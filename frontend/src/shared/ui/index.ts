@@ -26,6 +26,8 @@ export type { KeyValueItem, KeyValueListProps } from './KeyValueList';
 export { KeyValueList } from './KeyValueList';
 export type { ModalProps } from './Modal';
 export { Modal } from './Modal';
+export type { PageProps } from './Page';
+export { Page } from './Page';
 export { Spinner } from './Spinner';
 export type { StepsProps } from './Steps';
 export { Steps } from './Steps';

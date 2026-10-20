@@ -1,0 +1,46 @@
+.page {
+	display: grid;
+	gap: var(--space-6);
+	width: 100%;
+	max-width: 1440px;
+	margin: 0 auto;
+	padding: var(--space-8);
+	align-content: start;
+}
+
+.header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--space-4);
+}
+
+.title {
+	margin: 0;
+	font-size: 32px;
+	font-weight: 600;
+	line-height: 40px;
+}
+
+.subtitle {
+	margin: var(--space-1) 0 0;
+	color: var(--color-text-muted);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+}
+
+@media (max-width: 640px) {
+	.page {
+		padding: var(--space-4);
+	}
+
+	.title {
+		font-size: 28px;
+		line-height: 36px;
+	}
+}

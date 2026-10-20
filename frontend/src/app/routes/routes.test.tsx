@@ -1,5 +1,8 @@
+import { clientUser, officerUser } from '@test/fixtures/session';
+import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 
 import { routes } from './router';
@@ -7,14 +10,40 @@ import { routes } from './router';
 const renderAt = (path: string) => {
 	const router = createMemoryRouter(routes, { initialEntries: [path] });
 
-	return renderWithProviders(<RouterProvider router={router} />, { withRouter: false });
+	return { router, ...renderWithProviders(<RouterProvider router={router} />, { withRouter: false }) };
+};
+
+const asUser = (user: typeof clientUser ) => {
+	server.use(http.get(apiUrl('/auth/me'), () => HttpResponse.json(user)));
+};
+
+const anonymous = () => {
+	server.use(http.get(apiUrl('/auth/me'), () => HttpResponse.json(
+		{ code: 'UNAUTHORIZED', message: 'Нет сессии' },
+		{ status: 401 },
+	)));
 };
 
 describe('маршруты приложения', () => {
-	it('/ — главная страница', () => {
+	it('/ без сессии ведёт на страницу входа', async () => {
+		anonymous();
 		renderAt('/');
 
-		expect(screen.getByRole('heading', { level: 1, name: 'Кредитный кабинет' })).toBeInTheDocument();
+		expect(await screen.findByRole('heading', { level: 1, name: 'Умный кредитный кабинет' })).toBeInTheDocument();
+	});
+
+	it('/ для клиента — главная с шапкой клиента', async () => {
+		asUser(clientUser);
+		renderAt('/');
+
+		expect(await screen.findByRole('navigation', { name: 'Основная навигация' })).toBeInTheDocument();
+	});
+
+	it('сотрудник банка с адреса клиента попадает в очередь заявок', async () => {
+		asUser(officerUser);
+		const { router } = renderAt('/');
+
+		await waitFor(() => expect(router.state.location.pathname).toBe('/bank/queue'));
 	});
 
 	it('неизвестный адрес — страница 404 со ссылкой на главную', () => {
@@ -22,5 +51,15 @@ describe('маршруты приложения', () => {
 
 		expect(screen.getByRole('heading', { name: 'Страница не найдена' })).toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'На главную' })).toHaveAttribute('href', '/');
+	});
+
+	it('при сбое проверки доступа предлагает повторить', async () => {
+		server.use(http.get(apiUrl('/auth/me'), () => HttpResponse.json(
+			{ code: 'UPSTREAM_UNAVAILABLE', message: 'down' },
+			{ status: 502 },
+		), { once: true }));
+		renderAt('/');
+
+		expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось проверить доступ.');
 	});
 });

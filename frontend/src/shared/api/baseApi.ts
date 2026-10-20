@@ -12,6 +12,14 @@ export const baseApi = createApi({
 		baseUrl: env.apiBaseUrl,
 		credentials: 'include',
 	}),
-	tagTypes: ['Application'],
+	tagTypes: [
+		'Session',
+		'Application',
+		'Product',
+		'Loan',
+		'Notification',
+		'Ticket',
+		'BankApplication',
+	],
 	endpoints: () => ({}),
 });
