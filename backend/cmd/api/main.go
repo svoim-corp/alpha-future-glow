@@ -21,6 +21,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/events"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
@@ -54,6 +55,11 @@ func run(log *slog.Logger) error {
 	// Шина событий: зоны подписываются на события друг друга через неё.
 	// Пока подписчиков нет; передавайте bus в модули по мере надобности.
 	_ = events.New()
+
+	if err := idempotency.Migrate(ctx, conn); err != nil {
+		return err
+	}
+	// Экземпляр idempotency.New(conn) передавайте в модули, которым нужен .Middleware() на роутах-командах.
 
 	// Сборка модулей. Порядок важен для миграций: company -> identity -> остальные.
 	companyMod, err := company.New(ctx, conn)
