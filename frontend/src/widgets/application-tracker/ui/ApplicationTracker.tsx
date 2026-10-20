@@ -80,7 +80,9 @@ export const ApplicationTracker = ({ applicationId }: { applicationId: string })
 							)}
 							{application.status === 'SIGNING' && (
 								<div>
-									<ButtonLink to={paths.applicationSign(application.id)}>Перейти к подписанию</ButtonLink>
+									<ButtonLink to={paths.applicationSign(application.id)}>
+										Перейти к подписанию
+									</ButtonLink>
 								</div>
 							)}
 						</Card>
