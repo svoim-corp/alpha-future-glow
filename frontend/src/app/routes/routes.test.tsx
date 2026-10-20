@@ -40,7 +40,7 @@ describe('маршруты приложения', () => {
 		);
 		renderAt('/');
 
-		expect(await screen.findByRole('navigation', { name: 'Основная навигация' })).toBeInTheDocument();
+		expect(await screen.findByRole('navigation', { name: 'Разделы кабинета' })).toBeInTheDocument();
 	});
 
 	it('сотрудник банка с адреса клиента попадает в очередь заявок', async () => {

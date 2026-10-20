@@ -1,6 +1,7 @@
 /** Шаблоны маршрутов для роутера */
 export const ROUTES = {
 	home: '/',
+	applications: '/applications',
 	login: '/login',
 	products: '/products',
 	applicationEdit: '/applications/:id/edit',

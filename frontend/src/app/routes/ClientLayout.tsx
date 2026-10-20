@@ -1,9 +1,8 @@
-import { ClientHeader } from '@widgets/client-header';
+import { ClientShell } from '@widgets/client-shell';
 import { Outlet } from 'react-router';
 
 export const ClientLayout = () => (
-	<>
-		<ClientHeader />
+	<ClientShell>
 		<Outlet />
-	</>
+	</ClientShell>
 );
