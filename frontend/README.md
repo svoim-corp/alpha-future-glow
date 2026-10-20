@@ -12,6 +12,7 @@
 cp .env.example .env
 npm ci
 npm run dev        # http://localhost:3000
+npm run dev:mock   # то же, но без бэкенда: запросы к API обслуживают моки в браузере
 ```
 
 Запросы на `/api` dev-сервер проксирует на `VITE_API_PROXY_TARGET` (по умолчанию `http://localhost:8080`).
@@ -28,6 +29,7 @@ npm run dev        # http://localhost:3000
 | Команда | Что делает |
 |---|---|
 | `npm run dev` | dev-сервер |
+| `npm run dev:mock` | dev-сервер с моками API в браузере (MSW, `VITE_MOCK=true`), бэкенд не нужен |
 | `npm run build` | проверка типов + сборка в `dist/` |
 | `npm run check` | typecheck + ESLint + Steiger (FSD) + тесты — обязателен перед коммитом |
 | `npm run lint` / `lint:fix` | ESLint (включая границы слоёв FSD) |
@@ -59,3 +61,14 @@ test/         setup, renderWithProviders, MSW-сервер и фикстуры
 ## Тесты
 
 Vitest + Testing Library + MSW. Сеть мокается на уровне HTTP (MSW), стор настоящий. Пороги покрытия: 80 % строк/функций/выражений, 70 % ветвлений.
+
+## Демо без бэкенда
+
+`npm run dev:mock` (режим `mock`, `.env.mock`) запускает Service Worker из MSW: все запросы `/api/v1/*`
+обслуживаются моками из `src/app/mocks`. Состояние хранится в памяти вкладки — созданные заявки, планы,
+документы и решения банка живут до перезагрузки. Вход сохраняется на время сессии вкладки.
+
+- логины: `smirnov` (клиент), `ivanova` (сотрудник банка); пароль у всех `demo123`;
+- поданная клиентом заявка появляется в очереди банка, а решение сотрудника — у клиента в заявке;
+- данные — копии `test/fixtures`; контракты — `API_SPEC.md` и `API_SPEC_ADDITIONAL.md`;
+- Service Worker (`public/mockServiceWorker.js`) создан `npx msw init public`; в обычных режимах не подключается.

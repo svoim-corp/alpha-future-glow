@@ -24,7 +24,7 @@ describe('PaymentCalendar', () => {
 		renderWithProviders(<PaymentCalendar />);
 
 		expect(await screen.findByText(/Платёж 62\s200/)).toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'ноябрь 2026 г.' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'ноябрь 2026' })).toBeInTheDocument();
 		expect(await screen.findByRole('list', { name: 'Ближайшие платежи' })).toBeInTheDocument();
 	});
 
@@ -42,7 +42,7 @@ describe('PaymentCalendar', () => {
 
 		await user.click(await screen.findByRole('button', { name: 'Следующий месяц' }));
 
-		await screen.findByRole('heading', { name: 'декабрь 2026 г.' });
+		await screen.findByRole('heading', { name: 'декабрь 2026' });
 		expect(from).toHaveBeenCalledWith('2026-11-01');
 		expect(from).toHaveBeenCalledWith('2026-12-01');
 	});

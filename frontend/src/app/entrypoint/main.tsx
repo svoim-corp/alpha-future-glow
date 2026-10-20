@@ -14,13 +14,22 @@ if (!container) {
 	throw new Error('Не найден #root в index.html');
 }
 
-const store = setupStore();
-const router = createAppRouter();
+const start = async () => {
+	if (import.meta.env.VITE_MOCK === 'true') {
+		const { startMockApi } = await import('../mocks');
+		await startMockApi();
+	}
 
-createRoot(container).render(
-	<StrictMode>
-		<AppProviders store={store}>
-			<RouterProvider router={router} />
-		</AppProviders>
-	</StrictMode>,
-);
+	const store = setupStore();
+	const router = createAppRouter();
+
+	createRoot(container).render(
+		<StrictMode>
+			<AppProviders store={store}>
+				<RouterProvider router={router} />
+			</AppProviders>
+		</StrictMode>,
+	);
+};
+
+void start();

@@ -7,7 +7,9 @@ import { useState } from 'react';
 import styles from './PaymentCalendar.module.scss';
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const monthFormatter = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
+const monthFormat = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
+/** «июнь 2027 г.» → «июнь 2027»: сокращение года в заголовке лишнее */
+const monthFormatter = { format: (date: Date) => monthFormat.format(date).replace(/\s*г\.$/, '') };
 
 const startMonth = (): MonthRef => {
 	const now = new Date();

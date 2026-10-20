@@ -12,7 +12,9 @@ import styles from './PlannerBoard.module.scss';
 type Tab = 'calendar' | 'plans' | 'ideas';
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const monthFormatter = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
+const monthFormat = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
+/** «июнь 2027 г.» → «июнь 2027»: сокращение года в заголовке лишнее */
+const monthFormatter = { format: (date: Date) => monthFormat.format(date).replace(/\s*г\.$/, '') };
 
 const startMonthOf = (plan: BusinessPlan | undefined): MonthRef => {
 	const source = plan?.startDate ? new Date(`${plan.startDate}T00:00:00`) : new Date();

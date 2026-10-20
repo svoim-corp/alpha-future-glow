@@ -22,6 +22,8 @@ export default defineConfig((env) => mergeConfig(viteConfig(env), defineConfig({
 				'src/**/*.d.ts',
 				'src/**/*.test.{ts,tsx}',
 				'src/app/entrypoint/main.tsx',
+				// моки для демо без бэкенда — инструмент разработки, не код продукта
+				'src/app/mocks/**',
 			],
 			thresholds: {
 				lines: 80,
