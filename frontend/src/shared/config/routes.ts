@@ -9,6 +9,8 @@ export const ROUTES = {
 	credits: '/credits',
 	creditsCalendar: '/credits/calendar',
 	support: '/support',
+	documents: '/documents',
+	planner: '/planner',
 	bankQueue: '/bank/queue',
 	bankApplication: '/bank/applications/:id',
 } as const;
