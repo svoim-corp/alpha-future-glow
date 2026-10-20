@@ -58,7 +58,9 @@ export const SignContract = ({ applicationId, contract }: { applicationId: strin
 				<>
 					<Alert tone="success" title="Договор подписан">Остался последний шаг — получить деньги.</Alert>
 					<div>
-						<Button onClick={() => void onDisburse()} loading={disburseState.isLoading}>Получить деньги</Button>
+						<Button onClick={() => void onDisburse()} loading={disburseState.isLoading}>
+							Получить деньги
+						</Button>
 					</div>
 				</>
 			) : (
