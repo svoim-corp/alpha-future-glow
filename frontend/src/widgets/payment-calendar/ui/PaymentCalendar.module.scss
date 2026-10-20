@@ -1,0 +1,66 @@
+.wrap {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+
+.month {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+	text-transform: capitalize;
+}
+
+.table {
+	width: 100%;
+	table-layout: fixed;
+	border-collapse: collapse;
+}
+
+.table th {
+	padding: var(--space-2);
+	font-size: 13px;
+	color: var(--color-text-muted);
+	text-align: left;
+}
+
+.cell {
+	height: 88px;
+	padding: var(--space-2);
+	vertical-align: top;
+	border: 1px solid var(--color-border);
+}
+
+.day {
+	font-size: 13px;
+	color: var(--color-text-muted);
+}
+
+.pay {
+	display: block;
+	margin-top: var(--space-1);
+	padding: 2px var(--space-2);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-primary-text);
+	background: var(--color-primary-soft);
+	border-radius: var(--radius-sm);
+}
+
+.upcoming {
+	display: grid;
+	gap: var(--space-2);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.scroll {
+	overflow-x: auto;
+}

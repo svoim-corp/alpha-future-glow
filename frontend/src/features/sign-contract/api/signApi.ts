@@ -21,7 +21,7 @@ interface KeyedArgs {
 const invalidate = (_result: unknown, _error: unknown, { applicationId }: KeyedArgs) => [
 	{ type: 'Application' as const, id: applicationId },
 	{ type: 'Application' as const, id: 'LIST' },
-	{ type: 'Loan' as const, id: 'LIST' },
+	'Loan' as const,
 ];
 
 export const signApi = baseApi.injectEndpoints({

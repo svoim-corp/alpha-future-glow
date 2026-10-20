@@ -18,4 +18,7 @@ export type {
 	PaymentStatus,
 	ScheduleItem,
 } from './model/types';
+export { LoanCard } from './ui/LoanCard';
 export { LoansSummaryCard } from './ui/LoansSummaryCard';
+export { PaymentsTable } from './ui/PaymentsTable';
+export { PaymentStatusBadge } from './ui/PaymentStatusBadge';

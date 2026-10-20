@@ -1,6 +1,8 @@
 import { ApplicationPage } from '@pages/application';
 import { ApplicationEditPage } from '@pages/application-edit';
 import { ApplicationSignPage } from '@pages/application-sign';
+import { CreditsPage } from '@pages/credits';
+import { CreditsCalendarPage } from '@pages/credits-calendar';
 import { HomePage } from '@pages/home';
 import { LoginPage } from '@pages/login';
 import { NotFoundPage } from '@pages/not-found';
@@ -25,6 +27,8 @@ export const routes: RouteObject[] = [
 					{ path: ROUTES.applicationEdit, element: <ApplicationEditPage /> },
 					{ path: ROUTES.application, element: <ApplicationPage /> },
 					{ path: ROUTES.applicationSign, element: <ApplicationSignPage /> },
+					{ path: ROUTES.credits, element: <CreditsPage /> },
+					{ path: ROUTES.creditsCalendar, element: <CreditsCalendarPage /> },
 				],
 			},
 		],
