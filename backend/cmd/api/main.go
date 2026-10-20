@@ -13,7 +13,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"github.com/svoim-corp/alpha-future-glow/backend/docs"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/catalog"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/company"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/identity"
@@ -34,6 +37,10 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/underwriting"
 )
 
+// @title			Умный кредитный кабинет API
+// @version		1.0
+// @description	REST API кредитного кабинета для юрлиц и ИП и рабочего места банка.
+// @BasePath		/api/v1
 func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(log)
@@ -174,6 +181,17 @@ func registerTech(r *gin.Engine, cfg config.Config, conn *sqlx.DB) {
 			status, code = "DOWN", http.StatusServiceUnavailable
 		}
 		c.JSON(code, gin.H{"status": status, "db": dbStatus, "mocks": mocksStatus})
+	})
+
+	r.GET("/api/openapi.json", func(c *gin.Context) {
+		c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(docs.SwaggerInfo.ReadDoc()))
+	})
+	r.GET("/api/docs/*any", func(c *gin.Context) {
+		if p := c.Param("any"); p == "" || p == "/" {
+			c.Redirect(http.StatusFound, "/api/docs/index.html")
+			return
+		}
+		ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/api/openapi.json"))(c)
 	})
 
 	if cfg.IsDemo() {

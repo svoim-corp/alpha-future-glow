@@ -1,0 +1,163 @@
+basePath: /api/v1
+definitions:
+  httpx.ErrorBody:
+    properties:
+      code:
+        type: string
+      fields:
+        items:
+          $ref: '#/definitions/httpx.FieldError'
+        type: array
+      message:
+        type: string
+      traceId:
+        type: string
+    type: object
+  httpx.FieldError:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  identity.companyDTO:
+    properties:
+      id:
+        example: c-1
+        type: string
+      inn:
+        example: "7712345678"
+        type: string
+      isBankClient:
+        example: true
+        type: boolean
+      name:
+        example: ООО «Северная пекарня»
+        type: string
+    type: object
+  identity.loginRequest:
+    properties:
+      login:
+        example: smirnov
+        type: string
+      password:
+        example: demo123
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  identity.loginResponse:
+    properties:
+      redirect:
+        example: /
+        type: string
+      user:
+        $ref: '#/definitions/identity.userDTO'
+    type: object
+  identity.meResponse:
+    properties:
+      company:
+        $ref: '#/definitions/identity.companyDTO'
+      fullName:
+        type: string
+      id:
+        type: string
+      position:
+        type: string
+      role:
+        $ref: '#/definitions/shared.Role'
+    type: object
+  identity.userDTO:
+    properties:
+      companyId:
+        example: c-1
+        type: string
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      id:
+        example: u-1
+        type: string
+      position:
+        example: Генеральный директор
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/shared.Role'
+        example: CLIENT
+    type: object
+  shared.Role:
+    enum:
+    - CLIENT
+    - BANK_OFFICER
+    type: string
+    x-enum-varnames:
+    - RoleClient
+    - RoleBankOfficer
+info:
+  contact: {}
+  description: REST API кредитного кабинета для юрлиц и ИП и рабочего места банка.
+  title: Умный кредитный кабинет API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Учётные данные
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/identity.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/identity.loginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Вход по логину и паролю
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Завершить сессию
+      tags:
+      - auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/identity.meResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Текущий пользователь
+      tags:
+      - auth
+swagger: "2.0"

@@ -1,0 +1,247 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API кредитного кабинета для юрлиц и ИП и рабочего места банка.",
+        "title": "Умный кредитный кабинет API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Вход по логину и паролю",
+                "parameters": [
+                    {
+                        "description": "Учётные данные",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/identity.loginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/identity.loginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Завершить сессию",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Текущий пользователь",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/identity.meResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "httpx.ErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpx.FieldError"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "httpx.FieldError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "identity.companyDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "c-1"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7712345678"
+                },
+                "isBankClient": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ООО «Северная пекарня»"
+                }
+            }
+        },
+        "identity.loginRequest": {
+            "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "smirnov"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "demo123"
+                }
+            }
+        },
+        "identity.loginResponse": {
+            "type": "object",
+            "properties": {
+                "redirect": {
+                    "type": "string",
+                    "example": "/"
+                },
+                "user": {
+                    "$ref": "#/definitions/identity.userDTO"
+                }
+            }
+        },
+        "identity.meResponse": {
+            "type": "object",
+            "properties": {
+                "company": {
+                    "$ref": "#/definitions/identity.companyDTO"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/shared.Role"
+                }
+            }
+        },
+        "identity.userDTO": {
+            "type": "object",
+            "properties": {
+                "companyId": {
+                    "type": "string",
+                    "example": "c-1"
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "u-1"
+                },
+                "position": {
+                    "type": "string",
+                    "example": "Генеральный директор"
+                },
+                "role": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Role"
+                        }
+                    ],
+                    "example": "CLIENT"
+                }
+            }
+        },
+        "shared.Role": {
+            "type": "string",
+            "enum": [
+                "CLIENT",
+                "BANK_OFFICER"
+            ],
+            "x-enum-varnames": [
+                "RoleClient",
+                "RoleBankOfficer"
+            ]
+        }
+    }
+}
