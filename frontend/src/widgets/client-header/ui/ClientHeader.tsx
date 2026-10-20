@@ -1,3 +1,4 @@
+import { NotificationBell } from '@entities/notification';
 import { useGetMeQuery } from '@entities/session';
 import { SignOutButton } from '@features/sign-out';
 import { ROUTES } from '@shared/config';
@@ -29,6 +30,7 @@ export const ClientHeader = () => {
 				</nav>
 				<div className={styles.side}>
 					<NavLink to={ROUTES.support} className={linkClass}>Поддержка</NavLink>
+					<NotificationBell />
 					{user && <span className={styles.user}>{user.fullName}</span>}
 					<SignOutButton />
 				</div>
