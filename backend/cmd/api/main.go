@@ -14,15 +14,24 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/catalog"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/company"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/identity"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/integrations"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/notifications"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/offer"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/origination"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/config"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/events"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/scoring"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/servicing"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/support"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/underwriting"
 )
 
 func main() {
@@ -71,6 +80,31 @@ func run(log *slog.Logger) error {
 		return err
 	}
 
+	// Заготовки остальных зон: подключайте зависимости (shared-интерфейсы, bus) в New по мере надобности.
+	stubs := []interface{ Register(httpx.Routes) }{}
+	add := func(m interface{ Register(httpx.Routes) }, err error) error {
+		if err != nil {
+			return err
+		}
+		stubs = append(stubs, m)
+		return nil
+	}
+	for _, f := range []func() error{
+		func() error { return add(catalog.New(ctx, conn)) },
+		func() error { return add(origination.New(ctx, conn)) },
+		func() error { return add(integrations.New(ctx, conn)) },
+		func() error { return add(scoring.New(ctx, conn)) },
+		func() error { return add(underwriting.New(ctx, conn)) },
+		func() error { return add(offer.New(ctx, conn)) },
+		func() error { return add(servicing.New(ctx, conn)) },
+		func() error { return add(support.New(ctx, conn)) },
+		func() error { return add(notifications.New(ctx, conn)) },
+	} {
+		if err := f(); err != nil {
+			return err
+		}
+	}
+
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
 	r.Use(httpx.TraceID(), httpx.Logger(log), httpx.Recovery(log), auth.Middleware(identityMod))
@@ -85,6 +119,9 @@ func run(log *slog.Logger) error {
 	}
 	identityMod.Register(routes)
 	companyMod.Register(routes)
+	for _, m := range stubs {
+		m.Register(routes)
+	}
 
 	registerTech(r, cfg, conn)
 
