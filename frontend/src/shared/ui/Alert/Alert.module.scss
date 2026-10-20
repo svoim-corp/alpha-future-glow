@@ -1,0 +1,37 @@
+.alert {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: var(--space-4);
+	border-radius: var(--radius-control);
+	background: var(--color-info-soft);
+	color: var(--color-info);
+	font-size: 14px;
+}
+
+.warning {
+	background: var(--color-warning-soft);
+	color: var(--color-warning);
+}
+
+.success {
+	background: var(--color-success-soft);
+	color: var(--color-success);
+}
+
+.danger {
+	background: var(--color-danger-soft);
+	color: var(--color-danger);
+}
+
+.title {
+	font-weight: 600;
+}
+
+.body {
+	white-space: pre-line;
+}
+
+.actions {
+	margin-top: var(--space-2);
+}

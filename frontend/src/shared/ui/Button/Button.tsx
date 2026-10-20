@@ -1,18 +1,20 @@
-import clsx from 'clsx';
 import { type ButtonHTMLAttributes } from 'react';
 
-import styles from './Button.module.scss';
+import { Spinner } from '../Spinner';
+import { buttonClass, type ButtonVariant } from './buttonClass';
 
-export type ButtonVariant = 'primary' | 'secondary';
+export type { ButtonVariant };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: ButtonVariant;
 	loading?: boolean;
+	compact?: boolean;
 }
 
 export const Button = ({
 	variant = 'primary',
 	loading = false,
+	compact = false,
 	disabled,
 	className,
 	children,
@@ -22,10 +24,11 @@ export const Button = ({
 	<button
 		{...rest}
 		type={type}
-		className={clsx(styles.button, styles[variant], className)}
+		className={buttonClass(variant, compact, className)}
 		disabled={disabled || loading}
 		aria-busy={loading}
 	>
-		{loading ? 'Загрузка…' : children}
+		{loading && <Spinner />}
+		{children}
 	</button>
 );

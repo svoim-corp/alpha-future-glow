@@ -1,0 +1,30 @@
+.skeleton {
+	display: grid;
+	gap: var(--space-3);
+}
+
+.line {
+	height: 16px;
+	border-radius: var(--radius-sm);
+	background: var(--color-border);
+	animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+.empty {
+	padding: var(--space-8);
+	text-align: center;
+	border: 1px dashed var(--color-control-border);
+	border-radius: 16px;
+
+	p {
+		margin: 0;
+		color: var(--color-text-muted);
+		font-size: 14px;
+	}
+}
+
+@keyframes pulse {
+	to {
+		opacity: 0.45;
+	}
+}

@@ -1,0 +1,64 @@
+.overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: grid;
+	place-items: center;
+	padding: var(--space-4);
+	background: rgb(20 20 22 / 56%);
+}
+
+.dialog {
+	display: grid;
+	gap: var(--space-4);
+	width: min(560px, 100%);
+	max-height: calc(100vh - 32px);
+	overflow: auto;
+	padding: var(--space-6);
+	background: var(--color-surface);
+	color: var(--color-text);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow);
+
+	&:focus {
+		outline: none;
+	}
+}
+
+.wide {
+	width: min(760px, 100%);
+}
+
+.header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-4);
+
+	h2 {
+		font-size: 20px;
+		line-height: 28px;
+	}
+}
+
+.close {
+	min-width: 44px;
+	min-height: 44px;
+	border: 0;
+	border-radius: var(--radius-sm);
+	background: transparent;
+	color: var(--color-text-muted);
+	font-size: 20px;
+	cursor: pointer;
+
+	&:hover {
+		background: var(--color-raised);
+	}
+}
+
+.footer {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--space-3);
+}
