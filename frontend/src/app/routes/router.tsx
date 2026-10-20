@@ -1,6 +1,7 @@
 import { HomePage } from '@pages/home';
 import { LoginPage } from '@pages/login';
 import { NotFoundPage } from '@pages/not-found';
+import { ProductsPage } from '@pages/products';
 import { ROUTES } from '@shared/config';
 import { createBrowserRouter, type RouteObject } from 'react-router';
 
@@ -17,6 +18,7 @@ export const routes: RouteObject[] = [
 				element: <ClientLayout />,
 				children: [
 					{ path: ROUTES.home, element: <HomePage /> },
+					{ path: ROUTES.products, element: <ProductsPage /> },
 				],
 			},
 		],
