@@ -1,5 +1,4 @@
-.page {
-	max-width: 1080px;
-	margin: 0 auto;
-	padding: 32px 16px;
+.stack {
+	display: grid;
+	gap: var(--space-6);
 }

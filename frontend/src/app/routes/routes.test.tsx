@@ -34,6 +34,10 @@ describe('маршруты приложения', () => {
 
 	it('/ для клиента — главная с шапкой клиента', async () => {
 		asUser(clientUser);
+		server.use(
+			http.get(apiUrl('/applications'), () => HttpResponse.json({ items: [], page: 1, size: 20, total: 0 })),
+			http.get(apiUrl('/loans/summary'), () => HttpResponse.json({ activeLoans: 0, nextPayment: null })),
+		);
 		renderAt('/');
 
 		expect(await screen.findByRole('navigation', { name: 'Основная навигация' })).toBeInTheDocument();
