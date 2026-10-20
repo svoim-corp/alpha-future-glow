@@ -74,6 +74,13 @@ export type {
 } from './model/types';
 export { isVersionConflict, useDraftPatch } from './model/useDraftPatch';
 export { ApplicationCard } from './ui/ApplicationCard';
+export {
+	ApplicantView,
+	ChecksView,
+	CompletenessView,
+	HistoryView,
+	ScoreView,
+} from './ui/BankReviewViews';
 export { CompanyCard } from './ui/CompanyCard';
 export { CompanyProfileView } from './ui/CompanyProfileView';
 export { OfferView } from './ui/OfferView';
