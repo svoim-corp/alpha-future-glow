@@ -1,3 +1,4 @@
+import { ApplicationEditPage } from '@pages/application-edit';
 import { HomePage } from '@pages/home';
 import { LoginPage } from '@pages/login';
 import { NotFoundPage } from '@pages/not-found';
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
 				children: [
 					{ path: ROUTES.home, element: <HomePage /> },
 					{ path: ROUTES.products, element: <ProductsPage /> },
+					{ path: ROUTES.applicationEdit, element: <ApplicationEditPage /> },
 				],
 			},
 		],
