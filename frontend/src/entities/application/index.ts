@@ -1,6 +1,7 @@
 export {
 	applicationApi,
 	useGetApplicationQuery,
+	useGetCompanyProfileQuery,
 	useGetMyApplicationsQuery,
 	usePatchApplicationMutation,
 } from './api/applicationApi';
@@ -20,6 +21,7 @@ export type {
 	ApplicationStage2,
 	ApplicationStatus,
 	AuthorityType,
+	CompanyProfile,
 	CompanyType,
 	ConsentRecord,
 	Guarantor,
@@ -33,5 +35,6 @@ export type {
 export { isVersionConflict, useDraftPatch } from './model/useDraftPatch';
 export { ApplicationCard } from './ui/ApplicationCard';
 export { CompanyCard } from './ui/CompanyCard';
+export { CompanyProfileView } from './ui/CompanyProfileView';
 export { SavedIndicator } from './ui/SavedIndicator';
 export { StatusBadge } from './ui/StatusBadge';

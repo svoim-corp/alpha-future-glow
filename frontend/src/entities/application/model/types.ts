@@ -141,3 +141,16 @@ export interface PatchApplicationResult {
 	/** true — изменились сумма, срок или продукт: этап 1 нужно пройти заново */
 	prelimInvalidated: boolean;
 }
+
+/** Данные из реестров только для чтения: GET /applications/{id}/company-profile */
+export interface CompanyProfile {
+	source: string[];
+	regAddress: string;
+	okved: { code: string; name: string };
+	head: string;
+	founders: { name: string; share: number }[];
+	taxRegime: string;
+	isBankClient: boolean;
+	internalTurnover: { avgMonthlyIncome: number; periodMonths: number } | null;
+	girbo: { accounted: boolean } | null;
+}

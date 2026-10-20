@@ -3,6 +3,7 @@ import { baseApi, type Paginated } from '@shared/api';
 import {
 	type Application,
 	type ApplicationShort,
+	type CompanyProfile,
 	type PatchApplicationArgs,
 	type PatchApplicationResult,
 } from '../model/types';
@@ -15,6 +16,10 @@ export const applicationApi = baseApi.injectEndpoints({
 		}),
 		getApplication: build.query<Application, string>({
 			query: (id) => `/applications/${id}`,
+			providesTags: (_result, _error, id) => [{ type: 'Application', id }],
+		}),
+		getCompanyProfile: build.query<CompanyProfile, string>({
+			query: (id) => `/applications/${id}/company-profile`,
 			providesTags: (_result, _error, id) => [{ type: 'Application', id }],
 		}),
 		/** Автосохранение черновика. Версию передаём в If-Match, ответ несёт новую версию */
@@ -45,4 +50,9 @@ export const applicationApi = baseApi.injectEndpoints({
 	}),
 });
 
-export const { useGetMyApplicationsQuery, useGetApplicationQuery, usePatchApplicationMutation } = applicationApi;
+export const {
+	useGetMyApplicationsQuery,
+	useGetApplicationQuery,
+	useGetCompanyProfileQuery,
+	usePatchApplicationMutation,
+} = applicationApi;
