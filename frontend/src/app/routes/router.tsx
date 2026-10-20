@@ -1,3 +1,4 @@
+import { ApplicationPage } from '@pages/application';
 import { ApplicationEditPage } from '@pages/application-edit';
 import { HomePage } from '@pages/home';
 import { LoginPage } from '@pages/login';
@@ -21,6 +22,7 @@ export const routes: RouteObject[] = [
 					{ path: ROUTES.home, element: <HomePage /> },
 					{ path: ROUTES.products, element: <ProductsPage /> },
 					{ path: ROUTES.applicationEdit, element: <ApplicationEditPage /> },
+					{ path: ROUTES.application, element: <ApplicationPage /> },
 				],
 			},
 		],

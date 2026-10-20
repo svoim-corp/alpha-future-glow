@@ -1,0 +1,36 @@
+.offer {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.compare {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-4);
+}
+
+.col {
+	display: grid;
+	gap: var(--space-2);
+	padding: var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+.col h3 {
+	margin: 0;
+	font-size: 14px;
+	color: var(--color-text-muted);
+}
+
+.amount {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 700;
+}
+
+@media (max-width: 640px) {
+	.compare {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
