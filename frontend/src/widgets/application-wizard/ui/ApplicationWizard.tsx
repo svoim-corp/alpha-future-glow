@@ -78,8 +78,8 @@ export const ApplicationWizard = ({ applicationId }: { applicationId: string }) 
 										<PaymentEstimate
 											params={{
 												productCode: application.product.code,
-												amount: toNumber(draft?.amount ?? String(application.params.amount)) ?? 0,
-												term: toNumber(draft?.term ?? String(application.params.term ?? '')) ?? 0,
+												amount: toNumber(draft?.amount ?? `${application.params.amount}`) ?? 0,
+												term: toNumber(draft?.term ?? `${application.params.term ?? ''}`) ?? 0,
 												graceMonths: toNumber(draft?.graceMonths ?? '') ?? application.params.graceMonths,
 											}}
 										/>
