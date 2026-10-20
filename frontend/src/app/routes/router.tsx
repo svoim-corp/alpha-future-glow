@@ -1,6 +1,7 @@
 import { ApplicationPage } from '@pages/application';
 import { ApplicationEditPage } from '@pages/application-edit';
 import { ApplicationSignPage } from '@pages/application-sign';
+import { BankQueuePage } from '@pages/bank-queue';
 import { CreditsPage } from '@pages/credits';
 import { CreditsCalendarPage } from '@pages/credits-calendar';
 import { HomePage } from '@pages/home';
@@ -40,7 +41,9 @@ export const routes: RouteObject[] = [
 		children: [
 			{
 				element: <BankLayout />,
-				children: [],
+				children: [
+					{ path: ROUTES.bankQueue, element: <BankQueuePage /> },
+				],
 			},
 		],
 	},

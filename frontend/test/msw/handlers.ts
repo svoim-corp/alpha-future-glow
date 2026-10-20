@@ -1,8 +1,12 @@
-import { type HttpHandler } from 'msw';
+import { http, type HttpHandler,HttpResponse } from 'msw';
+
+import { apiUrl } from './apiUrl';
 
 /**
  * Обработчики «счастливого пути» для всех тестов.
- * Пример: http.get(apiUrl('/applications'), () => HttpResponse.json(fixture)).
  * В конкретном тесте переопределяй через server.use(...).
  */
-export const handlers: HttpHandler[] = [];
+export const handlers: HttpHandler[] = [
+	// колокольчик в шапке запрашивает уведомления на любой клиентской странице
+	http.get(apiUrl('/notifications'), () => HttpResponse.json({ unreadCount: 0, items: [] })),
+];
