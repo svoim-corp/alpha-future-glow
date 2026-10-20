@@ -1,9 +1,9 @@
 import { PaymentStatusBadge, type ScheduleItem, useGetScheduleQuery, useGetUpcomingPaymentsQuery } from '@entities/loan';
+import { buildMonthGrid, monthRange, type MonthRef, shiftMonth } from '@shared/lib/calendar';
 import { formatDate, formatMoney } from '@shared/lib/format';
 import { AsyncBoundary, Button, Card } from '@shared/ui';
 import { useState } from 'react';
 
-import { buildMonthGrid, monthRange, type MonthRef, shiftMonth } from '../model/grid';
 import styles from './PaymentCalendar.module.scss';
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];

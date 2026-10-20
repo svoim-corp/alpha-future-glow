@@ -9,6 +9,7 @@ import { DocumentsPage } from '@pages/documents';
 import { HomePage } from '@pages/home';
 import { LoginPage } from '@pages/login';
 import { NotFoundPage } from '@pages/not-found';
+import { PlannerPage } from '@pages/planner';
 import { ProductsPage } from '@pages/products';
 import { SupportPage } from '@pages/support';
 import { ROUTES } from '@shared/config';
@@ -35,6 +36,7 @@ export const routes: RouteObject[] = [
 					{ path: ROUTES.creditsCalendar, element: <CreditsCalendarPage /> },
 					{ path: ROUTES.support, element: <SupportPage /> },
 					{ path: ROUTES.documents, element: <DocumentsPage /> },
+					{ path: ROUTES.planner, element: <PlannerPage /> },
 				],
 			},
 		],

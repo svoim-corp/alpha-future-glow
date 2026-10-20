@@ -1,4 +1,5 @@
 import { LoansSummaryCard } from '@entities/loan';
+import { PlanRecommendations } from '@entities/plan';
 import { ROUTES } from '@shared/config';
 import { ButtonLink, Page } from '@shared/ui';
 import { MyApplications } from '@widgets/my-applications';
@@ -14,6 +15,7 @@ export const HomePage = () => (
 		<div className={styles.stack}>
 			<LoansSummaryCard />
 			<MyApplications />
+			<PlanRecommendations />
 		</div>
 	</Page>
 );
