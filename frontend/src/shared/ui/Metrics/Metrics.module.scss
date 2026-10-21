@@ -29,6 +29,8 @@
 	font-weight: 600;
 	line-height: 1.2;
 	font-variant-numeric: tabular-nums;
+	min-width: 0;
+	overflow-wrap: anywhere;
 }
 
 .hint {

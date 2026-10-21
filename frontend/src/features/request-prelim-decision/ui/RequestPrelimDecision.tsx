@@ -120,18 +120,19 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 	return (
 		<div className={styles.block}>
 			<dl className={styles.limits}>
-				<div className={styles.limit}>
+				<div className={`${styles.limit} ${styles.accent}`}>
 					<dt>Предварительный лимит</dt>
 					<dd>{bankLimit === null ? '—' : formatMoney(bankLimit)}</dd>
 				</div>
+				{rate !== null && (
+					<div className={styles.limit}>
+						<dt>Предварительная ставка</dt>
+						<dd>{formatRate(rate)}</dd>
+						{limit && <dd className={styles.sub}>{`платёж ${formatMoney(limit.prelimPayment)} в месяц`}</dd>}
+					</div>
+				)}
 			</dl>
-			<p>Лимит рассчитан по оборотам на ваших счетах в банке, выписки не нужны.</p>
-			{rate !== null && (
-				<p>
-					{`Предварительная ставка ${formatRate(rate)}`}
-					{limit ? `, платёж ${formatMoney(limit.prelimPayment)} в месяц` : ''}
-				</p>
-			)}
+			<p className={styles.note}>Лимит рассчитан по оборотам на ваших счетах в банке, выписки не нужны.</p>
 			{limit && (
 				<ul className={styles.list} aria-label="Результаты проверок">
 					{limit.checks.map((check) => (

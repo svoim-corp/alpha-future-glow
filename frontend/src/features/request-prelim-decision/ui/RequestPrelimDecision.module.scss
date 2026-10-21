@@ -12,9 +12,29 @@
 
 .limit {
 	margin: 0;
-	padding: var(--space-3);
-	border: 1px solid var(--color-border);
+	padding: var(--space-4);
+	background: var(--color-background);
 	border-radius: var(--radius-control);
+}
+
+.accent {
+	background: var(--color-primary-soft);
+
+	dd {
+		color: var(--color-primary-text);
+	}
+}
+
+.limit dd.sub {
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--color-text-muted);
+}
+
+.note {
+	margin: 0;
+	font-size: 14px;
+	color: var(--color-text-muted);
 }
 
 .limit dt {
@@ -24,7 +44,7 @@
 
 .limit dd {
 	margin: 4px 0 0;
-	font-size: 20px;
+	font-size: 24px;
 	font-weight: 700;
 }
 
