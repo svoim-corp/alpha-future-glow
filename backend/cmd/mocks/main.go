@@ -28,7 +28,7 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "UP"}) })
-	// TODO(B): зарегистрировать /mock/* по API_SPEC.md, раздел 4.14.
+	(&server{data: newDataset()}).register(r)
 
 	srv := &http.Server{Addr: addr, Handler: r, ReadHeaderTimeout: 5 * time.Second}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
