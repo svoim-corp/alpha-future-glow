@@ -167,7 +167,7 @@ func (m *Module) list(c *gin.Context) {
 		st := shared.Status(r.Status)
 		items[i] = applicationShortDTO{
 			ID: r.ID, Number: r.Number, Product: ref, Amount: r.Amount, Term: r.Term,
-			Status: st, StatusLabel: st.Label(), ActionRequired: clientTurn[st], UpdatedAt: r.UpdatedAt,
+			Status: st, StatusLabel: st.Label(), ActionRequired: clientTurn[st], UpdatedAt: r.UpdatedAt.UTC(),
 		}
 	}
 	httpx.JSON(c, http.StatusOK, httpx.NewPage(items, page, size, total))
@@ -287,7 +287,7 @@ func (m *Module) patch(c *gin.Context) {
 		httpx.Fail(c, err)
 		return
 	}
-	httpx.JSON(c, http.StatusOK, patchResponse{Version: a.Version, SavedAt: a.UpdatedAt, PrelimInvalidated: invalidated})
+	httpx.JSON(c, http.StatusOK, patchResponse{Version: a.Version, SavedAt: a.UpdatedAt.UTC(), PrelimInvalidated: invalidated})
 }
 
 type consentRequest struct {
@@ -344,7 +344,7 @@ func (m *Module) consentBKI(c *gin.Context) {
 		httpx.Fail(c, err)
 		return
 	}
-	httpx.JSON(c, http.StatusCreated, consentResponse{Given: true, By: cs.GivenBy, At: cs.GivenAt})
+	httpx.JSON(c, http.StatusCreated, consentResponse{Given: true, By: cs.GivenBy, At: cs.GivenAt.UTC()})
 }
 
 // delete godoc
@@ -415,7 +415,7 @@ func (m *Module) consentGuarantor(c *gin.Context) {
 		httpx.Fail(c, err)
 		return
 	}
-	httpx.JSON(c, http.StatusCreated, guarantorConsentResponse{Given: true, At: cs.GivenAt})
+	httpx.JSON(c, http.StatusCreated, guarantorConsentResponse{Given: true, At: cs.GivenAt.UTC()})
 }
 
 type missingDTO struct {
@@ -639,7 +639,7 @@ func (m *Module) bankHistory(c *gin.Context) {
 	out := make([]historyEntryDTO, len(events))
 	for i, ev := range events {
 		out[i] = historyEntryDTO{
-			At: ev.At, Actor: historyActorDTO{Type: shared.ActorType(ev.ActorType)}, Action: ev.Action,
+			At: ev.At.UTC(), Actor: historyActorDTO{Type: shared.ActorType(ev.ActorType)}, Action: ev.Action,
 			From: shared.Status(ev.From), To: shared.Status(ev.To), Comment: ev.Comment,
 		}
 		if ev.ActorName != nil {

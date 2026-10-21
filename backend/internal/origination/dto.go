@@ -131,7 +131,7 @@ func toApplicationDTO(d *dossier) applicationDTO {
 		PrelimInvalidated: d.stage.invalidated,
 		Stage2:            stage2DTO{TruthConfirmed: a.TruthConfirmed},
 		Locks:             locksDTO{ParamsLocked: st != shared.StatusDraft, Stage2Available: d.stage.stage == stageFull},
-		SavedAt:           a.UpdatedAt,
+		SavedAt:           a.UpdatedAt.UTC(),
 	}
 	if until := a.Authority.V.ValidUntil; until != nil {
 		resp.Authority.ValidUntil = dateOrNil(*until)
@@ -142,7 +142,7 @@ func toApplicationDTO(d *dossier) applicationDTO {
 		resp.Stage2.Turnover = &turnoverDTO{Source: shared.SourceBankAccounts, AvgMonthlyIncome: p.Turnover.AvgMonthlyIncome, PeriodMonths: p.Turnover.PeriodMonths}
 	}
 	if c := d.consent; c != nil {
-		resp.Consents.BKI = &consentDTO{Given: true, At: c.GivenAt}
+		resp.Consents.BKI = &consentDTO{Given: true, At: c.GivenAt.UTC()}
 	}
 	if id := a.GuarantorPersonID; id != nil {
 		resp.Stage2.Guarantor = &guarantorDTO{PersonID: *id, FullName: d.guarantorName(*id), BKIConsent: d.guarantorAgreed()}

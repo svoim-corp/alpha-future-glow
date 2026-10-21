@@ -63,7 +63,7 @@ func steps(current shared.Status, events []eventRow) []timelineStep {
 	var out []timelineStep
 	for _, ev := range events {
 		if to := shared.Status(ev.To); to != shared.StatusDraft {
-			at := ev.At
+			at := ev.At.UTC()
 			out = append(out, timelineStep{status: to, at: &at, state: stepDone})
 		}
 	}

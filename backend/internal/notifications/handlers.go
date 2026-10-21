@@ -54,7 +54,7 @@ func (m *Module) list(c *gin.Context) {
 	resp := listResponse{UnreadCount: unread, Items: make([]notificationDTO, len(rows))}
 	for i, r := range rows {
 		resp.Items[i] = notificationDTO{
-			ID: r.ID, Type: shared.NotificationType(r.Type), Title: r.Title, Text: r.Text, Link: r.Link, Read: r.Read, CreatedAt: r.CreatedAt,
+			ID: r.ID, Type: shared.NotificationType(r.Type), Title: r.Title, Text: r.Text, Link: r.Link, Read: r.Read, CreatedAt: r.CreatedAt.UTC(),
 		}
 	}
 	httpx.JSON(c, http.StatusOK, resp)
