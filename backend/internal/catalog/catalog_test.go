@@ -129,3 +129,28 @@ func TestMatchProducts(t *testing.T) {
 		}
 	}
 }
+
+func TestCalculatePayment(t *testing.T) {
+	_, r := newTestModule(t)
+	w := do(r, "POST", "/api/v1/calculator/payment", `{"productCode":"INVEST","amount":6000000,"term":60,"graceMonths":6}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", w.Code, w.Body.String())
+	}
+	got := decode[calculatorResponse](t, w)
+	if got.Payment.Min != 162_900 || got.Payment.Max != 189_600 || got.Rate.Min != 18 || !got.WithinProductLimits ||
+		got.GracePayment == nil || got.GracePayment.Months != 6 || got.GracePayment.Min != 90_000 {
+		t.Fatalf("расчёт: %+v", got)
+	}
+
+	w = do(r, "POST", "/api/v1/calculator/payment", `{"productCode":"WORKING","amount":1500000,"term":24,"graceMonths":null}`)
+	if !strings.Contains(w.Body.String(), `"gracePayment":null`) {
+		t.Fatalf("без отсрочки gracePayment = null: %s", w.Body.String())
+	}
+
+	if w := do(r, "POST", "/api/v1/calculator/payment", `{"productCode":"NOPE","amount":1,"term":1}`); w.Code != http.StatusNotFound {
+		t.Fatalf("неизвестный продукт: %d", w.Code)
+	}
+	if w := do(r, "POST", "/api/v1/calculator/payment", `{"productCode":"WORKING","amount":1500000}`); w.Code != http.StatusBadRequest {
+		t.Fatalf("без срока: %d", w.Code)
+	}
+}

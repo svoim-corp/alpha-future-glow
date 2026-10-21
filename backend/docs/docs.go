@@ -1011,6 +1011,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/calculator/payment": {
+            "post": {
+                "description": "Ставку до проверки банк не знает, поэтому платёж — диапазон по ставкам продукта. Округление — до 100 ₽.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Калькулятор платежа",
+                "parameters": [
+                    {
+                        "description": "Параметры кредита",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/catalog.calculatorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/catalog.calculatorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/plans": {
             "get": {
                 "description": "По умолчанию — все, кроме ARCHIVED. recommendation — подбор на сегодня или null.",
@@ -1369,6 +1415,57 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "catalog.calculatorRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "productCode",
+                "term"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 6000000
+                },
+                "graceMonths": {
+                    "description": "0 или null — без отсрочки",
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 6
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "INVEST"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 60
+                }
+            }
+        },
+        "catalog.calculatorResponse": {
+            "type": "object",
+            "properties": {
+                "gracePayment": {
+                    "description": "null — без отсрочки",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/catalog.gracePaymentDTO"
+                        }
+                    ]
+                },
+                "payment": {
+                    "$ref": "#/definitions/catalog.moneyRangeDTO"
+                },
+                "rate": {
+                    "$ref": "#/definitions/catalog.rateRangeDTO"
+                },
+                "withinProductLimits": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "catalog.goalDTO": {
             "type": "object",
             "properties": {
@@ -1379,6 +1476,23 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Пополнить оборотные средства"
+                }
+            }
+        },
+        "catalog.gracePaymentDTO": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer",
+                    "example": 130000
+                },
+                "min": {
+                    "type": "integer",
+                    "example": 90000
+                },
+                "months": {
+                    "type": "integer",
+                    "example": 6
                 }
             }
         },

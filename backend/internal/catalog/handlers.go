@@ -192,3 +192,62 @@ func (m *Module) matchProducts(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, out)
 }
+
+type calculatorRequest struct {
+	ProductCode string `json:"productCode" binding:"required" example:"INVEST"`
+	Amount      int64  `json:"amount" binding:"required,gt=0" example:"6000000"`
+	Term        int    `json:"term" binding:"required,gt=0" example:"60"`
+	GraceMonths int    `json:"graceMonths" binding:"gte=0" example:"6"` // 0 или null — без отсрочки
+}
+
+type gracePaymentDTO struct {
+	Min    int64 `json:"min" example:"90000"`
+	Max    int64 `json:"max" example:"130000"`
+	Months int   `json:"months" example:"6"`
+}
+
+type calculatorResponse struct {
+	Rate                rateRangeDTO     `json:"rate"`
+	Payment             moneyRangeDTO    `json:"payment"`
+	GracePayment        *gracePaymentDTO `json:"gracePayment"` // null — без отсрочки
+	WithinProductLimits bool             `json:"withinProductLimits" example:"true"`
+}
+
+// calculatePayment godoc
+//
+//	@Summary		Калькулятор платежа
+//	@Description	Ставку до проверки банк не знает, поэтому платёж — диапазон по ставкам продукта. Округление — до 100 ₽.
+//	@Tags			catalog
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		calculatorRequest	true	"Параметры кредита"
+//	@Success		200		{object}	calculatorResponse
+//	@Failure		400		{object}	httpx.ErrorBody
+//	@Failure		404		{object}	httpx.ErrorBody
+//	@Router			/calculator/payment [post]
+func (m *Module) calculatePayment(c *gin.Context) {
+	var req calculatorRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	p, err := m.store.Product(c.Request.Context(), req.ProductCode)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if p == nil {
+		httpx.Fail(c, httpx.NotFound("Продукт не найден"))
+		return
+	}
+	calc := calculate(*p, req.Amount, req.Term, req.GraceMonths)
+	resp := calculatorResponse{
+		Rate:                rateRangeDTO{Min: p.RateMin, Max: p.RateMax},
+		Payment:             moneyRangeDTO{Min: calc.paymentMin, Max: calc.paymentMax},
+		WithinProductLimits: calc.withinLimits,
+	}
+	if req.GraceMonths > 0 {
+		resp.GracePayment = &gracePaymentDTO{Min: calc.graceMin, Max: calc.graceMax, Months: req.GraceMonths}
+	}
+	httpx.JSON(c, http.StatusOK, resp)
+}
