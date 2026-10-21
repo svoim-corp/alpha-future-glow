@@ -2109,6 +2109,59 @@
                 }
             }
         },
+        "/loans/schedule": {
+            "get": {
+                "description": "Платежи всех кредитов компании за период, по датам. Период — не больше года.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Платёжный календарь",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "2026-11-01",
+                        "description": "С даты",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-12-31",
+                        "description": "По дату включительно",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/servicing.scheduleItemDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/loans/summary": {
             "get": {
                 "description": "Сколько действующих кредитов и ближайший платёж: сумма всех платежей компании в ближайшую дату.",
@@ -4969,6 +5022,32 @@
                 "name": {
                     "type": "string",
                     "example": "Оборотный кредит"
+                }
+            }
+        },
+        "servicing.scheduleItemDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 61958
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-11-20"
+                },
+                "loanId": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "productName": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
+                },
+                "status": {
+                    "description": "PLANNED, PAID, OVERDUE",
+                    "type": "string",
+                    "example": "PLANNED"
                 }
             }
         },

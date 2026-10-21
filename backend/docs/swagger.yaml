@@ -1531,6 +1531,25 @@ definitions:
         example: Оборотный кредит
         type: string
     type: object
+  servicing.scheduleItemDTO:
+    properties:
+      amount:
+        example: 61958
+        type: integer
+      date:
+        example: "2026-11-20"
+        type: string
+      loanId:
+        example: l-55
+        type: string
+      productName:
+        example: Оборотный кредит
+        type: string
+      status:
+        description: PLANNED, PAID, OVERDUE
+        example: PLANNED
+        type: string
+    type: object
   servicing.summaryResponse:
     properties:
       activeLoans:
@@ -3704,6 +3723,43 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: 'Кредит: условия и график платежей'
+      tags:
+      - loans
+  /loans/schedule:
+    get:
+      description: Платежи всех кредитов компании за период, по датам. Период — не
+        больше года.
+      parameters:
+      - description: С даты
+        example: "2026-11-01"
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: По дату включительно
+        example: "2026-12-31"
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.scheduleItemDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Платёжный календарь
       tags:
       - loans
   /loans/summary:

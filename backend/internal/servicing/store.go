@@ -120,6 +120,16 @@ func (s *Store) LoanPayments(ctx context.Context, loanID string) ([]paymentRow, 
 	return out, err
 }
 
+// PeriodPayments — платежи компании с from по to включительно по датам.
+func (s *Store) PeriodPayments(ctx context.Context, companyID string, from, to time.Time) ([]paymentRow, error) {
+	var out []paymentRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT `+paymentCols+` FROM servicing.payments p JOIN servicing.loans l ON l.id = p.loan_id
+		WHERE l.company_id = $1 AND p.due_date BETWEEN $2 AND $3
+		ORDER BY p.due_date, p.loan_id`, companyID, from, to)
+	return out, err
+}
+
 // ActiveLoans — число действующих кредитов компании.
 func (s *Store) ActiveLoans(ctx context.Context, companyID string) (int, error) {
 	var n int

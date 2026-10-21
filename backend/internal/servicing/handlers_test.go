@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestSummary(t *testing.T) {
@@ -65,5 +66,28 @@ func TestGet(t *testing.T) {
 	}
 	if w := e.do("GET", "/api/v1/loans/l-0", "smirnov"); w.Code != http.StatusNotFound {
 		t.Fatalf("нет кредита: %d", w.Code)
+	}
+}
+
+func TestSchedule(t *testing.T) {
+	e := newEnv(t)
+	a := e.open(t, "a-1", "c-1", today.AddDate(0, -1, 0))
+	b := e.open(t, "a-2", "c-1", time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC))
+	e.open(t, "a-3", "c-3", today)
+
+	got := decode[[]scheduleItemDTO](t, e.do("GET", "/api/v1/loans/schedule?from=2026-10-01&to=2026-11-30", "smirnov"))
+	want := []string{"2026-10-21 " + a + " PLANNED", "2026-11-05 " + b + " PLANNED", "2026-11-21 " + a + " PLANNED"}
+	if len(got) != len(want) {
+		t.Fatalf("календарь: %+v", got)
+	}
+	for i, w := range want {
+		if g := got[i].Date + " " + got[i].LoanID + " " + got[i].Status; g != w || got[i].ProductName != "Оборотный кредит" || got[i].Amount != 61_958 {
+			t.Errorf("строка %d: %+v, want %s", i, got[i], w)
+		}
+	}
+	for _, q := range []string{"", "?from=2026-11-01", "?from=2026-12-01&to=2026-11-01", "?from=2026-01-01&to=2027-06-01", "?from=01.11.2026&to=2026-12-01"} {
+		if w := e.do("GET", "/api/v1/loans/schedule"+q, "smirnov"); w.Code != http.StatusBadRequest {
+			t.Errorf("%q: %d", q, w.Code)
+		}
 	}
 }

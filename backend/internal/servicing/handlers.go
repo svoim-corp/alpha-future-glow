@@ -220,3 +220,75 @@ func (m *Module) get(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, resp)
 }
+
+// maxPeriodDays — календарь показывает месяц-два; год — с запасом, но без выгрузки всей истории.
+const maxPeriodDays = 366
+
+type scheduleItemDTO struct {
+	Date        string `json:"date" example:"2026-11-20"`
+	LoanID      string `json:"loanId" example:"l-55"`
+	ProductName string `json:"productName" example:"Оборотный кредит"`
+	Amount      int64  `json:"amount" example:"61958"`
+	Status      string `json:"status" example:"PLANNED"` // PLANNED, PAID, OVERDUE
+}
+
+func toScheduleItems(rows []paymentRow, today time.Time) []scheduleItemDTO {
+	out := make([]scheduleItemDTO, len(rows))
+	for i, p := range rows {
+		out[i] = scheduleItemDTO{
+			Date: p.DueDate.Format(dateLayout), LoanID: p.LoanID, ProductName: p.ProductName, Amount: p.Total, Status: paymentStatus(p, today),
+		}
+	}
+	return out
+}
+
+// period — ?from и ?to: даты YYYY-MM-DD, from не позже to, не больше года.
+func period(c *gin.Context) (from, to time.Time, err error) {
+	field := func(name, msg string) error {
+		return httpx.Validation("", httpx.FieldError{Field: name, Code: "INVALID", Message: msg})
+	}
+	if from, err = time.Parse(dateLayout, c.Query("from")); err != nil {
+		return from, to, field("from", "Укажите дату в формате ГГГГ-ММ-ДД")
+	}
+	if to, err = time.Parse(dateLayout, c.Query("to")); err != nil {
+		return from, to, field("to", "Укажите дату в формате ГГГГ-ММ-ДД")
+	}
+	switch {
+	case to.Before(from):
+		return from, to, field("to", "Дата окончания раньше даты начала")
+	case to.Sub(from) > maxPeriodDays*24*time.Hour:
+		return from, to, field("to", "Период — не больше года")
+	}
+	return from, to, nil
+}
+
+// schedule godoc
+//
+//	@Summary		Платёжный календарь
+//	@Description	Платежи всех кредитов компании за период, по датам. Период — не больше года.
+//	@Tags			loans
+//	@Produce		json
+//	@Param			from	query		string	true	"С даты"	example(2026-11-01)
+//	@Param			to		query		string	true	"По дату включительно"	example(2026-12-31)
+//	@Success		200		{array}		scheduleItemDTO
+//	@Failure		400		{object}	httpx.ErrorBody
+//	@Failure		403		{object}	httpx.ErrorBody
+//	@Router			/loans/schedule [get]
+func (m *Module) schedule(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	from, to, err := period(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	rows, err := m.store.PeriodPayments(c.Request.Context(), company, from, to)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, toScheduleItems(rows, m.today()))
+}
