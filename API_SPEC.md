@@ -1006,12 +1006,16 @@ Identity ──► Origination ◄── Catalog
 |---|---|---|---|
 | `GET /mock/core-banking/clients/{inn}` | АБС банка: профиль клиента | Уточн. | `{ inn, name, type, clientSince, regAddress, actualAddress, taxRegime, persons[{ personId, fullName, inn, roles[HEAD/FOUNDER/REPRESENTATIVE], share?, mchdNumber? }] }` |
 | `GET /mock/core-banking/turnover/{inn}` | АБС банка: обороты по счетам | Уточн. | `{ avgMonthlyIncome, months[{ month, income, outcome }] }` |
+| `GET /mock/egrul/{inn}` | ЕГРЮЛ (ООО) | ТЗ, стр. 13; путь — Доп. | `{ inn, name, ogrn, state, regDate, regAddress, okved, head, founders[] }` — пример ниже |
+| `GET /mock/egrip/{inn}` | ЕГРИП (ИП) | ТЗ, стр. 13; путь — Доп. | `{ inn, ogrnip, fullName, state, regDate, okved }` |
 | `GET /mock/transparent-business/{inn}` | «Прозрачный бизнес» ФНС | ТЗ, стр. 13 | `{ massAddress, massHead, taxRegime, employees }` |
 | `POST /mock/bki/report` | БКИ | ТЗ, стр. 13 | запрос `{ inn, consentId }` → `{ loans[{ amount, balance, overdueDays }], totalDebt, maxOverdueDays }` |
 | `GET /mock/fns/debts/{inn}` | Налоговая задолженность | Доп. | `{ hasDebt, amount }` |
 | `GET /mock/girbo/{inn}` | ГИР БО (только ООО) | Доп. | `{ year, revenue, netProfit }` |
-| `GET /mock/courts/{inn}` | КАД / ФССП / ЕФРСБ | Доп. | `{ arbitration[], enforcement[], bankruptcy }` |
-| `GET /mock/mchd/{number}` | Реестр МЧД (номер берётся из АБС, не от пользователя) | Доп. | `{ valid, principalInn, representative, validUntil, powers[] }` |
+| `GET /mock/courts/{inn}` | КАД / ФССП / ЕФРСБ | Доп. | `{ arbitration[{ caseNumber, role, amount }], enforcement[{ number, amount }], bankruptcy }`; `role`: `DEFENDANT` / `PLAINTIFF` |
+| `GET /mock/mchd/{number}` | Реестр МЧД (номер берётся из АБС, не от пользователя) | Доп. | `{ valid, principalInn, representative{ fullName, inn }, validUntil, powers[] }` |
+
+Неизвестный мокам ИНН или номер МЧД, а также ГИР БО для ИП — `404 { code: "NOT_FOUND", message }` (Доп.).
 
 Связь пользователя с данными банка: у `User` есть `personInn`. Полномочия определяются так:
 1. Если среди `persons` клиента есть запись с этим ИНН и ролью `HEAD` — это руководитель.
