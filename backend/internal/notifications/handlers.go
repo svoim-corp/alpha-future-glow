@@ -59,3 +59,26 @@ func (m *Module) list(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, resp)
 }
+
+// markRead godoc
+//
+//	@Summary		Отметить уведомление прочитанным
+//	@Description	Повторная отметка — не ошибка. Чужое уведомление — 404, чтобы не раскрывать его существование.
+//	@Tags			notifications
+//	@Param			id	path	string	true	"ID уведомления"
+//	@Success		204
+//	@Failure		401	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Router			/notifications/{id}/read [post]
+func (m *Module) markRead(c *gin.Context) {
+	ok, err := m.store.MarkRead(c.Request.Context(), c.Param("id"), auth.UserFrom(c).ID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if !ok {
+		httpx.Fail(c, httpx.NotFound("Уведомление не найдено"))
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

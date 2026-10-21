@@ -1091,6 +1091,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/notifications/{id}/read": {
+            "post": {
+                "description": "Повторная отметка — не ошибка. Чужое уведомление — 404, чтобы не раскрывать его существование.",
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Отметить уведомление прочитанным",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID уведомления",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/plans": {
             "get": {
                 "description": "По умолчанию — все, кроме ARCHIVED. recommendation — подбор на сегодня или null.",

@@ -130,3 +130,24 @@ func TestList(t *testing.T) {
 		t.Fatalf("без входа: %d", w.Code)
 	}
 }
+
+func TestMarkRead(t *testing.T) {
+	m, r := newTestModule(t)
+	notify(t, m, "u-1", "своё")
+	id := list(t, r, "/api/v1/notifications", "u-1").Items[0].ID
+
+	if w := do(r, "POST", "/api/v1/notifications/"+id+"/read", "u-2"); w.Code != http.StatusNotFound {
+		t.Fatalf("чужое уведомление: %d", w.Code)
+	}
+	for range 2 { // повторная отметка — не ошибка
+		if w := do(r, "POST", "/api/v1/notifications/"+id+"/read", "u-1"); w.Code != http.StatusNoContent {
+			t.Fatalf("своё уведомление: %d %s", w.Code, w.Body.String())
+		}
+	}
+	if got := list(t, r, "/api/v1/notifications", "u-1"); got.UnreadCount != 0 || !got.Items[0].Read {
+		t.Fatalf("после отметки: %+v", got)
+	}
+	if w := do(r, "POST", "/api/v1/notifications/n-0/read", "u-1"); w.Code != http.StatusNotFound {
+		t.Fatalf("несуществующее: %d", w.Code)
+	}
+}

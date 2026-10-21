@@ -2105,6 +2105,30 @@ paths:
       summary: Уведомления в шапке
       tags:
       - notifications
+  /notifications/{id}/read:
+    post:
+      description: Повторная отметка — не ошибка. Чужое уведомление — 404, чтобы не
+        раскрывать его существование.
+      parameters:
+      - description: ID уведомления
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Отметить уведомление прочитанным
+      tags:
+      - notifications
   /plans:
     get:
       description: По умолчанию — все, кроме ARCHIVED. recommendation — подбор на

@@ -30,6 +30,7 @@ func (m *Module) Migrate(ctx context.Context) error {
 
 func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/notifications", m.list)
+	r.Client.POST("/notifications/:id/read", m.markRead)
 }
 
 // ResetDemo удаляет уведомления: они относятся к заявкам и кредитам демо.

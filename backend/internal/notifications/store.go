@@ -47,3 +47,13 @@ func (s *Store) UnreadCount(ctx context.Context, userID string) (int, error) {
 	err := s.db.GetContext(ctx, &n, `SELECT count(*) FROM notifications.notifications WHERE user_id = $1 AND NOT read`, userID)
 	return n, err
 }
+
+// MarkRead отмечает уведомление пользователя прочитанным; false — у пользователя такого уведомления нет.
+func (s *Store) MarkRead(ctx context.Context, id, userID string) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `UPDATE notifications.notifications SET read = true WHERE id = $1 AND user_id = $2`, id, userID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
