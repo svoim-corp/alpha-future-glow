@@ -1,3 +1,10 @@
+.frame {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-width: 0;
+}
+
 .estimate {
 	display: grid;
 	gap: var(--space-1);
@@ -21,7 +28,41 @@
 }
 
 .line {
+	display: block;
 	height: 16px;
 	border-radius: var(--radius-sm);
 	background: var(--color-border);
+}
+
+.pending {
+	display: grid;
+	gap: var(--space-2);
+	font-size: 13px;
+	color: var(--color-text-muted);
+}
+
+.totals {
+	display: grid;
+	gap: var(--space-3);
+	padding-top: var(--space-4);
+	margin: var(--space-3) 0;
+	border-top: 1px solid var(--color-border);
+	font-size: 13px;
+
+	div {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		justify-content: space-between;
+	}
+
+	dt {
+		color: var(--color-text-muted);
+	}
+
+	dd {
+		margin: 0;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
 }

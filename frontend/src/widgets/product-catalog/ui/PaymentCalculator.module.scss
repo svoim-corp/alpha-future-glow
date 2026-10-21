@@ -52,7 +52,8 @@
 	gap: 16px;
 	align-items: center;
 	justify-content: space-between;
-	font-size: 11px;
+	flex-wrap: wrap;
+	font-size: 14px;
 	color: var(--color-text-muted);
 }
 
@@ -62,7 +63,8 @@
 	gap: 20px;
 	justify-content: center;
 	padding: 28px;
-	font-size: 11px;
+	min-width: 0;
+	font-size: 14px;
 	color: var(--color-primary-text);
 	background: var(--color-primary-soft);
 	border-radius: 20px;
@@ -79,7 +81,7 @@
 		font-size: 14px;
 	}
 
-	span:first-child {
+	> div > div > div > span:first-child {
 		font-size: 24px;
 		letter-spacing: -0.03em;
 	}
@@ -93,9 +95,19 @@
 
 .note {
 	margin: 24px 0 0;
-	font-size: 10px;
+	font-size: 13px;
 	line-height: 1.7;
 	color: var(--color-text-muted);
+}
+
+@media (max-width: 600px) {
+	.result {
+		padding: 20px 16px;
+	}
+
+	.payment > div > div > div > span:first-child {
+		font-size: 22px;
+	}
 }
 
 @media (max-width: 1024px) {

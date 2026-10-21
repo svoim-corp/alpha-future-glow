@@ -4,6 +4,7 @@ import {
 	isVersionConflict,
 	SavedIndicator,
 	useDraftPatch,
+	useGetApplicationQuery,
 	useGetCompanyProfileQuery,
 } from '@entities/application';
 import { getApiError, getErrorMessage, getFieldErrors } from '@shared/api';
@@ -32,6 +33,7 @@ const candidateLabel = (candidate: GuarantorCandidate) => (
 /** Этап 2: выбор поручителя из известных банку людей (для ООО), подтверждение достоверности и отправка */
 export const FillFullApplication = ({ application, onSubmitted }: FillFullApplicationProps) => {
 	const { save, isSaving } = useDraftPatch(application.id, application.version);
+	const { isFetching: refreshing } = useGetApplicationQuery(application.id);
 	const { data: profile } = useGetCompanyProfileQuery(application.id);
 	const [consent, consentState] = useConsentGuarantorBkiMutation();
 	const [validate, validateState] = useValidateApplicationMutation();
@@ -45,15 +47,19 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 	const [idempotencyKey] = useState(() => crypto.randomUUID());
 	const isLlc = application.company?.type === 'LLC';
 	const candidates = profile?.guarantorCandidates ?? [];
+	const busy = isSaving || refreshing || consentState.isLoading || validateState.isLoading || submitState.isLoading;
+	const guarantorReady = personId !== '' && application.stage2.guarantor?.personId === personId;
+	const guarantorConsented = guarantorReady && application.stage2.guarantor?.bkiConsent === true;
 
 	const pickGuarantor = async (value: string) => {
-		setPersonId(value);
-
-		if (value === '') {
+		if (value === '' || busy || conflict) {
 			return;
 		}
 
+		setPersonId(value);
 		setSaveFailed(false);
+		setMissing([]);
+		setFailure(null);
 
 		try {
 			await save({ stage2: { guarantor: { personId: value } } });
@@ -67,7 +73,9 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 	};
 
 	const giveGuarantorConsent = async () => {
+		if (!guarantorReady || guarantorConsented || busy || saveFailed || conflict) return;
 		setFailure(null);
+		setMissing([]);
 
 		try {
 			await consent(application.id).unwrap();
@@ -77,14 +85,16 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 	};
 
 	const send = async () => {
+		if (busy || saveFailed || conflict || (personId !== '' && !guarantorReady)) return;
 		setFailure(null);
 		setMissing([]);
 
 		try {
 			const check = await validate(application.id).unwrap();
+			// Подтверждение достоверности передаётся только в submit, поэтому validate всегда считает его недостающим.
+			const rest = check.missing.filter((item) => item.field !== 'stage2.truthConfirmed');
 
-			if (!check.valid || !truth) {
-				const rest = check.missing.filter((item) => item.field !== 'stage2.truthConfirmed');
+			if (rest.length > 0 || !truth) {
 				setMissing(truth ? rest : [
 					...rest,
 					{ field: 'stage2.truthConfirmed', message: 'Подтвердите достоверность сведений' },
@@ -110,9 +120,6 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 		}
 	};
 
-	const guarantorConsented = application.stage2.guarantor?.bkiConsent === true;
-	const guarantorReady = application.stage2.guarantor !== null;
-
 	return (
 		<form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate>
 			{conflict && (
@@ -126,6 +133,8 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 						label="Поручитель"
 						hint="Выберите из руководителя и учредителей — их данные уже есть в банке"
 						value={personId}
+						disabled={busy || conflict}
+						error={saveFailed ? 'Не удалось сохранить поручителя. Выберите его повторно.' : undefined}
 						onChange={(next) => void pickGuarantor(next)}
 						options={[
 							{ value: '', label: 'Выберите поручителя' },
@@ -138,7 +147,7 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 					<CheckboxField
 						label="Поручитель согласен на запрос его кредитной истории"
 						checked={guarantorConsented}
-						disabled={!guarantorReady || guarantorConsented || consentState.isLoading}
+						disabled={!guarantorReady || guarantorConsented || busy || saveFailed || conflict}
 						onChange={() => void giveGuarantorConsent()}
 					/>
 				</div>
@@ -146,6 +155,7 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 			<CheckboxField
 				label="Подтверждаю, что все сведения достоверны"
 				checked={truth}
+				disabled={busy || conflict}
 				onChange={(event) => setTruth(event.target.checked)}
 			/>
 			{missing.length > 0 && (
@@ -158,7 +168,8 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 			{failure && <Alert tone="danger" title={failure} />}
 			<SavedIndicator savedAt={application.savedAt} saving={isSaving} failed={saveFailed} />
 			<div className={styles.actions}>
-				<Button onClick={() => void send()} loading={validateState.isLoading || submitState.isLoading}>
+				<Button onClick={() => void send()} loading={validateState.isLoading || submitState.isLoading}
+					disabled={isSaving || refreshing || consentState.isLoading || saveFailed || conflict || (personId !== '' && !guarantorReady)}>
 					Отправить заявку
 				</Button>
 			</div>

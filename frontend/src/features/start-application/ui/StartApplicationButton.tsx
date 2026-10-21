@@ -19,32 +19,34 @@ export const StartApplicationButton = ({
 }: StartApplicationButtonProps) => {
 	const navigate = useNavigate();
 	const [create, { isLoading }] = useCreateApplicationMutation();
-	const [failure, setFailure] = useState<string | null>(null);
-	const [unavailable, setUnavailable] = useState(false);
+	const [failure, setFailure] = useState<{ message: string; params: string; unavailable: boolean } | null>(null);
+	const params = JSON.stringify({ productCode, amount, term, goal });
 
 	const handleClick = async () => {
-		if (amount === null) {
+		if (amount === null || isLoading) {
 			return;
 		}
 
 		setFailure(null);
-		setUnavailable(false);
 
 		try {
 			const result = await create({ productCode, amount, term, goal }).unwrap();
 			await navigate(result.redirect);
 		} catch (error) {
 			const unsupported = [404, 501].includes(getErrorStatus(error) ?? 0);
-			setUnavailable(Boolean(unsupported && unavailableMessage));
-			setFailure(unsupported && unavailableMessage
-				? unavailableMessage : getErrorMessage(error, 'Не удалось создать заявку. Повторите попытку.'));
+			setFailure({
+				params,
+				unavailable: Boolean(unsupported && unavailableMessage),
+				message: unsupported && unavailableMessage
+					? unavailableMessage : getErrorMessage(error, 'Не удалось создать заявку. Повторите попытку.'),
+			});
 		}
 	};
 
 	return (
 		<>
 			<Button loading={isLoading} disabled={amount === null} onClick={() => void handleClick()}>Оформить</Button>
-			{failure && <Alert tone={unavailable ? 'warning' : 'danger'} title={failure} />}
+			{failure && failure.params === params && <Alert tone={failure.unavailable ? 'warning' : 'danger'} title={failure.message} />}
 		</>
 	);
 };

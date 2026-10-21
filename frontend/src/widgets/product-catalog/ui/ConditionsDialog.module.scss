@@ -3,6 +3,13 @@
 	gap: 20px;
 }
 
+.conditions {
+	display: grid;
+	gap: 20px;
+	min-width: 0;
+	align-content: start;
+}
+
 .text {
 	margin: 0;
 	font-size: 14px;
@@ -12,10 +19,12 @@
 
 .calc {
 	display: grid;
-	gap: 8px;
-	padding: 16px 20px;
+	gap: 20px;
+	min-width: 0;
+	align-content: start;
+	padding: 24px;
 	background: var(--color-raised);
-	border-radius: 16px;
+	border-radius: var(--radius-control);
 }
 
 .calcTitle {
@@ -35,4 +44,18 @@
 	margin: 0;
 	font-size: 14px;
 	line-height: 1.7;
+}
+
+@media (min-width: 900px) {
+	.body {
+		grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+		gap: 32px;
+		align-items: start;
+	}
+}
+
+@media (max-width: 560px) {
+	.calc {
+		padding: 16px;
+	}
 }

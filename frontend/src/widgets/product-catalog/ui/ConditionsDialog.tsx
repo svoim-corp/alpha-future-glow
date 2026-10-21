@@ -2,9 +2,11 @@ import { buildConditionRows, useGetGoalsQuery, useGetProductQuery } from '@entit
 import { PaymentEstimate } from '@features/calculate-payment';
 import { StartApplicationButton } from '@features/start-application';
 import { formatMoney, formatTerm } from '@shared/lib/format';
-import { AsyncBoundary, KeyValueList, Modal } from '@shared/ui';
+import { Alert, AsyncBoundary, KeyValueList, Modal } from '@shared/ui';
 
 import { estimateParams } from '../model/estimate';
+import { clamp } from '../model/range';
+import { selectionAdjustment } from '../model/selection';
 import styles from './ConditionsDialog.module.scss';
 
 interface ConditionsDialogProps {
@@ -26,10 +28,13 @@ export const ConditionsDialog = ({
 	const product = useGetProductQuery(productCode);
 	const goals = useGetGoalsQuery();
 	const details = product.data;
-	const hasTerm = details?.term !== null && details?.term !== undefined;
+	const selectedAmount = details ? clamp(amount, details.amount) : amount;
+	const selectedTerm = details?.term ? clamp(term ?? details.term.min, details.term) : null;
+	const adjustment = details ? selectionAdjustment(amount, term, details) : null;
+	const incompatibleGoal = Boolean(goal && details && !details.goals.includes(goal));
 
 	return (
-		<Modal title={details?.name ?? 'Условия продукта'} onClose={onClose} wide>
+		<Modal title={details?.name ?? 'Условия продукта'} onClose={onClose} size="large">
 			<AsyncBoundary
 				isLoading={product.isLoading}
 				isError={product.isError}
@@ -39,36 +44,39 @@ export const ConditionsDialog = ({
 			>
 				{details && (
 					<div className={styles.body}>
-						<p className={styles.text}>{details.description}</p>
-						<div className={styles.calc}>
-							{hasTerm ? (
-								<>
-									<p className={styles.calcTitle}>
-										Ваш расчёт: {formatMoney(amount)} на {term ? formatTerm(term) : '—'}
-									</p>
-									<PaymentEstimate params={estimateParams(details.code, amount, term)} />
-								</>
-							) : (
-								<>
-									<p className={styles.calcTitle}>Лимит на 12 месяцев</p>
-									<p className={styles.text}>
-										Проценты начисляются только за дни, когда счёт в минусе.
-									</p>
-								</>
-							)}
+						<div className={styles.conditions}>
+							<p className={styles.text}>{details.description}</p>
+							<AsyncBoundary isLoading={goals.isLoading} isError={goals.isError}
+								onRetry={() => void goals.refetch()} loadingLabel="Загрузка целей продукта"
+								errorText="Не удалось загрузить названия целей продукта.">
+								<KeyValueList items={buildConditionRows(details, goals.data ?? [])} />
+							</AsyncBoundary>
+							<h3 className={styles.subTitle}>Что понадобится</h3>
+							<ul className={styles.need}>
+								{details.whatYouNeed.map((item) => <li key={item}>{item}</li>)}
+							</ul>
 						</div>
-						<KeyValueList items={buildConditionRows(details, goals.data ?? [])} />
-						<h3 className={styles.subTitle}>Что понадобится</h3>
-						<ul className={styles.need}>
-							{details.whatYouNeed.map((item) => <li key={item}>{item}</li>)}
-						</ul>
-						<div>
-							<StartApplicationButton
-								productCode={details.code}
-								amount={amount}
-								term={hasTerm ? term : null}
-								goal={goal ?? undefined}
-							/>
+						<div className={styles.calc}>
+							<p className={styles.calcTitle}>
+								{details.code === 'OVERDRAFT' ? 'Лимит' : 'Ваш расчёт'}: {formatMoney(selectedAmount)} на {selectedTerm ? formatTerm(selectedTerm) : '—'}
+							</p>
+							{adjustment && <Alert title="Параметры скорректированы">{adjustment}</Alert>}
+							<PaymentEstimate params={estimateParams(details.code, selectedAmount, selectedTerm)} showTotals />
+							{details.code === 'OVERDRAFT' && (
+								<p className={styles.text}>
+									Предварительный расчёт сервера на срок действия лимита. Фактические платежи зависят от использования лимита и условий договора.
+								</p>
+							)}
+							{incompatibleGoal && <Alert tone="warning" title="Продукт не подходит для выбранной цели.">Выберите другую цель или продукт в каталоге.</Alert>}
+							<div>
+								<StartApplicationButton
+									productCode={details.code}
+									amount={incompatibleGoal ? null : selectedAmount}
+									term={selectedTerm}
+									goal={goal ?? undefined}
+								/>
+							</div>
+							<p className={styles.text}>Откроется черновик заявки с указанными параметрами. Окончательные условия определятся после рассмотрения.</p>
 						</div>
 					</div>
 				)}
