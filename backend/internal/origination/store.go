@@ -179,6 +179,19 @@ func (s *Store) Consent(ctx context.Context, appID string, subject shared.Consen
 	return &c, nil
 }
 
+// SetDraftAmount меняет сумму черновика и увеличивает версию; false — заявки нет или это не черновик.
+func (s *Store) SetDraftAmount(ctx context.Context, id string, amount int64, at time.Time) (int, bool, error) {
+	var version int
+	err := s.db.GetContext(ctx, &version, `
+		UPDATE origination.applications SET amount = $2, version = version + 1, updated_at = $3
+		WHERE id = $1 AND status = 'DRAFT'
+		RETURNING version`, id, amount, at)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	return version, err == nil, err
+}
+
 // CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.
 func (s *Store) CompanyApplications(ctx context.Context, companyID string, limit, offset int) ([]appRow, int, error) {
 	var total int
