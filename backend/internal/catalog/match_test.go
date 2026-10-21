@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
@@ -75,5 +76,33 @@ func TestRub(t *testing.T) {
 		if got := rub(in); got != want {
 			t.Errorf("rub(%d) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestSuitable(t *testing.T) {
+	line := slices.Clone(testLine)
+	line[0].RateMin, line[1].RateMin, line[2].RateMin, line[3].RateMin = 20, 18, 24, 22
+
+	tests := []struct {
+		name   string
+		goal   string
+		amount int64
+		want   []string
+	}{
+		{"оба подходят — дешёвый первым", "WORKING_CAPITAL", 500_000, []string{"WORKING", "EXPRESS"}},
+		{"по сумме только один", "EQUIPMENT", 2_000_000, []string{"INVEST"}},
+		{"нет цели", "REAL_ESTATE", 2_000_000, nil},
+		{"сумма вне всех рамок", "CASH_GAP", 50_000, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got []string
+			for _, p := range suitable(line, tt.goal, tt.amount) {
+				got = append(got, p.Code)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

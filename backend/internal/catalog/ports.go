@@ -10,7 +10,7 @@ import (
 func (m *Module) Products() shared.Products { return products{store: m.store} }
 
 // ProductMatcher отдаёт реализацию shared.ProductMatcher другим зонам.
-func (m *Module) ProductMatcher() shared.ProductMatcher { return productsStub{} }
+func (m *Module) ProductMatcher() shared.ProductMatcher { return products{store: m.store} }
 
 type products struct{ store *Store }
 
@@ -23,6 +23,15 @@ func (p products) Product(ctx context.Context, code string) (*shared.ProductView
 	return &v, nil
 }
 
+// Match — продукты под цель и бюджет Планера, самые дешёвые первыми.
+func (p products) Match(ctx context.Context, goal string, amount int64) ([]shared.ProductView, error) {
+	all, err := p.store.Products(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return suitable(all, goal, amount), nil
+}
+
 func (r productRow) view() shared.ProductView {
 	return shared.ProductView{
 		Code: r.Code, Name: r.Name, Goals: r.Goals.V,
@@ -30,11 +39,4 @@ func (r productRow) view() shared.ProductView {
 		RateMin: r.RateMin, RateMax: r.RateMax, GraceMaxMonths: r.GraceMaxMonths,
 		MinBusinessAgeMonths: r.MinBusinessAgeMonths, GuarantorForLLC: r.GuarantorForLLC,
 	}
-}
-
-// productsStub — заглушка этапа 0 для подбора: продуктов нет. Заменить чтением из своей схемы (A).
-type productsStub struct{}
-
-func (productsStub) Match(context.Context, string, int64) ([]shared.ProductView, error) {
-	return nil, nil
 }

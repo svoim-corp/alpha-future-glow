@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
 const reasonFits = "Подходит по цели, сумме и сроку"
@@ -63,4 +65,17 @@ func rub(n int64) string {
 		out = append(out, s[i])
 	}
 	return string(out) + " ₽"
+}
+
+// suitable — продукты с целью goal, в рамки которых укладывается amount. «Лучший» для клиента — с меньшей минимальной
+// ставкой; при равной ставке сохраняется порядок каталога. Срок Планер не задаёт, поэтому он не проверяется.
+func suitable(products []productRow, goal string, amount int64) []shared.ProductView {
+	var out []shared.ProductView
+	for _, p := range products {
+		if mismatch(p, goal, "", amount, 0) == "" {
+			out = append(out, p.view())
+		}
+	}
+	slices.SortStableFunc(out, func(a, b shared.ProductView) int { return cmp.Compare(a.RateMin, b.RateMin) })
+	return out
 }
