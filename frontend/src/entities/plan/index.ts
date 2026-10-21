@@ -1,5 +1,5 @@
 export { planApi, useGetPlanRecommendationsQuery, useGetPlansQuery } from './api/planApi';
-export { planCoversDate } from './model/period';
+export { formatPeriodLong, formatPlanStart, planCoversDate } from './model/period';
 export type {
 	BusinessPlan,
 	DateMode,
@@ -8,5 +8,5 @@ export type {
 	PlansResponse,
 	PlanState,
 } from './model/types';
-export { formatPeriod, PlanCard } from './ui/PlanCard';
+export { formatPeriod, PlanCard, planIcon } from './ui/PlanCard';
 export { PlanRecommendations } from './ui/PlanRecommendations';

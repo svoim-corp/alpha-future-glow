@@ -42,12 +42,8 @@ const Chart = ({ payments }: { payments: LoanPayment[] }) => {
 			<ul className={styles.bars}>
 				{payments.map((payment) => (
 					<li key={payment.date} className={styles.column}>
-						{/* Фокусируемый столбец: подсказка с составом платежа доступна и с клавиатуры (как в макете) */}
-						{ }
 						<div
 							className={styles.stack}
-							// eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-							tabIndex={0}
 							role="img"
 							aria-label={`${monthLabel(payment.date)}: долг ${formatMoney(payment.principal)}, проценты ${formatMoney(payment.interest)}`}
 						>

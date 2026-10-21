@@ -1,1 +1,1 @@
-export { buildMonthGrid, monthRange, type MonthRef, shiftMonth, toIsoDate } from './grid';
+export { buildMonthCells, buildMonthGrid, type MonthCell, monthRange, type MonthRef, shiftMonth, toIsoDate } from './grid';

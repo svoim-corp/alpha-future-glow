@@ -1,4 +1,4 @@
-import { buildMonthGrid, monthRange, shiftMonth, toIsoDate } from './grid';
+import { buildMonthCells, buildMonthGrid, monthRange, shiftMonth, toIsoDate } from './grid';
 
 describe('календарная сетка', () => {
 	it('ноябрь 2026 начинается с воскресенья: перед 1-м числом шесть пустых клеток', () => {
@@ -26,5 +26,14 @@ describe('календарная сетка', () => {
 
 	it('формирует ISO-дату с ведущими нулями', () => {
 		expect(toIsoDate(2026, 0, 5)).toBe('2026-01-05');
+	});
+
+	it('дорисовывает соседние месяцы до полных недель', () => {
+		const grid = buildMonthCells({ year: 2027, month: 5 });
+
+		expect(grid[0]?.[0]).toEqual({ date: '2027-05-31', outside: true });
+		expect(grid[0]?.[1]).toEqual({ date: '2027-06-01', outside: false });
+		expect(grid.at(-1)?.[6]).toEqual({ date: '2027-07-04', outside: true });
+		expect(grid.every((week) => week.length === 7)).toBe(true);
 	});
 });

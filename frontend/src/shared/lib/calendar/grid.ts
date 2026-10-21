@@ -35,3 +35,25 @@ export const buildMonthGrid = ({ year, month }: MonthRef): (string | null)[][] =
 
 	return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
 };
+
+export interface MonthCell {
+	date: string;
+	/** День соседнего месяца, дорисованный до полной недели */
+	outside: boolean;
+}
+
+/** Недели месяца с днями соседних месяцев вместо пустых клеток — как в макете планера */
+export const buildMonthCells = ({ year, month }: MonthRef): MonthCell[][] => {
+	const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+	const daysInMonth = new Date(year, month + 1, 0).getDate();
+	const weeks = Math.ceil((offset + daysInMonth) / 7);
+
+	return Array.from({ length: weeks }, (_, week) => Array.from({ length: 7 }, (_, day) => {
+		const date = new Date(year, month, 1 - offset + week * 7 + day);
+
+		return {
+			date: toIsoDate(date.getFullYear(), date.getMonth(), date.getDate()),
+			outside: date.getMonth() !== month,
+		};
+	}));
+};

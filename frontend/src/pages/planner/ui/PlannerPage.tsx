@@ -4,6 +4,7 @@ import { PlannerBoard } from '@widgets/planner-board';
 
 export const PlannerPage = () => (
 	<Page
+		eyebrow="СНАЧАЛА ИДЕЯ. ЗАТЕМ — ВОЗМОЖНОСТИ."
 		title="Планер"
 		subtitle="Сохраняйте планы — находите финансирование в нужный момент."
 		actions={<CreatePlan />}

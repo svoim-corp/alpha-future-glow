@@ -46,7 +46,7 @@ describe('PlannerPage', () => {
 		base();
 		const { user } = renderWithProviders(<PlannerPage />);
 
-		await user.click(await screen.findByRole('tab', { name: 'Идеи без даты' }));
+		await user.click(await screen.findByRole('tab', { name: /Идеи без даты/ }));
 
 		expect(screen.getByRole('article', { name: 'Новая печь для пекарни' })).toBeInTheDocument();
 		expect(screen.queryByRole('article', { name: 'Ремонт помещения' })).not.toBeInTheDocument();
