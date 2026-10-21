@@ -411,6 +411,54 @@ definitions:
         - $ref: '#/definitions/shared.NotificationType'
         example: INFO_REQUESTED
     type: object
+  origination.applicationDTO:
+    properties:
+      authority:
+        $ref: '#/definitions/origination.authorityDTO'
+      company:
+        allOf:
+        - $ref: '#/definitions/origination.companyDTO'
+        description: null — данные банка сейчас недоступны
+      consents:
+        $ref: '#/definitions/origination.consentsDTO'
+      id:
+        example: a-1031
+        type: string
+      locks:
+        $ref: '#/definitions/origination.locksDTO'
+      number:
+        example: КЗ-2026-001031
+        type: string
+      params:
+        $ref: '#/definitions/origination.paramsDTO'
+      prelim:
+        allOf:
+        - $ref: '#/definitions/origination.prelimDTO'
+        description: null — этап 1 не пройден или результат устарел
+      prelimInvalidated:
+        description: 'этап 1 нужно пройти заново: изменились сумма, срок или продукт'
+        type: boolean
+      product:
+        $ref: '#/definitions/origination.productRefDTO'
+      savedAt:
+        example: "2026-10-20T10:12:00Z"
+        type: string
+      stage:
+        example: 2
+        type: integer
+      stage2:
+        $ref: '#/definitions/origination.stage2DTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: DRAFT
+      statusLabel:
+        example: Черновик
+        type: string
+      version:
+        example: 7
+        type: integer
+    type: object
   origination.applicationShortDTO:
     properties:
       actionRequired:
@@ -458,6 +506,56 @@ definitions:
         example: 2
         type: integer
     type: object
+  origination.authorityDTO:
+    properties:
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.AuthorityType'
+        example: MCHD
+      validUntil:
+        example: "2027-03-01"
+        type: string
+      verified:
+        description: снимок проверен по данным банка и реестру МЧД
+        example: true
+        type: boolean
+    type: object
+  origination.companyDTO:
+    properties:
+      inn:
+        example: "7712345678"
+        type: string
+      name:
+        example: ООО «Северная пекарня»
+        type: string
+      ogrn:
+        example: "1157746000000"
+        type: string
+      regDate:
+        example: "2015-03-12"
+        type: string
+      state:
+        example: ACTIVE
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.CompanyType'
+        example: LLC
+    type: object
+  origination.consentDTO:
+    properties:
+      at:
+        example: "2026-10-20T10:05:00Z"
+        type: string
+      given:
+        example: true
+        type: boolean
+    type: object
+  origination.consentsDTO:
+    properties:
+      bki:
+        $ref: '#/definitions/origination.consentDTO'
+    type: object
   origination.createRequest:
     properties:
       amount:
@@ -494,6 +592,71 @@ definitions:
         example: 1
         type: integer
     type: object
+  origination.guarantorDTO:
+    properties:
+      bkiConsent:
+        example: true
+        type: boolean
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      personId:
+        example: p-1
+        type: string
+    type: object
+  origination.locksDTO:
+    properties:
+      paramsLocked:
+        example: false
+        type: boolean
+      stage2Available:
+        example: true
+        type: boolean
+    type: object
+  origination.paramsDTO:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      graceMonths:
+        example: 6
+        type: integer
+      overdraftLimit:
+        example: 500000
+        type: integer
+      purposeText:
+        example: Закупка муки и упаковки к сезону
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  origination.prelimDTO:
+    properties:
+      amountFits:
+        example: true
+        type: boolean
+      choice:
+        allOf:
+        - $ref: '#/definitions/shared.PrelimChoice'
+        example: KEEP_AMOUNT
+      limit:
+        example: 3300000
+        type: integer
+      outcome:
+        allOf:
+        - $ref: '#/definitions/shared.PrelimOutcome'
+        example: LIMIT
+      prelimRate:
+        example: 22
+        type: number
+      stopReason:
+        example: BUSINESS_TOO_YOUNG
+        type: string
+    type: object
   origination.productRefDTO:
     properties:
       code:
@@ -502,6 +665,32 @@ definitions:
       name:
         example: Оборотный кредит
         type: string
+    type: object
+  origination.stage2DTO:
+    properties:
+      actualAddress:
+        example: г. Москва, ул. Складская, 3
+        type: string
+      guarantor:
+        $ref: '#/definitions/origination.guarantorDTO'
+      truthConfirmed:
+        example: false
+        type: boolean
+      turnover:
+        $ref: '#/definitions/origination.turnoverDTO'
+    type: object
+  origination.turnoverDTO:
+    properties:
+      avgMonthlyIncome:
+        example: 1840000
+        type: integer
+      periodMonths:
+        example: 12
+        type: integer
+      source:
+        allOf:
+        - $ref: '#/definitions/shared.CheckSource'
+        example: BANK_ACCOUNTS
     type: object
   planner.createPlanRequest:
     properties:
@@ -1556,6 +1745,38 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Создать черновик заявки
+      tags:
+      - applications
+  /applications/{id}:
+    get:
+      description: 'Полное состояние заявки: этап, параметры, данные банка (только
+        чтение), результат этапа 1, блокировки.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.applicationDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Заявка для мастера и карточки
       tags:
       - applications
   /applications/{id}/company-profile:

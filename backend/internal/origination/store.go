@@ -2,6 +2,8 @@ package origination
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -53,6 +55,19 @@ func (s *Store) Insert(ctx context.Context, a *appRow) error {
 		VALUES ('a-' || nextval('origination.application_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
 		RETURNING id`,
 		a.CompanyID, a.ApplicantID, a.ProductCode, a.Goal, a.Amount, a.Term, a.Authority, a.Status, a.Version, a.CreatedAt)
+}
+
+// Application — заявка по id; (nil, nil) — заявки нет.
+func (s *Store) Application(ctx context.Context, id string) (*appRow, error) {
+	var a appRow
+	err := s.db.GetContext(ctx, &a, `SELECT `+appCols+` FROM origination.applications WHERE id = $1`, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
 }
 
 // CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.

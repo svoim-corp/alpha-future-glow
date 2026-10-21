@@ -68,3 +68,46 @@
   "page": 1, "size": 20, "total": 2
 }
 ```
+
+### `GET /applications/{id}`
+
+Реализовано. Полное состояние заявки: мастер по нему решает, какой этап и какие поля показать и что заблокировать.
+
+```json
+{
+  "id": "a-1031",
+  "number": null,
+  "status": "DRAFT",
+  "statusLabel": "Черновик",
+  "stage": 2,
+  "version": 7,
+  "product": { "code": "WORKING", "name": "Оборотный кредит" },
+  "params": { "amount": 1500000, "term": 24, "goal": "WORKING_CAPITAL", "purposeText": "Закупка муки и упаковки к сезону", "graceMonths": null, "overdraftLimit": null },
+  "company": { "inn": "7712345678", "type": "LLC", "name": "ООО «Северная пекарня»", "ogrn": "1157746000000", "regDate": "2015-03-12", "state": "ACTIVE" },
+  "authority": { "type": "MCHD", "verified": true, "validUntil": "2027-03-01" },
+  "consents": { "bki": { "given": true, "at": "2026-10-20T10:05:00Z" } },
+  "prelim": { "outcome": "LIMIT", "limit": 3300000, "prelimRate": 22, "amountFits": true, "choice": null, "stopReason": null },
+  "prelimInvalidated": false,
+  "stage2": {
+    "actualAddress": "г. Москва, ул. Складская, 3",
+    "turnover": { "source": "BANK_ACCOUNTS", "avgMonthlyIncome": 1840000, "periodMonths": 12 },
+    "guarantor": { "personId": "p-1", "fullName": "Смирнов Олег Викторович", "bkiConsent": true },
+    "truthConfirmed": false
+  },
+  "locks": { "paramsLocked": false, "stage2Available": true },
+  "savedAt": "2026-10-20T10:12:00Z"
+}
+```
+
+- `company`, `authority`, `stage2.actualAddress`, `stage2.turnover` — данные банка, только для чтения. Если данные
+  банка сейчас недоступны, заявка всё равно открывается: `company`, `actualAddress`, `turnover` — `null`.
+- `authority` — снимок при создании черновика: `HEAD` — руководитель, `MCHD` — по доверенности до `validUntil`.
+- `stage`: 1 — параметры, согласие на БКИ и предварительное решение; 2 — открыт после лимита этапа 1, если сумма
+  в лимите (`amountFits: true`) или клиент выбрал, что делать с суммой сверх лимита (`prelim/choice`). У поданной
+  заявки — всегда 2.
+- `prelim` — действующий результат этапа 1 (Scoring). У стоп-отказа `limit`, `prelimRate`, `amountFits` — `null`,
+  заполнен `stopReason`. Результат считается устаревшим, если его посчитали для других продукта, суммы или срока:
+  тогда `prelim: null` и `prelimInvalidated: true` — этап 1 нужно пройти заново.
+- `stage2.guarantor` — `null`, пока поручитель не выбран; `fullName` — из кандидатов банка.
+- `locks.paramsLocked` — параметры менять нельзя (заявка не черновик); `locks.stage2Available` — открыт этап 2.
+- `consents.bki` — только если согласие дано.

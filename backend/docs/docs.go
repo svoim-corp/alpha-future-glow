@@ -131,6 +131,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}": {
+            "get": {
+                "description": "Полное состояние заявки: этап, параметры, данные банка (только чтение), результат этапа 1, блокировки.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Заявка для мастера и карточки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/origination.applicationDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/company-profile": {
             "get": {
                 "description": "Профиль из клиентской базы банка, сверенный с реестрами. Только для чтения.",
@@ -2202,6 +2249,81 @@ const docTemplate = `{
                 }
             }
         },
+        "origination.applicationDTO": {
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "$ref": "#/definitions/origination.authorityDTO"
+                },
+                "company": {
+                    "description": "null — данные банка сейчас недоступны",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/origination.companyDTO"
+                        }
+                    ]
+                },
+                "consents": {
+                    "$ref": "#/definitions/origination.consentsDTO"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a-1031"
+                },
+                "locks": {
+                    "$ref": "#/definitions/origination.locksDTO"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КЗ-2026-001031"
+                },
+                "params": {
+                    "$ref": "#/definitions/origination.paramsDTO"
+                },
+                "prelim": {
+                    "description": "null — этап 1 не пройден или результат устарел",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/origination.prelimDTO"
+                        }
+                    ]
+                },
+                "prelimInvalidated": {
+                    "description": "этап 1 нужно пройти заново: изменились сумма, срок или продукт",
+                    "type": "boolean"
+                },
+                "product": {
+                    "$ref": "#/definitions/origination.productRefDTO"
+                },
+                "savedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T10:12:00Z"
+                },
+                "stage": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "stage2": {
+                    "$ref": "#/definitions/origination.stage2DTO"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "DRAFT"
+                },
+                "statusLabel": {
+                    "type": "string",
+                    "example": "Черновик"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 7
+                }
+            }
+        },
         "origination.applicationShortDTO": {
             "type": "object",
             "properties": {
@@ -2270,6 +2392,82 @@ const docTemplate = `{
                 }
             }
         },
+        "origination.authorityDTO": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.AuthorityType"
+                        }
+                    ],
+                    "example": "MCHD"
+                },
+                "validUntil": {
+                    "type": "string",
+                    "example": "2027-03-01"
+                },
+                "verified": {
+                    "description": "снимок проверен по данным банка и реестру МЧД",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "origination.companyDTO": {
+            "type": "object",
+            "properties": {
+                "inn": {
+                    "type": "string",
+                    "example": "7712345678"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ООО «Северная пекарня»"
+                },
+                "ogrn": {
+                    "type": "string",
+                    "example": "1157746000000"
+                },
+                "regDate": {
+                    "type": "string",
+                    "example": "2015-03-12"
+                },
+                "state": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CompanyType"
+                        }
+                    ],
+                    "example": "LLC"
+                }
+            }
+        },
+        "origination.consentDTO": {
+            "type": "object",
+            "properties": {
+                "at": {
+                    "type": "string",
+                    "example": "2026-10-20T10:05:00Z"
+                },
+                "given": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "origination.consentsDTO": {
+            "type": "object",
+            "properties": {
+                "bki": {
+                    "$ref": "#/definitions/origination.consentDTO"
+                }
+            }
+        },
         "origination.createRequest": {
             "type": "object",
             "required": [
@@ -2322,6 +2520,102 @@ const docTemplate = `{
                 }
             }
         },
+        "origination.guarantorDTO": {
+            "type": "object",
+            "properties": {
+                "bkiConsent": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                }
+            }
+        },
+        "origination.locksDTO": {
+            "type": "object",
+            "properties": {
+                "paramsLocked": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "stage2Available": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "origination.paramsDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "graceMonths": {
+                    "type": "integer",
+                    "example": 6
+                },
+                "overdraftLimit": {
+                    "type": "integer",
+                    "example": 500000
+                },
+                "purposeText": {
+                    "type": "string",
+                    "example": "Закупка муки и упаковки к сезону"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "origination.prelimDTO": {
+            "type": "object",
+            "properties": {
+                "amountFits": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "choice": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.PrelimChoice"
+                        }
+                    ],
+                    "example": "KEEP_AMOUNT"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 3300000
+                },
+                "outcome": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.PrelimOutcome"
+                        }
+                    ],
+                    "example": "LIMIT"
+                },
+                "prelimRate": {
+                    "type": "number",
+                    "example": 22
+                },
+                "stopReason": {
+                    "type": "string",
+                    "example": "BUSINESS_TOO_YOUNG"
+                }
+            }
+        },
         "origination.productRefDTO": {
             "type": "object",
             "properties": {
@@ -2332,6 +2626,46 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Оборотный кредит"
+                }
+            }
+        },
+        "origination.stage2DTO": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Складская, 3"
+                },
+                "guarantor": {
+                    "$ref": "#/definitions/origination.guarantorDTO"
+                },
+                "truthConfirmed": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "turnover": {
+                    "$ref": "#/definitions/origination.turnoverDTO"
+                }
+            }
+        },
+        "origination.turnoverDTO": {
+            "type": "object",
+            "properties": {
+                "avgMonthlyIncome": {
+                    "type": "integer",
+                    "example": 1840000
+                },
+                "periodMonths": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BANK_ACCOUNTS"
                 }
             }
         },

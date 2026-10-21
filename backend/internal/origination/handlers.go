@@ -171,3 +171,35 @@ func (m *Module) list(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, httpx.NewPage(items, page, size, total))
 }
+
+// get godoc
+//
+//	@Summary		Заявка для мастера и карточки
+//	@Description	Полное состояние заявки: этап, параметры, данные банка (только чтение), результат этапа 1, блокировки.
+//	@Tags			applications
+//	@Produce		json
+//	@Param			id	path		string	true	"ID заявки"
+//	@Success		200	{object}	applicationDTO
+//	@Failure		401	{object}	httpx.ErrorBody
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Router			/applications/{id} [get]
+func (m *Module) get(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	a, err := m.ownApplication(ctx, c.Param("id"), who.companyID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	d, err := m.dossier(ctx, a)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, toApplicationDTO(d))
+}

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -48,6 +49,75 @@ func (f fakeAuthorities) Resolve(_ context.Context, _, personINN string) (shared
 	return shared.AuthorityView{Type: shared.AuthorityNone, Reason: "Срок действия доверенности истёк 30.09.2026"}, nil
 }
 
+// fakeCompanies — профили компаний; upstream — данные банка недоступны.
+type fakeCompanies struct {
+	mu       sync.Mutex
+	profiles map[string]*shared.CompanyProfile
+	upstream bool
+}
+
+func (f *fakeCompanies) GetByID(_ context.Context, id string) (*shared.CompanyView, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if p, ok := f.profiles[id]; ok {
+		cv := p.CompanyView
+		return &cv, nil
+	}
+	return nil, nil
+}
+
+func (f *fakeCompanies) Profile(_ context.Context, id string) (*shared.CompanyProfile, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.upstream {
+		return nil, httpx.Upstream("")
+	}
+	return f.profiles[id], nil
+}
+
+var smirnovPerson = shared.Person{PersonID: "p-1", FullName: "Смирнов Олег Викторович", INN: "771234567890", Roles: []shared.PersonRole{shared.PersonHead, shared.PersonFounder}}
+
+func newFakeCompanies() *fakeCompanies {
+	return &fakeCompanies{profiles: map[string]*shared.CompanyProfile{
+		"c-1": {
+			CompanyView: shared.CompanyView{ID: "c-1", INN: "7712345678", Name: "ООО «Северная пекарня»", Type: shared.CompanyLLC},
+			OGRN:        "1157746000000", State: "ACTIVE", RegDate: time.Date(2015, 3, 12, 0, 0, 0, 0, time.UTC),
+			ActualAddress: "г. Москва, ул. Складская, 3", Head: smirnovPerson,
+			GuarantorCandidates: []shared.Person{smirnovPerson, {PersonID: "p-3", FullName: "Кравцов Илья Андреевич", Roles: []shared.PersonRole{shared.PersonFounder}}},
+			Turnover:            shared.Turnover{AvgMonthlyIncome: 1_840_000, PeriodMonths: 12},
+		},
+		"c-3": {
+			CompanyView: shared.CompanyView{ID: "c-3", INN: "772512345601", Name: "ИП Орлова Мария Игоревна", Type: shared.CompanyIE},
+			State:       "ACTIVE", ActualAddress: "г. Москва, ул. Садовая, 1", GuarantorCandidates: []shared.Person{},
+		},
+	}}
+}
+
+// fakePrelims — результаты этапа 1 по id заявки.
+type fakePrelims struct {
+	mu sync.Mutex
+	m  map[string]*shared.PrelimView
+}
+
+func (f *fakePrelims) Prelim(_ context.Context, appID string) (*shared.PrelimView, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.m[appID], nil
+}
+
+// passPrelim — этап 1 пройден с лимитом для текущих параметров заявки.
+func (e *env) passPrelim(t *testing.T, appID string) {
+	t.Helper()
+	a, err := e.m.store.Application(context.Background(), appID)
+	if err != nil || a == nil {
+		t.Fatalf("заявка %s: %v", appID, err)
+	}
+	e.prelims.mu.Lock()
+	defer e.prelims.mu.Unlock()
+	e.prelims.m[appID] = &shared.PrelimView{Outcome: shared.PrelimLimit, Limit: 3_300_000, PrelimRate: 22, AmountFits: true,
+		ProductCode: a.ProductCode, Amount: a.Amount, Term: a.Term}
+}
+
 // users — токен сессии в тестах равен логину.
 var users = map[string]*auth.User{
 	"smirnov": {ID: "u-1", Role: shared.RoleClient, CompanyID: ptr("c-1"), PersonINN: ptr("771234567890"), FullName: "Смирнов Олег Викторович"},
@@ -64,9 +134,11 @@ func (resolver) Resolve(_ context.Context, token string) (*auth.User, error) {
 }
 
 type env struct {
-	m      *Module
-	bus    *events.Bus
-	router *gin.Engine
+	m         *Module
+	bus       *events.Bus
+	companies *fakeCompanies
+	prelims   *fakePrelims
+	router    *gin.Engine
 }
 
 // newEnv — модуль на тестовой БД с фейками других зон. Без TEST_DATABASE_URL тест пропускается:
@@ -85,10 +157,13 @@ func newEnv(t *testing.T) *env {
 	t.Cleanup(func() { _ = conn.Close() })
 
 	bus := events.New()
+	companies, prelims := newFakeCompanies(), &fakePrelims{m: map[string]*shared.PrelimView{}}
 	m := New(module.Deps{DB: conn, Bus: bus})
 	m.now = func() time.Time { return today }
 	m.Wire(Ports{
-		Products: fakeProducts{"WORKING": working, "EXPRESS": express},
+		Products:  fakeProducts{"WORKING": working, "EXPRESS": express},
+		Companies: companies,
+		Prelims:   prelims,
 		Authorities: fakeAuthorities{
 			"771234567890": {Type: shared.AuthorityHead, Powers: []string{shared.PowerCreditApplication, shared.PowerBKIConsent}},
 			"771298765432": {Type: shared.AuthorityMCHD, MCHDNumber: ptr("a1b2"), ValidUntil: ptr(time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)),
@@ -111,7 +186,7 @@ func newEnv(t *testing.T) *env {
 		Client: api.Group("", auth.RequireAuth()),
 		Bank:   api.Group("/bank", auth.RequireAuth(), auth.RequireRole(shared.RoleBankOfficer)),
 	})
-	return &env{m: m, bus: bus, router: r}
+	return &env{m: m, bus: bus, companies: companies, prelims: prelims, router: r}
 }
 
 // do выполняет запрос от имени user; hdr — дополнительные заголовки.
