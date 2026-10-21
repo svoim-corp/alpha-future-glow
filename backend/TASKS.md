@@ -1,7 +1,7 @@
 # Разделение работы над бэкендом
 
 Как два разработчика делят сервер, чтобы работать параллельно и не мешать друг другу.
-Контракт API — `../API_SPEC.md` и `../API_SPEC_ADDITIONAL.md`; правила кода — `AGENTS.md`; демо-данные — `SCENARIOS.md`.
+Контракт API — `../docs/API_SPEC.md` и `../docs/API_SPEC_ADDITIONAL.md`; правила кода — `AGENTS.md`; демо-данные — `SCENARIOS.md`.
 
 ## Принцип
 
@@ -23,7 +23,7 @@
 | `internal/shared/*.go` | Меняет зона-поставщик интерфейса (указана в комментарии). Изменение сигнатуры — договориться и в том же коммите поправить реализацию, заглушку и всех потребителей |
 | `cmd/api/main.go` | Каждый трогает только строки своих зон: `New`, `Wire`, список `zones` |
 | `SCENARIOS.md` | A ведёт пользователей, B — компании и моки. Изменили строку — поправьте seed в том же коммите |
-| `../API_SPEC.md` | Изменения контракта — отдельным коммитом, второй разработчик смотрит до мержа |
+| `../docs/API_SPEC.md` | Изменения контракта — отдельным коммитом, второй разработчик смотрит до мержа |
 | `docs/` | Не мержить руками: при конфликте выполнить `make swagger` |
 | `go.mod` | Без `go get -u` (см. README); новую зависимость обсудить заранее |
 
@@ -46,7 +46,7 @@
 
 | # | Задача | Что сделать | Зависит от |
 |---|---|---|---|
-| B1 | **Моки** (`cmd/mocks`) | Все пути из `API_SPEC.md` 4.14, включая `core-banking/clients/{inn}` и `core-banking/turnover/{inn}`. Данные — строго по `SCENARIOS.md`, по одной компании на ветку решения | — |
+| B1 | **Моки** (`cmd/mocks`) | Все пути из `../docs/API_SPEC.md` 4.14, включая `core-banking/clients/{inn}` и `core-banking/turnover/{inn}`. Данные — строго по `SCENARIOS.md`, по одной компании на ветку решения | — |
 | B2 | **Integrations** | HTTP-клиенты к мокам (таймауты, `502 UPSTREAM_UNAVAILABLE`), снимки ответов `CheckResult`. Адаптеры для Company и Scoring — через свои интерфейсы в `shared` (например, `shared/integrations.go`) | B1 |
 | B3 | **Company** | Профиль клиента из АБС и реестров, кэш в своей схеме; `GET /applications/{id}/company-profile`. Заменить заглушку `Profile` в `company/ports.go` | B2 |
 | B4 | **Полномочия** | `Authorities.Resolve`: роль человека в АБС (`HEAD` → руководитель), для `REPRESENTATIVE` — проверка МЧД в реестре, иначе `AuthorityNone` с причиной. Заменить `authoritiesStub` | B2 |
@@ -55,7 +55,7 @@
 | B7 | **Очередь банка** | Своя таблица очереди, обновляемая по `ApplicationStatusChanged`; `GET /bank/applications/stats`, `GET /bank/applications` (фильтры, сортировка, пагинация), `POST /bank/applications/{id}/assign` (`409`, если взял другой) | A3 |
 | B8 | **Разбор заявки** | `GET /bank/applications/{id}`, `GET .../completeness`, `GET .../checks`, `POST .../checks/refresh` | B3, B6 |
 | B9 | **Запрос информации и решение** | `POST /bank/applications/{id}/info-requests` (→ `INFO_REQUESTED`, уведомление), клиентские `GET /applications/{id}/info-requests` и `POST .../answer` (→ `DATA_CHECK`), `POST /bank/applications/{id}/decision` (`Idempotency-Key`, `422` вне рамок продукта, `DecisionMade`) | B6; `Notifier` от A |
-| B10 | **Planner** | `API_SPEC_ADDITIONAL.md`: `/plans`, `/plans/recommendations`, уведомления `PLAN_MATCH`. Делать последним: это «Доп.», у организаторов открыт вопрос, нужен ли раздел | `Products`, `Notifier` от A |
+| B10 | **Planner** | `../docs/API_SPEC_ADDITIONAL.md`: `/plans`, `/plans/recommendations`, уведомления `PLAN_MATCH`. Делать последним: это «Доп.», у организаторов открыт вопрос, нужен ли раздел | `Products`, `Notifier` от A |
 | B11 | **Сдача** | `THIRD_PARTY_NOTICES` со всеми моками, описание сценариев по `SCENARIOS.md` | B1 |
 
 ## Порядок и точки стыковки
@@ -85,4 +85,4 @@ B1 → B2 → B3 → B5 → B6 → B8 → B9      B4 — после B2;  B7 — 
 
 - Ответ на обращение в поддержку: сотрудник банка (тогда нужен раздел в его кабинете и `TICKET_REPLY`) или только FAQ.
 - Каталог открыт без входа (`r.Public`) — подтвердить с фронтом.
-- Нужен ли Planner для сдачи (вопрос организаторам в `API_SPEC_ADDITIONAL.md`).
+- Нужен ли Planner для сдачи (вопрос организаторам в `../docs/API_SPEC_ADDITIONAL.md`).
