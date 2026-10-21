@@ -48,7 +48,6 @@ export type {
 	TimelineStep,
 } from './model/tracking';
 export type {
-	ActualAddress,
 	Application,
 	ApplicationAuthority,
 	ApplicationCompany,
@@ -65,6 +64,7 @@ export type {
 	CompanyType,
 	ConsentRecord,
 	Guarantor,
+	GuarantorCandidate,
 	PatchApplicationArgs,
 	PatchApplicationResult,
 	PrelimChoice,

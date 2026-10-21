@@ -55,10 +55,10 @@ export const bankDetailsFixture: BankApplicationDetails = {
 		goal: 'WORKING_CAPITAL',
 		purposeText: 'Закупка муки и упаковки к сезону',
 	},
-	turnover: { source: 'STATEMENT', avgMonthlyIncome: 1910000 },
+	turnover: { source: 'BANK_ACCOUNTS', avgMonthlyIncome: 1910000 },
 	girbo: { year: 2025, revenue: 21400000, netProfit: 2100000 },
-	guarantor: { fullName: 'Смирнов Олег Викторович', inn: '771234567890', bkiConsent: true },
-	prelim: { limitNoStatement: 500000, limitWithStatement: 3000000, prelimRate: 22 },
+	guarantor: { personId: 'p-1', fullName: 'Смирнов Олег Викторович', inn: '771234567890', bkiConsent: true },
+	prelim: { limit: 3000000, prelimRate: 22, amountFits: true, choice: null },
 };
 
 export const completenessFixture: Completeness = {

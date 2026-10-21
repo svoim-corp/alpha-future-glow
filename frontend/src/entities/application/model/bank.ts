@@ -1,4 +1,4 @@
-import { type ApplicationStatus, type ProductRef } from './types';
+import { type ApplicationStatus, type PrelimChoice, type ProductRef } from './types';
 
 export type RiskBand = 'LOW' | 'MEDIUM' | 'HIGH';
 export type DecisionMode = 'AUTO' | 'MANUAL';
@@ -65,8 +65,8 @@ export interface BankApplicationDetails {
 	};
 	turnover: { source: string; avgMonthlyIncome: number } | null;
 	girbo: { year: number; revenue: number; netProfit: number } | null;
-	guarantor: { fullName: string; inn: string; bkiConsent: boolean } | null;
-	prelim: { limitNoStatement: number; limitWithStatement: number; prelimRate: number } | null;
+	guarantor: { personId: string; fullName: string; inn: string; bkiConsent: boolean } | null;
+	prelim: { limit: number; prelimRate: number; amountFits: boolean; choice: PrelimChoice | null } | null;
 }
 
 export type IssueSeverity = 'INFO' | 'WARN' | 'BLOCKER';

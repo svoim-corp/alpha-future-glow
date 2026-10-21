@@ -3,7 +3,6 @@ import { PaymentEstimate } from '@features/calculate-payment';
 import { EditDraftParams, type ParamsValues } from '@features/edit-draft-params';
 import { FillFullApplication } from '@features/fill-full-application';
 import { RequestPrelimDecision } from '@features/request-prelim-decision';
-import { UploadStatement } from '@features/upload-statement';
 import { VerifyCompany } from '@features/verify-company';
 import { paths } from '@shared/config';
 import { AsyncBoundary, Button, Card, Steps } from '@shared/ui';
@@ -45,10 +44,6 @@ export const ApplicationWizard = ({ applicationId }: { applicationId: string }) 
 							<Card className={styles.card} aria-labelledby="w-profile">
 								<h2 id="w-profile" className={styles.title}>Данные вашей компании</h2>
 								<CompanyProfileView applicationId={application.id} />
-							</Card>
-							<Card className={styles.card} aria-labelledby="w-statement">
-								<h2 id="w-statement" className={styles.title}>Выписка по счёту</h2>
-								<UploadStatement applicationId={application.id} />
 							</Card>
 							<Card className={styles.card} aria-labelledby="w-full">
 								<h2 id="w-full" className={styles.title}>Полная заявка</h2>

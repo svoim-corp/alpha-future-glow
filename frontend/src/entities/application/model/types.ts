@@ -35,7 +35,7 @@ export type ApplicationStage = 1 | 2;
 export type CompanyType = 'LLC' | 'IE';
 export type AuthorityType = 'HEAD' | 'MCHD';
 export type PrelimOutcome = 'LIMIT' | 'STOP';
-export type PrelimChoice = 'STATEMENT' | 'REDUCE_AMOUNT';
+export type PrelimChoice = 'REDUCE_AMOUNT' | 'KEEP_AMOUNT';
 
 export interface ApplicationParams {
 	amount: number;
@@ -58,6 +58,7 @@ export interface ApplicationCompany {
 export interface ApplicationAuthority {
 	type: AuthorityType;
 	verified: boolean;
+	validUntil?: string | null;
 }
 
 export interface ConsentRecord {
@@ -67,15 +68,11 @@ export interface ConsentRecord {
 
 export interface ApplicationPrelim {
 	outcome: PrelimOutcome;
-	limitNoStatement: number | null;
-	limitWithStatement: number | null;
+	limit: number | null;
 	prelimRate: number | null;
+	/** false — запрошенная сумма больше лимита, клиент выбирает дальше */
+	amountFits: boolean | null;
 	choice: PrelimChoice | null;
-}
-
-export interface ActualAddress {
-	sameAsRegistration: boolean;
-	address: string | null;
 }
 
 export interface TurnoverInfo {
@@ -85,13 +82,14 @@ export interface TurnoverInfo {
 }
 
 export interface Guarantor {
+	personId: string;
 	fullName: string;
-	inn: string;
 	bkiConsent: boolean;
 }
 
 export interface ApplicationStage2 {
-	actualAddress: ActualAddress | null;
+	/** Данные банка, только для чтения */
+	actualAddress: string | null;
 	turnover: TurnoverInfo | null;
 	guarantor: Guarantor | null;
 	truthConfirmed: boolean;
@@ -124,8 +122,7 @@ export interface Application {
 export interface ApplicationPatch {
 	params?: Partial<Pick<ApplicationParams, 'amount' | 'term' | 'goal' | 'purposeText' | 'graceMonths' | 'overdraftLimit'>>;
 	stage2?: {
-		actualAddress?: { sameAsRegistration: boolean; address?: string | null };
-		guarantor?: { fullName: string; inn: string };
+		guarantor?: { personId: string };
 	};
 }
 
@@ -142,15 +139,28 @@ export interface PatchApplicationResult {
 	prelimInvalidated: boolean;
 }
 
-/** Данные из реестров только для чтения: GET /applications/{id}/company-profile */
+export interface PersonRef {
+	personId: string;
+	fullName: string;
+}
+
+export type PersonRole = 'HEAD' | 'FOUNDER';
+
+export interface GuarantorCandidate extends PersonRef {
+	roles: PersonRole[];
+}
+
+/** Данные банка, сверенные с реестрами, только для чтения: GET /applications/{id}/company-profile */
 export interface CompanyProfile {
 	source: string[];
 	regAddress: string;
+	actualAddress: string | null;
 	okved: { code: string; name: string };
-	head: string;
-	founders: { name: string; share: number }[];
+	head: PersonRef;
+	founders: (PersonRef & { share: number })[];
+	/** Руководитель и учредители-физлица; для ИП — пустой массив */
+	guarantorCandidates: GuarantorCandidate[];
 	taxRegime: string;
-	isBankClient: boolean;
-	internalTurnover: { avgMonthlyIncome: number; periodMonths: number } | null;
+	turnover: TurnoverInfo | null;
 	girbo: { accounted: boolean } | null;
 }

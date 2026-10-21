@@ -11,11 +11,11 @@ export interface PrelimCheck {
 export interface PrelimLimit {
 	outcome: 'LIMIT';
 	requestedAmount: number;
-	limitNoStatement: number;
-	limitWithStatement: number;
+	limit: number;
 	prelimRate: number;
 	prelimPayment: number;
-	needsChoice: boolean;
+	/** false — запрошенная сумма больше лимита */
+	amountFits: boolean;
 	checks: PrelimCheck[];
 }
 
@@ -30,13 +30,13 @@ export type PrelimResult = PrelimLimit | PrelimStop;
 
 export interface ChoiceArgs {
 	applicationId: string;
-	choice: 'STATEMENT' | 'REDUCE_AMOUNT';
+	choice: 'REDUCE_AMOUNT' | 'KEEP_AMOUNT';
+	/** Для REDUCE_AMOUNT — новая сумма, не больше лимита */
 	amount?: number;
 }
 
 export interface ChoiceResult {
 	stage: 1 | 2;
-	statementRequired: boolean;
 	params: { amount: number; term: number };
 	version: number;
 }

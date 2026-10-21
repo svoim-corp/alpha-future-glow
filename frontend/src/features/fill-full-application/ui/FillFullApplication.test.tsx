@@ -1,4 +1,5 @@
 import { fullApplication } from '@test/fixtures/applications';
+import { companyProfileFixture } from '@test/fixtures/companyProfile';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
 import { screen, waitFor } from '@testing-library/react';
@@ -8,27 +9,37 @@ import { FillFullApplication } from './FillFullApplication';
 
 const submitted = { id: 'a-1031', number: 'КЗ-2026-001031', status: 'SUBMITTED', redirect: '/applications/a-1031' };
 
-const renderForm = (application = fullApplication, onSubmitted = vi.fn()) => renderWithProviders(
-	<FillFullApplication application={application} onSubmitted={onSubmitted} />,
-);
+const renderForm = (application = fullApplication, onSubmitted = vi.fn()) => {
+	server.use(http.get(apiUrl('/applications/a-1031/company-profile'), () => HttpResponse.json(companyProfileFixture)));
+
+	return renderWithProviders(<FillFullApplication application={application} onSubmitted={onSubmitted} />);
+};
 
 describe('FillFullApplication', () => {
-	it('для ООО показывает блок поручителя, для ИП нет', () => {
+	it('для ООО показывает выбор поручителя, для ИП нет', () => {
 		const { rerender } = renderForm();
-		expect(screen.getByLabelText('ИНН поручителя')).toBeInTheDocument();
+		expect(screen.getByLabelText('Поручитель')).toBeInTheDocument();
 
 		const ie = { ...fullApplication, company: { ...fullApplication.company!, type: 'IE' as const } };
 		rerender(<FillFullApplication application={ie} onSubmitted={vi.fn()} />);
-		expect(screen.queryByLabelText('ИНН поручителя')).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Поручитель')).not.toBeInTheDocument();
 	});
 
-	it('отдельное поле адреса появляется, если адрес не совпадает с регистрацией', async () => {
-		const { user } = renderForm();
+	it('поручителя выбирают из руководителя и учредителей и сохраняют только personId', async () => {
+		const patch = vi.fn();
+		server.use(http.patch(apiUrl('/applications/a-1031'), async ({ request }) => {
+			patch(await request.json());
 
-		expect(screen.queryByLabelText('Фактический адрес')).not.toBeInTheDocument();
-		await user.click(screen.getByRole('checkbox', { name: 'Совпадает с адресом регистрации' }));
+			return HttpResponse.json({ version: 8, savedAt: '2026-10-20T10:13:00Z', prelimInvalidated: false });
+		}));
+		const empty = { ...fullApplication, stage2: { ...fullApplication.stage2, guarantor: null } };
+		const { user } = renderForm(empty);
 
-		expect(screen.getByLabelText('Фактический адрес')).toBeInTheDocument();
+		const option = await screen.findByRole('option', { name: 'Смирнов Олег Викторович — руководитель, учредитель' });
+		await user.selectOptions(screen.getByLabelText('Поручитель'), option);
+
+		await waitFor(() => expect(patch).toHaveBeenCalledWith({ stage2: { guarantor: { personId: 'p-1' } } }));
+		expect(screen.queryByLabelText('ИНН поручителя')).not.toBeInTheDocument();
 	});
 
 	it('без подтверждения достоверности не отправляет и подсвечивает пропуск', async () => {
@@ -52,14 +63,14 @@ describe('FillFullApplication', () => {
 	it('показывает незаполненное из validate', async () => {
 		server.use(http.post(apiUrl('/applications/a-1031/validate'), () => HttpResponse.json({
 			valid: false,
-			missing: [{ field: 'stage2.guarantor.inn', message: 'Укажите ИНН поручителя' }],
+			missing: [{ field: 'stage2.guarantor.personId', message: 'Нужно выбрать поручителя' }],
 		})));
 		const { user } = renderForm();
 
 		await user.click(screen.getByRole('checkbox', { name: 'Подтверждаю, что все сведения достоверны' }));
 		await user.click(screen.getByRole('button', { name: 'Отправить заявку' }));
 
-		expect(await screen.findByText('Укажите ИНН поручителя')).toBeInTheDocument();
+		expect(await screen.findByText('Нужно выбрать поручителя')).toBeInTheDocument();
 	});
 
 	it('отправляет заявку с If-Match и Idempotency-Key и сообщает адрес перехода', async () => {
@@ -117,6 +128,6 @@ describe('FillFullApplication', () => {
 		await user.click(screen.getByRole('button', { name: 'Отправить заявку' }));
 
 		expect(await screen.findByText('Заявка уже отправлена')).toBeInTheDocument();
-		expect(screen.getByLabelText('ИНН поручителя')).toHaveValue('771234567890');
+		expect(screen.getByLabelText('Поручитель')).toHaveValue('p-1');
 	});
 });

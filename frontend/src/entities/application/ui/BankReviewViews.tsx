@@ -73,8 +73,8 @@ export const ApplicantView = ({ data }: { data: BankApplicationDetails }) => (
 				: []),
 			...(data.prelim
 				? [{
-					label: 'Предварительные лимиты',
-					value: `${formatMoney(data.prelim.limitNoStatement)} / ${formatMoney(data.prelim.limitWithStatement)}`,
+					label: 'Предварительный лимит',
+					value: `${formatMoney(data.prelim.limit)}${data.prelim.amountFits ? '' : ', запрошенная сумма выше'}`,
 				}]
 				: []),
 		]}

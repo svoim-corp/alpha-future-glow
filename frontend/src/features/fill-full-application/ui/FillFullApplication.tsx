@@ -1,9 +1,14 @@
-import { type Application, isVersionConflict, SavedIndicator, useDraftPatch } from '@entities/application';
-import { zodResolver } from '@hookform/resolvers/zod';
+import {
+	type Application,
+	type GuarantorCandidate,
+	isVersionConflict,
+	SavedIndicator,
+	useDraftPatch,
+	useGetCompanyProfileQuery,
+} from '@entities/application';
 import { getApiError, getErrorMessage, getFieldErrors } from '@shared/api';
-import { Alert, Button, CheckboxField, Field, TextAreaField } from '@shared/ui';
+import { Alert, Button, CheckboxField, SelectField } from '@shared/ui';
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
 
 import {
 	type MissingField,
@@ -11,8 +16,6 @@ import {
 	useSubmitApplicationMutation,
 	useValidateApplicationMutation,
 } from '../api/submitApi';
-import { buildStage2Patch, toStage2Values } from '../model/diff';
-import { stage2Schema,type Stage2Values } from '../model/schema';
 import styles from './FillFullApplication.module.scss';
 
 interface FillFullApplicationProps {
@@ -20,37 +23,40 @@ interface FillFullApplicationProps {
 	onSubmitted: (redirect: string) => void;
 }
 
-/** Этап 2: фактический адрес, поручитель (для ООО), подтверждение достоверности и отправка */
+const ROLE_LABELS = { HEAD: 'руководитель', FOUNDER: 'учредитель' } as const;
+
+const candidateLabel = (candidate: GuarantorCandidate) => (
+	`${candidate.fullName} — ${candidate.roles.map((role) => ROLE_LABELS[role]).join(', ')}`
+);
+
+/** Этап 2: выбор поручителя из известных банку людей (для ООО), подтверждение достоверности и отправка */
 export const FillFullApplication = ({ application, onSubmitted }: FillFullApplicationProps) => {
 	const { save, isSaving } = useDraftPatch(application.id, application.version);
+	const { data: profile } = useGetCompanyProfileQuery(application.id);
 	const [consent, consentState] = useConsentGuarantorBkiMutation();
 	const [validate, validateState] = useValidateApplicationMutation();
 	const [submit, submitState] = useSubmitApplicationMutation();
 	const [truth, setTruth] = useState(application.stage2.truthConfirmed);
+	const [personId, setPersonId] = useState(application.stage2.guarantor?.personId ?? '');
 	const [missing, setMissing] = useState<MissingField[]>([]);
 	const [failure, setFailure] = useState<string | null>(null);
 	const [saveFailed, setSaveFailed] = useState(false);
 	const [conflict, setConflict] = useState(false);
 	const [idempotencyKey] = useState(() => crypto.randomUUID());
 	const isLlc = application.company?.type === 'LLC';
+	const candidates = profile?.guarantorCandidates ?? [];
 
-	const { register, handleSubmit, control, formState: { errors } } = useForm<Stage2Values>({
-		resolver: zodResolver(stage2Schema),
-		defaultValues: toStage2Values(application.stage2),
-	});
-	const same = useWatch({ control, name: 'sameAsRegistration' });
+	const pickGuarantor = async (value: string) => {
+		setPersonId(value);
 
-	const persist = handleSubmit(async (values) => {
-		const body = buildStage2Patch(values, application.stage2);
-
-		if (!body) {
+		if (value === '') {
 			return;
 		}
 
 		setSaveFailed(false);
 
 		try {
-			await save({ stage2: body });
+			await save({ stage2: { guarantor: { personId: value } } });
 		} catch (error) {
 			if (isVersionConflict(error)) {
 				setConflict(true);
@@ -58,7 +64,7 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 				setSaveFailed(true);
 			}
 		}
-	});
+	};
 
 	const giveGuarantorConsent = async () => {
 		setFailure(null);
@@ -75,13 +81,12 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 		setMissing([]);
 
 		try {
-			await persist();
 			const check = await validate(application.id).unwrap();
 
 			if (!check.valid || !truth) {
-				const rest = check.missing.filter((item) => item.field !== 'stage2.truthConfirmed' || !truth);
+				const rest = check.missing.filter((item) => item.field !== 'stage2.truthConfirmed');
 				setMissing(truth ? rest : [
-					...rest.filter((item) => item.field !== 'stage2.truthConfirmed'),
+					...rest,
 					{ field: 'stage2.truthConfirmed', message: 'Подтвердите достоверность сведений' },
 				]);
 
@@ -109,37 +114,27 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 	const guarantorReady = application.stage2.guarantor !== null;
 
 	return (
-		<form
-			className={styles.form}
-			onSubmit={(event) => event.preventDefault()}
-			onBlur={() => void persist()}
-			noValidate
-		>
+		<form className={styles.form} onSubmit={(event) => event.preventDefault()} noValidate>
 			{conflict && (
 				<Alert tone="warning" title="Заявка изменена в другом окне">
 					Обновите страницу, чтобы увидеть актуальные данные.
 				</Alert>
 			)}
-			<div className={styles.group}>
-				<h3 className={styles.legend}>Фактический адрес</h3>
-				<CheckboxField label="Совпадает с адресом регистрации" {...register('sameAsRegistration')} />
-				{!same && (
-					<TextAreaField
-						label="Фактический адрес"
-						error={errors.address?.message}
-						{...register('address')}
-					/>
-				)}
-			</div>
 			{isLlc && (
 				<div className={styles.group}>
 					<h3 className={styles.legend}>Поручитель</h3>
-					<Field label="ФИО поручителя" error={errors.guarantorName?.message} {...register('guarantorName')} />
-					<Field
-						label="ИНН поручителя"
-						inputMode="numeric"
-						error={errors.guarantorInn?.message}
-						{...register('guarantorInn')}
+					<SelectField
+						label="Поручитель"
+						hint="Выберите из руководителя и учредителей — их данные уже есть в банке"
+						value={personId}
+						onChange={(event) => void pickGuarantor(event.target.value)}
+						options={[
+							{ value: '', label: 'Выберите поручителя' },
+							...candidates.map((candidate) => ({
+								value: candidate.personId,
+								label: candidateLabel(candidate),
+							})),
+						]}
 					/>
 					<CheckboxField
 						label="Поручитель согласен на запрос его кредитной истории"

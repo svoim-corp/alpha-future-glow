@@ -40,7 +40,7 @@ describe('ApplicationEditPage', () => {
 		expect(screen.queryByRole('heading', { name: 'Полная заявка' })).not.toBeInTheDocument();
 	});
 
-	it('на этапе 2 показывает данные реестров, выписку и полную заявку', async () => {
+	it('на этапе 2 показывает данные банка и полную заявку без выписки', async () => {
 		server.use(
 			http.get(apiUrl('/applications/a-1031'), () => HttpResponse.json(fullApplication)),
 			http.get(apiUrl('/applications/a-1031/company-profile'), () => HttpResponse.json(companyProfileFixture)),
@@ -49,7 +49,8 @@ describe('ApplicationEditPage', () => {
 
 		expect(await screen.findByRole('heading', { name: 'Полная заявка' })).toBeInTheDocument();
 		expect(await screen.findByText('г. Москва, ул. Пекарская, 7')).toBeInTheDocument();
-		expect(screen.getByLabelText(/Выписка из 1С/)).toBeInTheDocument();
+		expect(screen.queryByLabelText(/Выписка/)).not.toBeInTheDocument();
+		expect(screen.getByLabelText('Поручитель')).toBeInTheDocument();
 	});
 
 	it('можно вернуться с этапа 2 к этапу 1', async () => {

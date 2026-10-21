@@ -10,7 +10,7 @@ const TAX_REGIME: Record<string, string> = {
 	PSN: 'Патент',
 };
 
-/** Данные из реестров. Клиент их не правит: устаревшее обновляется через налоговую */
+/** Данные из реестров. Клиент их не правит: данные ведёт банк */
 export const CompanyProfileView = ({ applicationId }: { applicationId: string }) => {
 	const { data, isLoading, isError, refetch } = useGetCompanyProfileQuery(applicationId);
 
@@ -26,18 +26,18 @@ export const CompanyProfileView = ({ applicationId }: { applicationId: string })
 				<KeyValueList
 					items={[
 						{ label: 'Адрес регистрации', value: data.regAddress },
+						...(data.actualAddress ? [{ label: 'Фактический адрес', value: data.actualAddress }] : []),
 						{ label: 'Основной вид деятельности', value: `${data.okved.code} ${data.okved.name}` },
-						{ label: 'Руководитель', value: data.head },
+						{ label: 'Руководитель', value: data.head.fullName },
 						{
 							label: 'Учредители',
-							value: data.founders.map((founder) => `${founder.name} — ${founder.share}%`).join(', '),
+							value: data.founders.map((founder) => `${founder.fullName} — ${founder.share}%`).join(', '),
 						},
 						{ label: 'Налоговый режим', value: TAX_REGIME[data.taxRegime] ?? data.taxRegime },
-						{ label: 'Клиент банка', value: data.isBankClient ? 'Да' : 'Нет' },
-						...(data.internalTurnover
+						...(data.turnover
 							? [{
-								label: 'Средние поступления в банке',
-								value: `${formatMoney(data.internalTurnover.avgMonthlyIncome)} в месяц`,
+								label: 'Средние поступления на счета в банке',
+								value: `${formatMoney(data.turnover.avgMonthlyIncome)} в месяц`,
 							}]
 							: []),
 						...(data.girbo?.accounted ? [{ label: 'Бухгалтерская отчётность', value: 'Учтена' }] : []),

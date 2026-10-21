@@ -199,7 +199,7 @@ export const handlers = [
 			consents: {},
 			prelim: null,
 			stage2: {
-				actualAddress: { sameAsRegistration: true, address: null },
+				actualAddress: null,
 				turnover: null,
 				guarantor: null,
 				truthConfirmed: false,
@@ -248,6 +248,21 @@ export const handlers = [
 		const body = await request.json() as Partial<Application>;
 		const before = item.full.params;
 		merge(item.full, body);
+		const personId = body.stage2?.guarantor?.personId;
+
+		if (personId) {
+			const candidate = companyProfileFixture.guarantorCandidates.find((entry) => entry.personId === personId);
+
+			if (!candidate) {
+				return HttpResponse.json(
+					{ code: 'VALIDATION_ERROR', message: 'Поручитель не из списка кандидатов' },
+					{ status: 400 },
+				);
+			}
+
+			item.full.stage2.guarantor = { personId, fullName: candidate.fullName, bkiConsent: false };
+		}
+
 		const changed = before.amount !== item.full.params.amount || before.term !== item.full.params.term;
 		const invalidated = Boolean(item.full.prelim) && changed;
 
@@ -313,7 +328,15 @@ export const handlers = [
 
 		return HttpResponse.json({ given: true, at });
 	}),
-	http.post(url('/applications/:id/guarantor/consent-bki'), () => HttpResponse.json({ given: true, at: nowIso() })),
+	http.post(url('/applications/:id/guarantor/consent-bki'), ({ params }) => {
+		const item = findApplication(String(params.id));
+
+		if (item?.full.stage2.guarantor) {
+			item.full.stage2.guarantor.bkiConsent = true;
+		}
+
+		return HttpResponse.json({ given: true, at: nowIso() }, { status: 201 });
+	}),
 	http.post(url('/applications/:id/prelim'), ({ params }) => {
 		const item = findApplication(String(params.id));
 
@@ -324,42 +347,45 @@ export const handlers = [
 		const { amount } = item.full.params;
 		const term = item.full.params.term ?? item.short.term;
 
-		if (amount > 3000000) {
+		const limit = 3000000;
+
+		if (amount > limit * 2) {
 			return HttpResponse.json({
 				outcome: 'STOP',
-				stopReason: 'AMOUNT_TOO_HIGH',
-				stopText: 'Запрошенная сумма выше доступного лимита',
-				whatToDo: ['Уменьшите сумму до 3 000 000 ₽', 'Подберите другой продукт в каталоге'],
+				stopReason: 'CRITICAL_RISK',
+				stopText: 'Запрошенная сумма намного выше доступного лимита',
+				whatToDo: ['Уменьшите сумму и попробуйте снова', 'Подберите другой продукт в каталоге'],
 			});
 		}
 
-		const limitNoStatement = 500000;
+		const amountFits = amount <= limit;
 		const result = {
 			outcome: 'LIMIT' as const,
 			requestedAmount: amount,
-			limitNoStatement,
-			limitWithStatement: 3000000,
+			limit,
 			prelimRate: 22,
-			prelimPayment: annuity(Math.min(amount, 3000000), term, 22),
-			needsChoice: amount > limitNoStatement,
+			prelimPayment: annuity(Math.min(amount, limit), term, 22),
+			amountFits,
 			checks: [
 				{ source: 'EGRUL', status: 'OK', label: 'Компания действует' },
+				{ source: 'BANK_ACCOUNTS', status: 'OK', label: 'Обороты по счетам учтены' },
 				{ source: 'BKI', status: 'OK', label: 'Кредитная история без просрочек' },
 			],
 		};
 		item.full.prelim = {
 			outcome: 'LIMIT',
-			limitNoStatement,
-			limitWithStatement: 3000000,
+			limit,
 			prelimRate: 22,
+			amountFits,
 			choice: null,
-		} as unknown as Application['prelim'];
+		};
+		item.full.locks.stage2Available = amountFits;
 
 		return HttpResponse.json(result);
 	}),
 	http.post(url('/applications/:id/prelim/choice'), async ({ params, request }) => {
 		const item = findApplication(String(params.id));
-		const body = await request.json() as { choice: 'STATEMENT' | 'REDUCE_AMOUNT'; amount?: number };
+		const body = await request.json() as { choice: 'REDUCE_AMOUNT' | 'KEEP_AMOUNT'; amount?: number };
 
 		if (!item) {
 			return notFound();
@@ -370,26 +396,20 @@ export const handlers = [
 			item.short.amount = body.amount;
 		}
 
+		if (item.full.prelim) {
+			item.full.prelim.choice = body.choice;
+		}
+
 		item.full.stage = 2;
 		item.full.locks.stage2Available = true;
 		item.full.version += 1;
 
 		return HttpResponse.json({
 			stage: 2,
-			statementRequired: body.choice === 'STATEMENT',
 			params: { amount: item.full.params.amount, term: item.full.params.term },
 			version: item.full.version,
 		});
 	}),
-	http.post(url('/applications/:id/statement'), () => HttpResponse.json({
-		parsed: true,
-		period: { from: '2025-10-01', to: '2026-09-30' },
-		operations: 1284,
-		avgMonthlyIncome: 1840000,
-		newLimit: 3000000,
-		amountFits: true,
-	})),
-	http.post(url('/applications/:id/documents'), () => new HttpResponse(null, { status: 204 })),
 	http.post(url('/applications/:id/validate'), () => HttpResponse.json({ valid: true, missing: [] })),
 	http.post(url('/applications/:id/submit'), ({ params }) => {
 		const item = findApplication(String(params.id));

@@ -1,7 +1,7 @@
 import { type Application } from '@entities/application';
 import { getErrorMessage } from '@shared/api';
 import { formatMoney, formatRate } from '@shared/lib/format';
-import { Alert, Button, CheckboxField, Field, RadioGroup } from '@shared/ui';
+import { Alert, Button, CheckboxField, RadioGroup } from '@shared/ui';
 import { useState } from 'react';
 
 import {
@@ -22,19 +22,18 @@ interface RequestPrelimDecisionProps {
 const CHECK_TONE = { OK: 'Ок', WARN: 'Внимание', FAIL: 'Проблема' } as const;
 
 const CHOICES = [
-	{ value: 'STATEMENT', label: 'Подтвердить обороты выпиской по счёту' },
-	{ value: 'REDUCE_AMOUNT', label: 'Уменьшить сумму до лимита без выписки' },
+	{ value: 'REDUCE_AMOUNT', label: 'Уменьшить сумму до лимита' },
+	{ value: 'KEEP_AMOUNT', label: 'Оставить запрошенную сумму: решение примет сотрудник банка, возможны иные условия' },
 ];
 
-/** Согласие на БКИ → предварительное решение (два лимита или стоп) → выбор, если сумма выше лимита без выписки */
+/** Согласие на БКИ → предварительное решение (лимит по оборотам в банке или стоп) → выбор, если сумма выше лимита */
 export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDecisionProps) => {
 	const [giveConsent, consentState] = useGiveBkiConsentMutation();
 	const [requestPrelim, prelimState] = useRequestPrelimMutation();
 	const [choose, chooseState] = useChoosePrelimMutation();
 	const [agreed, setAgreed] = useState(false);
 	const [result, setResult] = useState<PrelimResult | null>(null);
-	const [choice, setChoice] = useState<string>('STATEMENT');
-	const [amount, setAmount] = useState('');
+	const [choice, setChoice] = useState<string>('REDUCE_AMOUNT');
 	const [error, setError] = useState<string | null>(null);
 
 	const authorityOk = application.authority?.verified === true;
@@ -43,12 +42,11 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 	const limit: PrelimLimit | null = result?.outcome === 'LIMIT' ? result : null;
 	const stop = result?.outcome === 'STOP' ? result : null;
 	const requested = application.params.amount;
-	const limitNoStatement = limit?.limitNoStatement ?? stored?.limitNoStatement ?? null;
-	const limitWithStatement = limit?.limitWithStatement ?? stored?.limitWithStatement ?? null;
+	const bankLimit = limit?.limit ?? stored?.limit ?? null;
 	const rate = limit?.prelimRate ?? stored?.prelimRate ?? null;
 	const hasLimit = stored?.outcome === 'LIMIT' || limit !== null;
-	const needsChoice = limit ? limit.needsChoice : stored?.outcome === 'LIMIT' && stored.choice === null
-		&& limitNoStatement !== null && requested > limitNoStatement;
+	const needsChoice = limit ? !limit.amountFits : stored?.outcome === 'LIMIT' && stored.amountFits === false
+		&& stored.choice === null;
 
 	const run = async () => {
 		setError(null);
@@ -68,11 +66,11 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 		setError(null);
 
 		try {
-			const parsed = Number(amount);
+			const reduce = choice === 'REDUCE_AMOUNT';
 			await choose({
 				applicationId: application.id,
-				choice: choice === 'REDUCE_AMOUNT' ? 'REDUCE_AMOUNT' : 'STATEMENT',
-				amount: choice === 'REDUCE_AMOUNT' ? parsed : undefined,
+				choice: reduce ? 'REDUCE_AMOUNT' : 'KEEP_AMOUNT',
+				amount: reduce && bankLimit !== null ? bankLimit : undefined,
 			}).unwrap();
 			onStage2?.();
 		} catch (caught) {
@@ -123,14 +121,11 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 		<div className={styles.block}>
 			<dl className={styles.limits}>
 				<div className={styles.limit}>
-					<dt>Лимит без выписки</dt>
-					<dd>{limitNoStatement === null ? '—' : formatMoney(limitNoStatement)}</dd>
-				</div>
-				<div className={styles.limit}>
-					<dt>Лимит с выпиской</dt>
-					<dd>{limitWithStatement === null ? '—' : formatMoney(limitWithStatement)}</dd>
+					<dt>Предварительный лимит</dt>
+					<dd>{bankLimit === null ? '—' : formatMoney(bankLimit)}</dd>
 				</div>
 			</dl>
+			<p>Лимит рассчитан по оборотам на ваших счетах в банке, выписки не нужны.</p>
 			{rate !== null && (
 				<p>
 					{`Предварительная ставка ${formatRate(rate)}`}
@@ -146,25 +141,12 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 			)}
 			{needsChoice && (
 				<div className={styles.choice}>
-					<Alert tone="warning" title="Запрошенная сумма выше лимита без выписки">
+					<Alert tone="warning" title="Запрошенная сумма выше лимита">
 						{`Вы просили ${formatMoney(requested)}. Выберите, как продолжить.`}
 					</Alert>
 					<RadioGroup legend="Как продолжить" value={choice} onChange={setChoice} options={CHOICES} />
-					{choice === 'REDUCE_AMOUNT' && (
-						<Field
-							label="Новая сумма, ₽"
-							inputMode="numeric"
-							value={amount}
-							onChange={(event) => setAmount(event.target.value)}
-							hint={limitNoStatement === null ? undefined : `Не больше ${formatMoney(limitNoStatement)}`}
-						/>
-					)}
 					<div>
-						<Button
-							onClick={() => void confirmChoice()}
-							loading={chooseState.isLoading}
-							disabled={choice === 'REDUCE_AMOUNT' && !/^\d+$/u.test(amount)}
-						>
+						<Button onClick={() => void confirmChoice()} loading={chooseState.isLoading}>
 							Продолжить к полной заявке
 						</Button>
 					</div>
