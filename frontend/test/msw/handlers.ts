@@ -12,11 +12,7 @@ export const handlers: HttpHandler[] = [
 	http.get(apiUrl('/auth/me'), () => HttpResponse.json(clientUser)),
 	// колокольчик в шапке запрашивает уведомления на любой клиентской странице
 	http.get(apiUrl('/notifications'), () => HttpResponse.json({ unreadCount: 0, items: [] })),
-	// главная запрашивает кредиты, документы и подбор по планам на любой клиентской странице
+	// главная запрашивает кредиты и подбор по планам на любой клиентской странице
 	http.get(apiUrl('/loans'), () => HttpResponse.json([])),
 	http.get(apiUrl('/plans/recommendations'), () => HttpResponse.json([])),
-	http.get(apiUrl('/documents'), () => HttpResponse.json({
-		items: [],
-		counts: { ALL: 0, COMPANY: 0, STATEMENTS: 0, CONTRACTS: 0, PHOTOS: 0 },
-	})),
 ];

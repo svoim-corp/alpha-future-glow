@@ -113,11 +113,6 @@ export const LoanPanel = ({ loan }: { loan: Loan }) => {
 								<span>{formatMoney(loan.amount - loan.balance)} из {formatMoney(loan.amount)}</span>
 							</div>
 						</div>
-						<div className={styles.links}>
-							<Link to={ROUTES.documents} className={styles.textLink}>
-								Кредитный договор <Icon name="arrow" size={14} />
-							</Link>
-						</div>
 					</section>
 					{next && loan.nextPayment && (
 						<section className={styles.focus} aria-label="Ближайший платёж">
@@ -157,9 +152,6 @@ export const LoanPanel = ({ loan }: { loan: Loan }) => {
 					<section className={`${styles.card} ${styles.related}`} aria-label="Всё по вашему кредиту">
 						<span className={styles.tile}>ВАЖНОЕ РЯДОМ</span>
 						<h2>Всё по вашему кредиту</h2>
-						<Link to={ROUTES.documents} className={styles.relatedLink}>
-							Кредитный договор <Icon name="arrow" size={14} />
-						</Link>
 						<a href={`#${scheduleId(loan.id)}`} className={styles.relatedLink}>
 							График платежей <Icon name="arrow" size={14} />
 						</a>

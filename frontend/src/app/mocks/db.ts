@@ -6,7 +6,6 @@ import {
 	type Offer,
 } from '@entities/application';
 import { type Contract } from '@entities/contract';
-import { type DocumentsResponse } from '@entities/document';
 import { type Loan, type LoanDetails } from '@entities/loan';
 import { type NotificationsResponse } from '@entities/notification';
 import { type BusinessPlan } from '@entities/plan';
@@ -15,7 +14,6 @@ import { type Ticket } from '@entities/support';
 
 import { draftApplication, fullApplication, infoRequestedApplication } from './fixtures/applications';
 import { contractFixture } from './fixtures/contract';
-import { documentsFixture } from './fixtures/documents';
 import { loanDetailsFixture, loanFixture } from './fixtures/loans';
 import { notificationsFixture } from './fixtures/notifications';
 import { plansFixture } from './fixtures/plans';
@@ -53,7 +51,6 @@ export interface MockApplication {
 
 export interface MockDb {
 	applications: MockApplication[];
-	documents: DocumentsResponse['items'];
 	plans: BusinessPlan[];
 	tickets: Ticket[];
 	notifications: NotificationsResponse['items'];
@@ -86,7 +83,6 @@ const createDb = (): MockDb => {
 
 	return {
 		applications: [infoRequested, draft],
-		documents: clone(documentsFixture.items),
 		plans: clone(plansFixture.items),
 		tickets: clone(ticketsFixture),
 		notifications: clone(notificationsFixture.items),

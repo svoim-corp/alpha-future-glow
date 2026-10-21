@@ -6,7 +6,6 @@ import { BankApplicationPage } from '@pages/bank-application';
 import { BankQueuePage } from '@pages/bank-queue';
 import { CreditsPage } from '@pages/credits';
 import { CreditsCalendarPage } from '@pages/credits-calendar';
-import { DocumentsPage } from '@pages/documents';
 import { HomePage } from '@pages/home';
 import { LoginPage } from '@pages/login';
 import { NotFoundPage } from '@pages/not-found';
@@ -36,7 +35,6 @@ export const routes: RouteObject[] = [
 					{ path: ROUTES.credits, element: <CreditsPage /> },
 					{ path: ROUTES.creditsCalendar, element: <CreditsCalendarPage /> },
 					{ path: ROUTES.support, element: <SupportPage /> },
-					{ path: ROUTES.documents, element: <DocumentsPage /> },
 					{ path: ROUTES.planner, element: <PlannerPage /> },
 					{ path: ROUTES.applications, element: <ApplicationsPage /> },
 				],

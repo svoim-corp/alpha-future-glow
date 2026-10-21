@@ -575,41 +575,7 @@ export const handlers = [
 		return HttpResponse.json({ id, status: 'OPEN', createdAt }, { status: 201 });
 	}),
 
-	// ── документы и планер (API_SPEC_ADDITIONAL) ───────────
-	http.get(url('/documents'), ({ request }) => {
-		const category = new URL(request.url).searchParams.get('category');
-		const items = db.documents.filter((item) => !category || category === 'ALL' || item.category === category);
-		const counts: Record<string, number> = { ALL: db.documents.length };
-
-		for (const item of db.documents) {
-			counts[item.category] = (counts[item.category] ?? 0) + 1;
-		}
-
-		return HttpResponse.json({ items, counts });
-	}),
-	http.post(url('/documents'), async ({ request }) => {
-		const form = await request.formData();
-		const file = form.get('file');
-		const category = form.get('category');
-		const name = file instanceof File ? file.name : 'Документ';
-		const document = {
-			id: nextId('doc'),
-			name,
-			category: typeof category === 'string' ? category : 'COMPANY',
-			extension: (name.split('.').pop() ?? 'PDF').toUpperCase(),
-			sizeBytes: file instanceof File ? file.size : 0,
-			uploadedAt: nowIso(),
-			usage: { applications: 0, label: null },
-		};
-		db.documents.unshift(document as (typeof db.documents)[number]);
-
-		return HttpResponse.json(document, { status: 201 });
-	}),
-	http.delete(url('/documents/:id'), ({ params }) => {
-		db.documents = db.documents.filter((item) => item.id !== params.id);
-
-		return new HttpResponse(null, { status: 204 });
-	}),
+	// ── планер (API_SPEC_ADDITIONAL) ───────────
 	http.get(url('/plans/recommendations'), () => HttpResponse.json(
 		db.plans
 			.filter((plan) => plan.dateMode === 'UNSCHEDULED' || plan.recommendation)

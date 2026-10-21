@@ -5,7 +5,6 @@ import {
 	useGetInfoRequestsQuery,
 	useGetMyApplicationsQuery,
 } from '@entities/application';
-import { useGetDocumentsQuery } from '@entities/document';
 import { useGetLoanQuery, useGetLoansQuery, useGetLoansSummaryQuery } from '@entities/loan';
 import { PlanRecommendations } from '@entities/plan';
 import { ROUTES } from '@shared/config';
@@ -166,7 +165,7 @@ const QuickTile = () => (
 		</div>
 		<div className={styles.quickGrid}>
 			<Tile icon="catalog" to={ROUTES.products}>Подать заявку</Tile>
-			<Tile icon="documents" to={ROUTES.documents}>Документы</Tile>
+			<Tile icon="loans" to={ROUTES.credits}>Мои кредиты</Tile>
 			<Tile icon="calendar" to={ROUTES.planner}>Открыть планер</Tile>
 			<Tile icon="support" to={ROUTES.support}>Связаться с банком</Tile>
 		</div>
@@ -227,43 +226,7 @@ const FundingTile = () => (
 	</section>
 );
 
-const DocumentsTile = () => {
-	const { data } = useGetDocumentsQuery({ sort: '-uploadedAt' });
-	const items = data?.items.slice(0, 3) ?? [];
-
-	return (
-		<section className={clsx(styles.widget, styles.documents)} aria-labelledby="home-documents">
-			<div className={styles.heading}>
-				<div>
-					<h2 id="home-documents">Документы компании</h2>
-					<p className={styles.subtitle}>Необходимое для работы с заявками</p>
-				</div>
-				<Link to={ROUTES.documents} className={styles.textLink}>Все документы <Arrow /></Link>
-			</div>
-			{items.length === 0 ? (
-				<p className={styles.empty}>Документов пока нет. Загрузите первый — он пригодится в заявке.</p>
-			) : (
-				<div className={styles.documentGrid}>
-					{items.map((item) => (
-						<Link key={item.id} to={ROUTES.documents} className={styles.documentTile}>
-							<span className={styles.documentIcon}>
-								<Icon name="documents" size={19} />
-								<small>{item.extension}</small>
-							</span>
-							<span>
-								<strong>{item.name}</strong>
-								<small>{item.usage.label ?? `Загружен ${new Date(item.uploadedAt).toLocaleDateString('ru-RU')}`}</small>
-							</span>
-							<Arrow size={14} />
-						</Link>
-					))}
-				</div>
-			)}
-		</section>
-	);
-};
-
-/** Главная по макету home.html: плитки заявок, платежа, быстрых действий, задач, каталога, планов и документов */
+/** Главная по макету home.html: плитки заявок, платежа, быстрых действий, задач, каталога и планов */
 export const HomeDashboard = () => {
 	const { data } = useGetMyApplicationsQuery();
 	const items = data?.items ?? [];
@@ -276,7 +239,6 @@ export const HomeDashboard = () => {
 			<FocusTile items={items} />
 			<FundingTile />
 			<PlanRecommendations className={styles.full} />
-			<DocumentsTile />
 		</div>
 	);
 };

@@ -23,7 +23,6 @@ describe('ClientShell', () => {
 		expect(screen.getByRole('link', { name: 'Мои заявки' })).toHaveAttribute('href', '/applications');
 		expect(screen.getByRole('link', { name: 'Мои кредиты' })).toHaveAttribute('href', '/credits');
 		expect(screen.getByRole('link', { name: 'Каталог' })).toHaveAttribute('href', '/products');
-		expect(screen.getByRole('link', { name: 'Документы' })).toHaveAttribute('href', '/documents');
 		expect(screen.getByRole('link', { name: 'Поддержка' })).toHaveAttribute('href', '/support');
 		expect(screen.getByRole('button', { name: 'Выйти' })).toBeInTheDocument();
 		expect(screen.getByText('Содержимое')).toBeInTheDocument();

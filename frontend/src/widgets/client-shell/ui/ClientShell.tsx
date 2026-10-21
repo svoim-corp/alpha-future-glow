@@ -23,7 +23,6 @@ const NAV: NavEntry[] = [
 	{ to: ROUTES.applications, label: 'Мои заявки', icon: 'applications', end: true },
 	{ to: ROUTES.credits, label: 'Мои кредиты', icon: 'loans', end: false },
 	{ to: ROUTES.products, label: 'Каталог', icon: 'catalog', end: false },
-	{ to: ROUTES.documents, label: 'Документы', icon: 'documents', end: false },
 	{ to: ROUTES.support, label: 'Поддержка', icon: 'support', end: false },
 ];
 
