@@ -2081,6 +2081,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/loans/summary": {
+            "get": {
+                "description": "Сколько действующих кредитов и ближайший платёж: сумма всех платежей компании в ближайшую дату.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Кредиты на главной",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.summaryResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/notifications": {
             "get": {
                 "description": "Последние 50 уведомлений пользователя, новые первыми. unread=true — только непрочитанные.",
@@ -4707,6 +4739,36 @@ const docTemplate = `{
                 "rate": {
                     "type": "number",
                     "example": 21.5
+                }
+            }
+        },
+        "servicing.paymentRefDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 61958
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2026-11-20"
+                }
+            }
+        },
+        "servicing.summaryResponse": {
+            "type": "object",
+            "properties": {
+                "activeLoans": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "nextPayment": {
+                    "description": "null — платежей впереди нет",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/servicing.paymentRefDTO"
+                        }
+                    ]
                 }
             }
         },

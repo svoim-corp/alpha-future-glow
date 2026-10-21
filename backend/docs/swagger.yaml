@@ -1417,6 +1417,25 @@ definitions:
         example: 21.5
         type: number
     type: object
+  servicing.paymentRefDTO:
+    properties:
+      amount:
+        example: 61958
+        type: integer
+      date:
+        example: "2026-11-20"
+        type: string
+    type: object
+  servicing.summaryResponse:
+    properties:
+      activeLoans:
+        example: 1
+        type: integer
+      nextPayment:
+        allOf:
+        - $ref: '#/definitions/servicing.paymentRefDTO'
+        description: null — платежей впереди нет
+    type: object
   shared.ActorType:
     enum:
     - CLIENT
@@ -3532,6 +3551,28 @@ paths:
       summary: Калькулятор платежа
       tags:
       - catalog
+  /loans/summary:
+    get:
+      description: 'Сколько действующих кредитов и ближайший платёж: сумма всех платежей
+        компании в ближайшую дату.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.summaryResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Кредиты на главной
+      tags:
+      - loans
   /notifications:
     get:
       description: Последние 50 уведомлений пользователя, новые первыми. unread=true

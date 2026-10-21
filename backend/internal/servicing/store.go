@@ -58,6 +58,33 @@ func (s *Store) InsertLoan(ctx context.Context, tx *sqlx.Tx, l *loanRow, schedul
 	return nil
 }
 
+// paymentRow — строка графика с кредитом, к которому она относится.
+type paymentRow struct {
+	payment
+	LoanID      string `db:"loan_id"`
+	ProductName string `db:"product_name"`
+	Status      string `db:"status"`
+}
+
+const paymentCols = `p.loan_id, l.product_name, p.n, p.due_date, p.principal, p.interest, p.total, p.status`
+
+// UpcomingPayments — неоплаченные платежи компании с датой не раньше from, ближайшие первыми.
+func (s *Store) UpcomingPayments(ctx context.Context, companyID string, from time.Time, limit int) ([]paymentRow, error) {
+	var out []paymentRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT `+paymentCols+` FROM servicing.payments p JOIN servicing.loans l ON l.id = p.loan_id
+		WHERE l.company_id = $1 AND l.status = 'ACTIVE' AND p.status = 'PLANNED' AND p.due_date >= $2
+		ORDER BY p.due_date, p.loan_id LIMIT $3`, companyID, from, limit)
+	return out, err
+}
+
+// ActiveLoans — число действующих кредитов компании.
+func (s *Store) ActiveLoans(ctx context.Context, companyID string) (int, error) {
+	var n int
+	err := s.db.GetContext(ctx, &n, `SELECT count(*) FROM servicing.loans WHERE company_id = $1 AND status = 'ACTIVE'`, companyID)
+	return n, err
+}
+
 func (s *Store) Reset(ctx context.Context) error {
 	_, err := s.db.ExecContext(ctx, `TRUNCATE servicing.loans CASCADE`)
 	return err

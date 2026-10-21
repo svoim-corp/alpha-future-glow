@@ -38,7 +38,9 @@ func (m *Module) Migrate(ctx context.Context) error {
 
 func (m *Module) Wire(p Ports) { m.ports = p }
 
-func (m *Module) Register(r httpx.Routes) {}
+func (m *Module) Register(r httpx.Routes) {
+	r.Client.GET("/loans/summary", m.summary)
+}
 
 // ResetDemo удаляет кредиты и графики: в демо их выдают заново.
 func (m *Module) ResetDemo(ctx context.Context) error { return m.store.Reset(ctx) }
