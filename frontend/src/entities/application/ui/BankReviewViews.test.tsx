@@ -51,7 +51,7 @@ describe('BankReviewViews', () => {
 	it('история: кто, что и когда', () => {
 		renderWithProviders(<HistoryView history={historyFixture} />);
 
-		expect(screen.getByText('Клиент Петрова А. С.: SUBMIT')).toBeInTheDocument();
-		expect(screen.getByText('Система: CHECKS_DONE')).toBeInTheDocument();
+		expect(screen.getByText('Клиент Петрова А. С.: заявка подана')).toBeInTheDocument();
+		expect(screen.getByText('Система: проверки завершены')).toBeInTheDocument();
 	});
 });

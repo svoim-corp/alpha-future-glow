@@ -11,6 +11,33 @@ import {
 import styles from './BankReviewViews.module.scss';
 import { RiskBadge } from './RiskBadge';
 
+const TAX_REGIME_LABEL: Record<string, string> = {
+	USN_INCOME: 'УСН «Доходы»',
+	USN_INCOME_MINUS_EXPENSES: 'УСН «Доходы минус расходы»',
+	OSNO: 'Общая система налогообложения',
+	PSN: 'Патент',
+};
+
+const PRODUCT_LABEL: Record<string, string> = {
+	WORKING: 'Оборотный кредит',
+	EXPRESS: 'Экспресс-кредит',
+	INVEST: 'Инвестиционный кредит',
+	OVERDRAFT: 'Овердрафт',
+};
+
+const ACTION_LABEL: Record<string, string> = {
+	SUBMIT: 'заявка подана',
+	CHECKS_DONE: 'проверки завершены',
+	INFO_REQUEST: 'запрос информации',
+	INFO_ANSWER: 'ответ на запрос банка',
+	DECISION: 'решение принято',
+	ASSIGN: 'назначен исполнитель',
+	OFFER_ACCEPT: 'условия приняты',
+	OFFER_DECLINE: 'условия отклонены',
+	SIGN: 'договор подписан',
+	DISBURSE: 'кредит выдан',
+};
+
 const SOURCE_LABEL: Record<string, string> = {
 	EGRUL: 'ЕГРЮЛ',
 	EGRIP: 'ЕГРИП',
@@ -49,11 +76,11 @@ export const ApplicantView = ({ data }: { data: BankApplicationDetails }) => (
 			{ label: 'Компания', value: `${data.company.name}, ИНН ${data.company.inn}` },
 			{ label: 'Дата регистрации', value: formatDate(data.company.regDate) },
 			{ label: 'ОКВЭД', value: data.company.okved },
-			{ label: 'Налоговый режим', value: data.company.taxRegime },
+			{ label: 'Налоговый режим', value: TAX_REGIME_LABEL[data.company.taxRegime] ?? data.company.taxRegime },
 			{ label: 'Фактический адрес', value: data.company.actualAddress ?? 'Совпадает с адресом регистрации' },
 			{
 				label: 'Запрос',
-				value: `${formatMoney(data.request.amount)}, ${formatTerm(data.request.term)}, ${data.request.productCode}`,
+				value: `${formatMoney(data.request.amount)}, ${formatTerm(data.request.term)}, ${PRODUCT_LABEL[data.request.productCode] ?? data.request.productCode}`,
 			},
 			{ label: 'Цель', value: data.request.purposeText ?? data.request.goal ?? '—' },
 			...(data.turnover
@@ -82,7 +109,7 @@ export const ApplicantView = ({ data }: { data: BankApplicationDetails }) => (
 );
 
 export const CompletenessView = ({ data }: { data: Completeness }) => (
-	<div>
+	<div className={styles.stack}>
 		{data.complete
 			? <Alert tone="success" title="Анкета заполнена полностью" />
 			: <Alert tone="warning" title="В анкете есть пробелы" />}
@@ -113,7 +140,7 @@ export const ChecksView = ({ checks }: { checks: ExternalCheck[] }) => (
 );
 
 export const ScoreView = ({ score }: { score: Score }) => (
-	<div>
+	<div className={styles.stack}>
 		<p className={styles.big}>{score.score}</p>
 		<RiskBadge band={score.riskBand} />
 		<p className={styles.muted}>
@@ -150,7 +177,7 @@ export const HistoryView = ({ history }: { history: HistoryEntry[] }) => (
 			<li key={`${entry.at}-${entry.action}`}>
 				<span className={styles.row}>
 					<span>
-						{`${ACTOR[entry.actor.type]}${entry.actor.name ? ` ${entry.actor.name}` : ''}: ${entry.action}`}
+						{`${ACTOR[entry.actor.type]}${entry.actor.name ? ` ${entry.actor.name}` : ''}: ${ACTION_LABEL[entry.action] ?? entry.action}`}
 					</span>
 					<span className={styles.muted}>{formatDateTime(entry.at)}</span>
 				</span>

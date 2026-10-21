@@ -15,7 +15,8 @@ export const LoginPage = () => {
 	return (
 		<main className={styles.page}>
 			<div className={styles.panel}>
-				<div>
+				<div className={styles.head}>
+					<span className={styles.logo} aria-hidden="true">К.</span>
 					<h1 className={styles.title}>Умный кредитный кабинет</h1>
 					<p className={styles.lead}>Войдите, чтобы подобрать кредит и следить за заявкой.</p>
 				</div>

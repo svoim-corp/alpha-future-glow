@@ -26,8 +26,14 @@ export const AssignApplication = ({ item }: { item: Pick<BankQueueItem, 'id' | '
 
 	return (
 		<>
-			<Button variant="secondary" compact loading={isLoading} onClick={() => void onClick()}>
-				{`Взять в работу ${item.number}`}
+			<Button
+				variant="secondary"
+				compact
+				loading={isLoading}
+				aria-label={`Взять в работу ${item.number}`}
+				onClick={() => void onClick()}
+			>
+				Взять в работу
 			</Button>
 			{failure && <Alert tone="danger" title={failure} />}
 		</>

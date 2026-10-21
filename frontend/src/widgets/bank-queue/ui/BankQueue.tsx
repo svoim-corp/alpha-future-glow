@@ -14,7 +14,7 @@ import {
 import { AssignApplication } from '@features/assign-application';
 import { paths } from '@shared/config';
 import { formatDateTime, formatMoney, formatTerm } from '@shared/lib/format';
-import { AsyncBoundary, Button, DataTable, SelectField } from '@shared/ui';
+import { AsyncBoundary, Button, DataTable, Metrics, SelectField } from '@shared/ui';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
@@ -68,14 +68,10 @@ const Stats = () => {
 			errorText="Не удалось загрузить счётчики"
 		>
 			{data && (
-				<dl className={styles.stats}>
-					{STAT_LABELS.map(([key, label]) => (
-						<div key={key} className={styles.stat}>
-							<dt>{label}</dt>
-							<dd>{data[key]}</dd>
-						</div>
-					))}
-				</dl>
+				<Metrics
+					label="Заявки по этапам"
+					items={STAT_LABELS.map(([key, label]) => ({ label, value: data[key] }))}
+				/>
 			)}
 		</AsyncBoundary>
 	);
@@ -146,7 +142,7 @@ export const BankQueue = () => {
 								{
 									key: 'company',
 									header: 'Компания',
-									render: (row) => `${row.company.name}, ИНН ${row.company.inn}`,
+									render: (row) => row.company.name,
 								},
 								{ key: 'product', header: 'Продукт', render: (row) => row.product.name },
 								{

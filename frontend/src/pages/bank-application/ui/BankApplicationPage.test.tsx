@@ -34,7 +34,7 @@ describe('BankApplicationPage', () => {
 		expect(await screen.findByText('Анкета заполнена полностью')).toBeInTheDocument();
 		expect(await screen.findByText('ЕГРЮЛ')).toBeInTheDocument();
 		expect(await screen.findByText('+80 баллов')).toBeInTheDocument();
-		expect(await screen.findByText('Клиент Петрова А. С.: SUBMIT')).toBeInTheDocument();
+		expect(await screen.findByText('Клиент Петрова А. С.: заявка подана')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Иные условия' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Запросить информацию' })).toBeInTheDocument();
 	});
