@@ -32,9 +32,13 @@ const Upcoming = () => {
 		>
 			<ul className={styles.upcoming} aria-label="Ближайшие платежи">
 				{data?.map((item) => (
-					<li key={`${item.loanId}-${item.date}`}>
-						{`${formatDate(item.date)} — ${formatMoney(item.amount)}, ${item.productName} `}
-						<PaymentStatusBadge status={item.status} />
+					<li key={`${item.loanId}-${item.date}`} className={styles.item}>
+						<span className={styles.itemDate}>{formatDate(item.date)}</span>
+						<span className={styles.itemAmount}>{formatMoney(item.amount)}</span>
+						<span className={styles.itemMeta}>
+							{item.productName}
+							<PaymentStatusBadge status={item.status} />
+						</span>
 					</li>
 				))}
 			</ul>
@@ -56,7 +60,7 @@ export const PaymentCalendar = () => {
 	return (
 		<div className={styles.wrap}>
 			<Card aria-labelledby="cal-upcoming">
-				<h2 id="cal-upcoming">Ближайшие платежи</h2>
+				<h2 id="cal-upcoming" className={styles.title}>Ближайшие платежи</h2>
 				<Upcoming />
 			</Card>
 			<Card aria-labelledby="cal-month">
@@ -86,7 +90,7 @@ export const PaymentCalendar = () => {
 								{buildMonthGrid(current).map((week) => (
 									<tr key={week.find(Boolean) ?? 'empty'}>
 										{week.map((date, index) => (
-											<td key={date ?? `empty-${index}`} className={styles.cell}>
+											<td key={date ?? `empty-${index}`} className={date ? styles.cell : `${styles.cell} ${styles.empty}`}>
 												{date && (
 													<>
 														<span className={styles.day}>{Number(date.slice(8))}</span>

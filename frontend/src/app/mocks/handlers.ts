@@ -550,7 +550,11 @@ export const handlers = [
 
 		return HttpResponse.json({ activeLoans: db.loans.length, nextPayment: next });
 	}),
-	http.get(url('/loans/schedule/upcoming'), () => HttpResponse.json(scheduleFixture)),
+	http.get(url('/loans/schedule/upcoming'), ({ request }) => {
+		const limit = Number(new URL(request.url).searchParams.get('limit') ?? scheduleFixture.length);
+
+		return HttpResponse.json(scheduleFixture.slice(0, limit));
+	}),
 	http.get(url('/loans/schedule'), () => HttpResponse.json(scheduleFixture)),
 	http.get(url('/loans'), () => HttpResponse.json(db.loans.map((entry) => entry.loan))),
 	http.get(url('/loans/:id'), ({ params }) => {

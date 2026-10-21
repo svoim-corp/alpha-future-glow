@@ -1,6 +1,53 @@
 .wrap {
 	display: grid;
 	gap: var(--space-5);
+	align-items: start;
+	grid-template-columns: 320px minmax(0, 1fr);
+
+	@media (max-width: 1100px) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.title {
+	margin: 0 0 var(--space-4);
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.upcoming {
+	display: grid;
+	gap: var(--space-3);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.item {
+	display: grid;
+	gap: var(--space-1);
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-background);
+	border-radius: var(--radius-control);
+}
+
+.itemDate {
+	font-size: 13px;
+	color: var(--color-text-muted);
+}
+
+.itemAmount {
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.itemMeta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+	font-size: 14px;
 }
 
 .nav {
@@ -8,37 +55,67 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--space-3);
+	margin-bottom: var(--space-4);
+
+	@media (max-width: 760px) {
+		flex-wrap: wrap;
+
+		> :first-child { order: 1; flex: 1; }
+		> :last-child { order: 2; flex: 1; }
+	}
 }
 
 .month {
 	margin: 0;
-	font-size: 18px;
-	font-weight: 600;
+	font-size: 20px;
+	font-weight: 700;
+	text-align: center;
 	text-transform: capitalize;
+
+	@media (max-width: 760px) {
+		order: 0;
+		flex-basis: 100%;
+	}
 }
 
 .table {
 	width: 100%;
+	min-width: 0;
 	table-layout: fixed;
-	border-collapse: collapse;
+	border-collapse: separate;
+	border-spacing: 6px;
 }
 
 .table th {
-	padding: var(--space-2);
-	font-size: 13px;
+	padding: var(--space-1) var(--space-2);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
 	color: var(--color-text-muted);
 	text-align: left;
+	text-transform: uppercase;
 }
 
 .cell {
 	height: 88px;
 	padding: var(--space-2);
 	vertical-align: top;
-	border: 1px solid var(--color-border);
+	background: var(--color-background);
+	border-radius: var(--radius-control);
+
+	@media (max-width: 760px) {
+		height: 64px;
+		padding: var(--space-1);
+	}
+}
+
+.empty {
+	background: transparent;
 }
 
 .day {
 	font-size: 13px;
+	font-weight: 600;
 	color: var(--color-text-muted);
 }
 
@@ -46,19 +123,14 @@
 	display: block;
 	margin-top: var(--space-1);
 	padding: 2px var(--space-2);
-	font-size: 13px;
+	overflow: hidden;
+	font-size: 12px;
 	font-weight: 600;
 	color: var(--color-primary-text);
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	background: var(--color-primary-soft);
 	border-radius: var(--radius-sm);
-}
-
-.upcoming {
-	display: grid;
-	gap: var(--space-2);
-	margin: 0;
-	padding: 0;
-	list-style: none;
 }
 
 .scroll {
