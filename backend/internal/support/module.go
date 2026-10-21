@@ -41,6 +41,7 @@ func (m *Module) Wire(p Ports) { m.ports = p }
 func (m *Module) Register(r httpx.Routes) {
 	r.Public.GET("/support/faq", m.faq)
 	r.Client.POST("/support/tickets", m.createTicket)
+	r.Client.GET("/support/tickets", m.listTickets)
 }
 
 // ResetDemo удаляет обращения; частые вопросы — seed и остаются.

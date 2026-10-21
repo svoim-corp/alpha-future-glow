@@ -95,3 +95,40 @@ func (m *Module) createTicket(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusCreated, ticketCreatedDTO{ID: t.ID, Status: t.Status, CreatedAt: t.CreatedAt})
 }
+
+// ticketsLimit — на странице поддержки показываются последние обращения.
+const ticketsLimit = 100
+
+type ticketDTO struct {
+	ID            string    `json:"id" example:"t-12"`
+	Subject       string    `json:"subject" example:"Устаревший фактический адрес"`
+	Text          string    `json:"text" example:"В заявке старый адрес склада, мы переехали"`
+	Status        string    `json:"status" example:"OPEN"` // OPEN, ANSWERED, CLOSED
+	Reply         *string   `json:"reply" example:"Обновили адрес в данных банка"`
+	ApplicationID *string   `json:"applicationId" example:"a-1031"`
+	UpdatedAt     time.Time `json:"updatedAt" example:"2026-10-20T11:30:00Z"`
+}
+
+// listTickets godoc
+//
+//	@Summary		Мои обращения
+//	@Description	Последние 100 обращений пользователя, недавно изменённые первыми.
+//	@Tags			support
+//	@Produce		json
+//	@Success		200	{array}		ticketDTO
+//	@Failure		401	{object}	httpx.ErrorBody
+//	@Router			/support/tickets [get]
+func (m *Module) listTickets(c *gin.Context) {
+	rows, err := m.store.Tickets(c.Request.Context(), auth.UserFrom(c).ID, ticketsLimit)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	out := make([]ticketDTO, len(rows))
+	for i, r := range rows {
+		out[i] = ticketDTO{
+			ID: r.ID, Subject: r.Subject, Text: r.Text, Status: r.Status, Reply: r.Reply, ApplicationID: r.ApplicationID, UpdatedAt: r.UpdatedAt.UTC(),
+		}
+	}
+	httpx.JSON(c, http.StatusOK, out)
+}

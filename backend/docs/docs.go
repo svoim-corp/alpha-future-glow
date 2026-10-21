@@ -2175,6 +2175,33 @@ const docTemplate = `{
             }
         },
         "/support/tickets": {
+            "get": {
+                "description": "Последние 100 обращений пользователя, недавно изменённые первыми.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Мои обращения",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/support.ticketDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "applicationId — необязательно, только заявка своей компании.",
                 "consumes": [
@@ -4311,6 +4338,40 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "OPEN"
+                }
+            }
+        },
+        "support.ticketDTO": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "string",
+                    "example": "a-1031"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "t-12"
+                },
+                "reply": {
+                    "type": "string",
+                    "example": "Обновили адрес в данных банка"
+                },
+                "status": {
+                    "description": "OPEN, ANSWERED, CLOSED",
+                    "type": "string",
+                    "example": "OPEN"
+                },
+                "subject": {
+                    "type": "string",
+                    "example": "Устаревший фактический адрес"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "В заявке старый адрес склада, мы переехали"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T11:30:00Z"
                 }
             }
         },

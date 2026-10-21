@@ -1449,6 +1449,31 @@ definitions:
         example: OPEN
         type: string
     type: object
+  support.ticketDTO:
+    properties:
+      applicationId:
+        example: a-1031
+        type: string
+      id:
+        example: t-12
+        type: string
+      reply:
+        example: Обновили адрес в данных банка
+        type: string
+      status:
+        description: OPEN, ANSWERED, CLOSED
+        example: OPEN
+        type: string
+      subject:
+        example: Устаревший фактический адрес
+        type: string
+      text:
+        example: В заявке старый адрес склада, мы переехали
+        type: string
+      updatedAt:
+        example: "2026-10-20T11:30:00Z"
+        type: string
+    type: object
   support.ticketRequest:
     properties:
       applicationId:
@@ -3397,6 +3422,24 @@ paths:
       tags:
       - support
   /support/tickets:
+    get:
+      description: Последние 100 обращений пользователя, недавно изменённые первыми.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/support.ticketDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Мои обращения
+      tags:
+      - support
     post:
       consumes:
       - application/json

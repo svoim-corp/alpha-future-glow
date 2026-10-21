@@ -165,3 +165,19 @@ func TestCreateTicket(t *testing.T) {
 		})
 	}
 }
+
+func TestListTickets(t *testing.T) {
+	e := newEnv(t)
+	e.as("smirnov", "POST", "/api/v1/support/tickets", `{"subject":"первое","text":"x","applicationId":"a-1"}`)
+	e.as("smirnov", "POST", "/api/v1/support/tickets", `{"subject":"второе","text":"y"}`)
+	e.as("petrova", "POST", "/api/v1/support/tickets", `{"subject":"коллеги","text":"z"}`)
+
+	got := decode[[]ticketDTO](t, e.as("smirnov", "GET", "/api/v1/support/tickets", ""))
+	if len(got) != 2 || got[0].Subject != "второе" || got[1].ApplicationID == nil || *got[1].ApplicationID != "a-1" ||
+		got[0].Status != "OPEN" || got[0].Reply != nil {
+		t.Fatalf("обращения: %+v", got)
+	}
+	if empty := e.as("orlova", "GET", "/api/v1/support/tickets", ""); empty.Body.String() != "[]" {
+		t.Fatalf("без обращений — пустой массив: %s", empty.Body.String())
+	}
+}

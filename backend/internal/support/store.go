@@ -44,6 +44,15 @@ func (s *Store) InsertTicket(ctx context.Context, t *ticketRow) error {
 		RETURNING id`, t.UserID, t.CompanyID, t.ApplicationID, t.Subject, t.Text, t.Status, t.CreatedAt)
 }
 
+// Tickets — обращения пользователя, недавно изменённые первыми.
+func (s *Store) Tickets(ctx context.Context, userID string, limit int) ([]ticketRow, error) {
+	var out []ticketRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT id, user_id, company_id, application_id, subject, text, status, reply, created_at, updated_at
+		FROM support.tickets WHERE user_id = $1 ORDER BY updated_at DESC, id DESC LIMIT $2`, userID, limit)
+	return out, err
+}
+
 func (s *Store) ResetTickets(ctx context.Context) error {
 	_, err := s.db.ExecContext(ctx, `TRUNCATE support.tickets`)
 	return err
