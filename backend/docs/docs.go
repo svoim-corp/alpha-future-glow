@@ -2173,6 +2173,58 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/support/tickets": {
+            "post": {
+                "description": "applicationId — необязательно, только заявка своей компании.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Новое обращение в поддержку",
+                "parameters": [
+                    {
+                        "description": "Обращение",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/support.ticketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/support.ticketCreatedDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4242,6 +4294,47 @@ const docTemplate = `{
                 "step": {
                     "type": "string",
                     "example": "APPLICATION"
+                }
+            }
+        },
+        "support.ticketCreatedDTO": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-20T11:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "t-12"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OPEN"
+                }
+            }
+        },
+        "support.ticketRequest": {
+            "type": "object",
+            "required": [
+                "subject",
+                "text"
+            ],
+            "properties": {
+                "applicationId": {
+                    "description": "со страницы заявки подставляется сам",
+                    "type": "string",
+                    "example": "a-1031"
+                },
+                "subject": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Устаревший фактический адрес"
+                },
+                "text": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "example": "В заявке старый адрес склада, мы переехали"
                 }
             }
         },

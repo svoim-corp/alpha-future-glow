@@ -1437,6 +1437,36 @@ definitions:
         example: APPLICATION
         type: string
     type: object
+  support.ticketCreatedDTO:
+    properties:
+      createdAt:
+        example: "2026-10-20T11:00:00Z"
+        type: string
+      id:
+        example: t-12
+        type: string
+      status:
+        example: OPEN
+        type: string
+    type: object
+  support.ticketRequest:
+    properties:
+      applicationId:
+        description: со страницы заявки подставляется сам
+        example: a-1031
+        type: string
+      subject:
+        example: Устаревший фактический адрес
+        maxLength: 200
+        type: string
+      text:
+        example: В заявке старый адрес склада, мы переехали
+        maxLength: 4000
+        type: string
+    required:
+    - subject
+    - text
+    type: object
   underwriting.answerBody:
     properties:
       answers:
@@ -3364,6 +3394,40 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Частые вопросы
+      tags:
+      - support
+  /support/tickets:
+    post:
+      consumes:
+      - application/json
+      description: applicationId — необязательно, только заявка своей компании.
+      parameters:
+      - description: Обращение
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/support.ticketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/support.ticketCreatedDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Новое обращение в поддержку
       tags:
       - support
 swagger: "2.0"
