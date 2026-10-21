@@ -420,6 +420,45 @@ definitions:
         example: EXPRESS
         type: string
     type: object
+  offer.contractResponse:
+    properties:
+      disbursed:
+        example: false
+        type: boolean
+      documents:
+        items:
+          $ref: '#/definitions/offer.documentDTO'
+        type: array
+      number:
+        example: КД-2026-0001
+        type: string
+      signed:
+        example: false
+        type: boolean
+      terms:
+        $ref: '#/definitions/offer.contractTermsDTO'
+    type: object
+  offer.contractTermsDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      firstPaymentDate:
+        example: "2026-11-20"
+        type: string
+      monthlyPayment:
+        example: 61958
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      rate:
+        example: 21.5
+        type: number
+      term:
+        example: 24
+        type: integer
+    type: object
   offer.declineRequest:
     properties:
       reason:
@@ -428,6 +467,18 @@ definitions:
         type: string
     required:
     - reason
+    type: object
+  offer.documentDTO:
+    properties:
+      id:
+        example: d-1
+        type: string
+      title:
+        example: Кредитный договор
+        type: string
+      url:
+        example: /api/v1/applications/a-1031/contract/documents/d-1
+        type: string
     type: object
   offer.offerResponse:
     properties:
@@ -2327,6 +2378,34 @@ paths:
       summary: Согласие на запрос в БКИ
       tags:
       - applications
+  /applications/{id}/contract:
+    get:
+      description: Итоговые условия и документы. Есть после принятия предложения;
+        договор поручительства — только у ООО с поручителем.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.contractResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Предложение ещё не принято
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Договор к подписанию
+      tags:
+      - offer
   /applications/{id}/guarantor/consent-bki:
     post:
       consumes:

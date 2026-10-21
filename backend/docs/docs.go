@@ -417,6 +417,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/contract": {
+            "get": {
+                "description": "Итоговые условия и документы. Есть после принятия предложения; договор поручительства — только у ООО с поручителем.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Договор к подписанию",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/offer.contractResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Предложение ещё не принято",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/guarantor/consent-bki": {
             "post": {
                 "description": "Для выбранного поручителя, на этапе 2. При смене поручителя согласие нужно дать заново.",
@@ -3029,6 +3070,61 @@ const docTemplate = `{
                 }
             }
         },
+        "offer.contractResponse": {
+            "type": "object",
+            "properties": {
+                "disbursed": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/offer.documentDTO"
+                    }
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КД-2026-0001"
+                },
+                "signed": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "terms": {
+                    "$ref": "#/definitions/offer.contractTermsDTO"
+                }
+            }
+        },
+        "offer.contractTermsDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "firstPaymentDate": {
+                    "type": "string",
+                    "example": "2026-11-20"
+                },
+                "monthlyPayment": {
+                    "type": "integer",
+                    "example": 61958
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 21.5
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
         "offer.declineRequest": {
             "type": "object",
             "required": [
@@ -3039,6 +3135,23 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 1000,
                     "example": "Нашли финансирование в другом месте"
+                }
+            }
+        },
+        "offer.documentDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "d-1"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Кредитный договор"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "/api/v1/applications/a-1031/contract/documents/d-1"
                 }
             }
         },

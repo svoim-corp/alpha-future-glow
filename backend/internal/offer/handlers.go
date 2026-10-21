@@ -167,3 +167,67 @@ func (m *Module) declineOffer(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, statusResponse{Status: shared.StatusClosed})
 }
+
+type contractTermsDTO struct {
+	ProductCode      string  `json:"productCode" example:"WORKING"`
+	Amount           int64   `json:"amount" example:"1200000"`
+	Term             int     `json:"term" example:"24"`
+	Rate             float64 `json:"rate" example:"21.5"`
+	MonthlyPayment   int64   `json:"monthlyPayment" example:"61958"`
+	FirstPaymentDate string  `json:"firstPaymentDate" example:"2026-11-20"`
+}
+
+type documentDTO struct {
+	ID    string `json:"id" example:"d-1"`
+	Title string `json:"title" example:"Кредитный договор"`
+	URL   string `json:"url" example:"/api/v1/applications/a-1031/contract/documents/d-1"`
+}
+
+type contractResponse struct {
+	Number    string           `json:"number" example:"КД-2026-0001"`
+	Terms     contractTermsDTO `json:"terms"`
+	Documents []documentDTO    `json:"documents"`
+	Signed    bool             `json:"signed" example:"false"`
+	Disbursed bool             `json:"disbursed" example:"false"`
+}
+
+func documentURL(appID, docID string) string {
+	return "/api/v1/applications/" + appID + "/contract/documents/" + docID
+}
+
+// getContract godoc
+//
+//	@Summary		Договор к подписанию
+//	@Description	Итоговые условия и документы. Есть после принятия предложения; договор поручительства — только у ООО с поручителем.
+//	@Tags			offer
+//	@Produce		json
+//	@Param			id	path		string	true	"ID заявки"
+//	@Success		200	{object}	contractResponse
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody	"Предложение ещё не принято"
+//	@Router			/applications/{id}/contract [get]
+func (m *Module) getContract(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	k, err := m.contractOf(c.Request.Context(), c.Param("id"), company)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	o := k.o
+	resp := contractResponse{
+		Number: *o.ContractNumber,
+		Terms: contractTermsDTO{
+			ProductCode: o.ProductCode, Amount: o.Amount, Term: o.Term, Rate: o.Rate, MonthlyPayment: o.MonthlyPayment,
+			FirstPaymentDate: k.firstPaymentDate(m.now()).Format(dateLayout),
+		},
+		Documents: make([]documentDTO, len(k.docs)),
+	}
+	for i, d := range k.docs {
+		resp.Documents[i] = documentDTO{ID: d, Title: docTitles[d], URL: documentURL(k.app.ID, d)}
+	}
+	httpx.JSON(c, http.StatusOK, resp)
+}

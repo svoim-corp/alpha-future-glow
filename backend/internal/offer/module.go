@@ -47,6 +47,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/applications/:id/offer", m.getOffer)
 	r.Client.POST("/applications/:id/offer/accept", m.acceptOffer)
 	r.Client.POST("/applications/:id/offer/decline", m.declineOffer)
+	r.Client.GET("/applications/:id/contract", m.getContract)
 }
 
 // ResetDemo удаляет предложения и договоры: они относятся к заявкам демо.
