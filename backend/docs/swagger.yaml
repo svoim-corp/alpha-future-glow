@@ -1,5 +1,107 @@
 basePath: /api/v1
 definitions:
+  company.candidateDTO:
+    properties:
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      personId:
+        example: p-1
+        type: string
+      roles:
+        example:
+        - HEAD
+        - FOUNDER
+        items:
+          $ref: '#/definitions/shared.PersonRole'
+        type: array
+    type: object
+  company.founderDTO:
+    properties:
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      personId:
+        example: p-1
+        type: string
+      share:
+        example: 100
+        type: number
+    type: object
+  company.girboDTO:
+    properties:
+      accounted:
+        example: true
+        type: boolean
+    type: object
+  company.okvedDTO:
+    properties:
+      code:
+        example: "10.71"
+        type: string
+      name:
+        example: Производство хлеба
+        type: string
+    type: object
+  company.personRefDTO:
+    properties:
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      personId:
+        example: p-1
+        type: string
+    type: object
+  company.profileResponse:
+    properties:
+      actualAddress:
+        example: г. Москва, ул. Складская, 3
+        type: string
+      founders:
+        items:
+          $ref: '#/definitions/company.founderDTO'
+        type: array
+      girbo:
+        allOf:
+        - $ref: '#/definitions/company.girboDTO'
+        description: 'null у ИП: ГИР БО ведётся только по юрлицам'
+      guarantorCandidates:
+        items:
+          $ref: '#/definitions/company.candidateDTO'
+        type: array
+      head:
+        $ref: '#/definitions/company.personRefDTO'
+      okved:
+        $ref: '#/definitions/company.okvedDTO'
+      regAddress:
+        example: г. Москва, ул. Пекарская, 7
+        type: string
+      source:
+        example:
+        - BANK
+        - EGRUL
+        items:
+          $ref: '#/definitions/shared.CheckSource'
+        type: array
+      taxRegime:
+        example: USN_INCOME_MINUS_EXPENSES
+        type: string
+      turnover:
+        $ref: '#/definitions/company.turnoverDTO'
+    type: object
+  company.turnoverDTO:
+    properties:
+      avgMonthlyIncome:
+        example: 1840000
+        type: integer
+      periodMonths:
+        example: 12
+        type: integer
+      source:
+        allOf:
+        - $ref: '#/definitions/shared.CheckSource'
+        example: BANK_ACCOUNTS
+    type: object
   httpx.ErrorBody:
     properties:
       code:
@@ -86,6 +188,48 @@ definitions:
         - $ref: '#/definitions/shared.Role'
         example: CLIENT
     type: object
+  shared.CheckSource:
+    enum:
+    - BANK
+    - BANK_ACCOUNTS
+    - EGRUL
+    - TRANSPARENT_BUSINESS
+    - BKI
+    - FNS
+    - GIRBO
+    - COURTS
+    type: string
+    x-enum-comments:
+      SourceEGRUL: ЕГРЮЛ или ЕГРИП — по типу компании
+      SourceGIRBO: только ООО
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ЕГРЮЛ или ЕГРИП — по типу компании
+    - ""
+    - ""
+    - ""
+    - только ООО
+    - ""
+    x-enum-varnames:
+    - SourceBank
+    - SourceBankAccounts
+    - SourceEGRUL
+    - SourceTransparentBusiness
+    - SourceBKI
+    - SourceFNS
+    - SourceGIRBO
+    - SourceCourts
+  shared.PersonRole:
+    enum:
+    - HEAD
+    - FOUNDER
+    - REPRESENTATIVE
+    type: string
+    x-enum-varnames:
+    - PersonHead
+    - PersonFounder
+    - PersonRepresentative
   shared.Role:
     enum:
     - CLIENT
@@ -100,6 +244,42 @@ info:
   title: Умный кредитный кабинет API
   version: "1.0"
 paths:
+  /applications/{id}/company-profile:
+    get:
+      description: Профиль из клиентской базы банка, сверенный с реестрами. Только
+        для чтения.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/company.profileResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Данные о компании для заявки
+      tags:
+      - applications
   /auth/login:
     post:
       consumes:

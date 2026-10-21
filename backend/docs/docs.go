@@ -15,6 +15,59 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/applications/{id}/company-profile": {
+            "get": {
+                "description": "Профиль из клиентской базы банка, сверенный с реестрами. Только для чтения.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Данные о компании для заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/company.profileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -106,6 +159,158 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "company.candidateDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shared.PersonRole"
+                    },
+                    "example": [
+                        "HEAD",
+                        "FOUNDER"
+                    ]
+                }
+            }
+        },
+        "company.founderDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                },
+                "share": {
+                    "type": "number",
+                    "example": 100
+                }
+            }
+        },
+        "company.girboDTO": {
+            "type": "object",
+            "properties": {
+                "accounted": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "company.okvedDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "10.71"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Производство хлеба"
+                }
+            }
+        },
+        "company.personRefDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                }
+            }
+        },
+        "company.profileResponse": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Складская, 3"
+                },
+                "founders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/company.founderDTO"
+                    }
+                },
+                "girbo": {
+                    "description": "null у ИП: ГИР БО ведётся только по юрлицам",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/company.girboDTO"
+                        }
+                    ]
+                },
+                "guarantorCandidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/company.candidateDTO"
+                    }
+                },
+                "head": {
+                    "$ref": "#/definitions/company.personRefDTO"
+                },
+                "okved": {
+                    "$ref": "#/definitions/company.okvedDTO"
+                },
+                "regAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Пекарская, 7"
+                },
+                "source": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shared.CheckSource"
+                    },
+                    "example": [
+                        "BANK",
+                        "EGRUL"
+                    ]
+                },
+                "taxRegime": {
+                    "type": "string",
+                    "example": "USN_INCOME_MINUS_EXPENSES"
+                },
+                "turnover": {
+                    "$ref": "#/definitions/company.turnoverDTO"
+                }
+            }
+        },
+        "company.turnoverDTO": {
+            "type": "object",
+            "properties": {
+                "avgMonthlyIncome": {
+                    "type": "integer",
+                    "example": 1840000
+                },
+                "periodMonths": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
         "httpx.ErrorBody": {
             "type": "object",
             "properties": {
@@ -234,6 +439,56 @@ const docTemplate = `{
                     "example": "CLIENT"
                 }
             }
+        },
+        "shared.CheckSource": {
+            "type": "string",
+            "enum": [
+                "BANK",
+                "BANK_ACCOUNTS",
+                "EGRUL",
+                "TRANSPARENT_BUSINESS",
+                "BKI",
+                "FNS",
+                "GIRBO",
+                "COURTS"
+            ],
+            "x-enum-comments": {
+                "SourceEGRUL": "ЕГРЮЛ или ЕГРИП — по типу компании",
+                "SourceGIRBO": "только ООО"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "ЕГРЮЛ или ЕГРИП — по типу компании",
+                "",
+                "",
+                "",
+                "только ООО",
+                ""
+            ],
+            "x-enum-varnames": [
+                "SourceBank",
+                "SourceBankAccounts",
+                "SourceEGRUL",
+                "SourceTransparentBusiness",
+                "SourceBKI",
+                "SourceFNS",
+                "SourceGIRBO",
+                "SourceCourts"
+            ]
+        },
+        "shared.PersonRole": {
+            "type": "string",
+            "enum": [
+                "HEAD",
+                "FOUNDER",
+                "REPRESENTATIVE"
+            ],
+            "x-enum-varnames": [
+                "PersonHead",
+                "PersonFounder",
+                "PersonRepresentative"
+            ]
         },
         "shared.Role": {
             "type": "string",

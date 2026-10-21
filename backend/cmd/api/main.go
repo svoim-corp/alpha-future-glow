@@ -90,6 +90,11 @@ func run(log *slog.Logger) error {
 	plannerMod := planner.New(deps)
 
 	// Связи между зонами (shared-интерфейсы). Пока у поставщика нет реализации, он отдаёт заглушку из своего ports.go.
+	companyMod.Wire(company.Ports{
+		BankData:     integrationsMod.BankData(),
+		Registries:   integrationsMod.Registries(),
+		Applications: originationMod.Applications(),
+	})
 	identityMod.Wire(identity.Ports{Companies: companyMod.Companies()})
 	originationMod.Wire(origination.Ports{
 		Products:    catalogMod.Products(),
