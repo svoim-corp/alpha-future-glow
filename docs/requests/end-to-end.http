@@ -1,0 +1,263 @@
+# Сквозной сценарий «Умного кредитного кабинета»:
+# вход → каталог → черновик → этап 1 → этап 2 → отправка → разбор сотрудником → решение → оффер → подписание → выдача.
+#
+# Формат — JetBrains HTTP Client (GoLand, IntelliJ) и httpyac (CLI и расширение VS Code); cookie сессии
+# запоминаются между запросами, id заявки и кредита — через client.global. Прогон из консоли:
+#   cd docs/requests && npx httpyac send end-to-end.http --all
+#
+# Клиент — morozov (ООО «Альфа-Трейд»): после отправки заявка ждёт сотрудника, и решение принимает ivanova.
+# Для автоодобрения возьмите smirnov и сумму 1 500 000 — шаги «разбор» и «решение» пройдут сами.
+# Перед прогоном — сброс демо-данных (только APP_PROFILE=demo).
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### Сброс демо-данных
+POST {{host}}/admin/seed/reset
+
+### Готовность: БД и моки
+GET {{host}}/ready
+
+###############################################################################
+# 1. Вход клиента
+###############################################################################
+
+### Вход
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "login": "morozov", "password": "demo123" }
+
+### Текущий пользователь и компания
+GET {{api}}/auth/me
+
+###############################################################################
+# 2. Каталог
+###############################################################################
+
+### Линейка продуктов
+GET {{api}}/products
+
+### Цели для подбора
+GET {{api}}/products/goals
+
+### Подбор по задаче
+POST {{api}}/products/match
+Content-Type: application/json
+
+{ "goal": "WORKING_CAPITAL", "amount": 3000000, "term": 24 }
+
+### Условия продукта
+GET {{api}}/products/WORKING
+
+### Калькулятор платежа
+POST {{api}}/calculator/payment
+Content-Type: application/json
+
+{ "productCode": "WORKING", "amount": 3000000, "term": 24 }
+
+###############################################################################
+# 3. Черновик
+###############################################################################
+
+### Черновик: компания — из пользователя, полномочия — из данных банка
+POST {{api}}/applications
+Content-Type: application/json
+
+{ "productCode": "WORKING", "amount": 3000000, "term": 24, "goal": "WORKING_CAPITAL" }
+
+> {% client.global.set("appId", response.body.id); %}
+
+### Состояние заявки для мастера
+GET {{api}}/applications/{{appId}}
+
+### Мои заявки
+GET {{api}}/applications?mine=true
+
+###############################################################################
+# 4. Этап 1: согласие на БКИ и предварительное решение
+###############################################################################
+
+### Согласие на запрос в БКИ
+POST {{api}}/applications/{{appId}}/consents/bki
+Content-Type: application/json
+
+{ "given": true, "text": "Согласен на запрос моей кредитной истории в бюро кредитных историй" }
+
+### Предварительное решение: LIMIT, лимит 3 900 000, сумма в лимите
+POST {{api}}/applications/{{appId}}/prelim
+
+###############################################################################
+# 5. Этап 2: данные банка, поручитель, проверка полноты
+###############################################################################
+
+### Данные банка о компании: кандидаты в поручители
+GET {{api}}/applications/{{appId}}/company-profile
+
+> {% client.global.set("guarantorId", response.body.guarantorCandidates[0].personId); %}
+
+### Этап 2 открыт: текущая версия для If-Match
+GET {{api}}/applications/{{appId}}
+
+> {% client.global.set("version", response.body.version); %}
+
+### Выбор поручителя из кандидатов банка
+PATCH {{api}}/applications/{{appId}}
+Content-Type: application/json
+If-Match: {{version}}
+
+{ "stage2": { "guarantor": { "personId": "{{guarantorId}}" } } }
+
+> {% client.global.set("version", response.body.version); %}
+
+### Согласие поручителя на запрос в БКИ
+POST {{api}}/applications/{{appId}}/guarantor/consent-bki
+Content-Type: application/json
+
+{ "given": true }
+
+### Проверка полноты: остаётся только подтверждение достоверности
+POST {{api}}/applications/{{appId}}/validate
+
+###############################################################################
+# 6. Отправка
+###############################################################################
+
+### Отправка: номер КЗ-…, статус SUBMITTED, конвейер банка — в фоне
+POST {{api}}/applications/{{appId}}/submit
+Content-Type: application/json
+If-Match: {{version}}
+Idempotency-Key: {{$guid}}
+
+{ "truthConfirmed": true }
+
+### Таймлайн: через пару секунд конвейер доведёт заявку до «На решении»
+GET {{api}}/applications/{{appId}}/timeline
+
+###############################################################################
+# 7. Разбор заявки сотрудником банка
+###############################################################################
+
+### Вход сотрудника
+# @sleep 3000
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "login": "ivanova", "password": "demo123" }
+
+### Сводка очереди
+GET {{api}}/bank/applications/stats
+
+### Очередь: заявки, ждущие сотрудника
+GET {{api}}/bank/applications?status=ON_DECISION&decisionMode=MANUAL
+
+### Взять заявку в работу
+POST {{api}}/bank/applications/{{appId}}/assign
+
+### Анкета заявки
+GET {{api}}/bank/applications/{{appId}}
+
+### Полнота
+GET {{api}}/bank/applications/{{appId}}/completeness
+
+### Внешние проверки
+GET {{api}}/bank/applications/{{appId}}/checks
+
+### Скоринг: балл и факторы
+GET {{api}}/bank/applications/{{appId}}/score
+
+###############################################################################
+# 8. Решение: иные условия
+###############################################################################
+### Иные условия на 2 400 000 ₽ под 23%
+POST {{api}}/bank/applications/{{appId}}/decision
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "type": "COUNTER", "productCode": "WORKING", "amount": 2400000, "term": 24, "rate": 23, "reason": "Сумма снижена по уровню долговой нагрузки" }
+
+### История заявки
+GET {{api}}/bank/applications/{{appId}}/history
+
+###############################################################################
+# 9. Оффер
+###############################################################################
+
+### Вход клиента
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "login": "morozov", "password": "demo123" }
+
+### Уведомления: решение по заявке
+GET {{api}}/notifications?unread=true
+
+### Решение и предложение банка
+GET {{api}}/applications/{{appId}}/offer
+
+### Принять условия
+POST {{api}}/applications/{{appId}}/offer/accept
+
+###############################################################################
+# 10. Подписание
+###############################################################################
+
+### Договор и документы
+GET {{api}}/applications/{{appId}}/contract
+
+### Печатная форма кредитного договора
+GET {{api}}/applications/{{appId}}/contract/documents/d-1
+
+### Печатная форма договора поручительства
+GET {{api}}/applications/{{appId}}/contract/documents/d-2
+
+### Подписать
+POST {{api}}/applications/{{appId}}/contract/sign
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "confirm": true }
+
+###############################################################################
+# 11. Выдача и обслуживание
+###############################################################################
+
+### Выдача: кредит и график платежей
+POST {{api}}/applications/{{appId}}/contract/disburse
+Idempotency-Key: {{$guid}}
+
+> {% client.global.set("loanId", response.body.loanId); %}
+
+### Таймлайн: «Выдано»
+GET {{api}}/applications/{{appId}}/timeline
+
+### Кредиты на главной
+GET {{api}}/loans/summary
+
+### Мои кредиты
+GET {{api}}/loans
+
+### Условия и график
+GET {{api}}/loans/{{loanId}}
+
+### Платёжный календарь
+GET {{api}}/loans/schedule?from=2026-11-01&to=2027-01-31
+
+### Ближайшие платежи
+GET {{api}}/loans/schedule/upcoming?limit=3
+
+###############################################################################
+# 12. Поддержка
+###############################################################################
+
+### Частые вопросы по заявке
+GET {{api}}/support/faq?step=APPLICATION
+
+### Обращение со страницы заявки
+POST {{api}}/support/tickets
+Content-Type: application/json
+
+{ "subject": "Вопрос по графику", "text": "Можно ли перенести дату платежа?", "applicationId": "{{appId}}" }
+
+### Мои обращения
+GET {{api}}/support/tickets
