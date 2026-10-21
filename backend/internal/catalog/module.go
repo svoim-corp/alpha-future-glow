@@ -3,16 +3,28 @@ package catalog
 
 import (
 	"context"
+	"embed"
 
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 )
 
-type Module struct{ deps module.Deps }
+//go:embed migrations/*.sql
+var migrations embed.FS
 
-func New(deps module.Deps) *Module { return &Module{deps: deps} }
+type Module struct {
+	deps  module.Deps
+	store *Store
+}
 
-// Migrate — миграций пока нет. Когда появятся таблицы, добавьте migrations/ и db.Migrate (образец — identity).
-func (m *Module) Migrate(ctx context.Context) error { return nil }
+func New(deps module.Deps) *Module { return &Module{deps: deps, store: &Store{db: deps.DB}} }
 
-func (m *Module) Register(r httpx.Routes) {}
+func (m *Module) Migrate(ctx context.Context) error {
+	return db.Migrate(ctx, m.deps.DB, "catalog", migrations)
+}
+
+// Register — каталог открыт без входа: его смотрят до решения оформить заявку (docs/catalog.md).
+func (m *Module) Register(r httpx.Routes) {
+	r.Public.GET("/products", m.listProducts)
+}

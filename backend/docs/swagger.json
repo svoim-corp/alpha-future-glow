@@ -1236,9 +1236,105 @@
                     }
                 }
             }
+        },
+        "/products": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Линейка продуктов для каталога",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/catalog.productSummaryDTO"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "catalog.moneyRangeDTO": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer",
+                    "example": 10000000
+                },
+                "min": {
+                    "type": "integer",
+                    "example": 300000
+                }
+            }
+        },
+        "catalog.productSummaryDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "$ref": "#/definitions/catalog.moneyRangeDTO"
+                },
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "goals": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "WORKING_CAPITAL"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
+                },
+                "rate": {
+                    "$ref": "#/definitions/catalog.rateRangeDTO"
+                },
+                "shortText": {
+                    "type": "string",
+                    "example": "Закупки, зарплата, налоги, аренда"
+                },
+                "term": {
+                    "$ref": "#/definitions/catalog.termRangeDTO"
+                }
+            }
+        },
+        "catalog.rateRangeDTO": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "number",
+                    "example": 28
+                },
+                "min": {
+                    "type": "number",
+                    "example": 20
+                }
+            }
+        },
+        "catalog.termRangeDTO": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer",
+                    "example": 36
+                },
+                "min": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
         "company.candidateDTO": {
             "type": "object",
             "properties": {
