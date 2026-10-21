@@ -106,6 +106,7 @@ func run(log *slog.Logger) error {
 		Applications: originationMod.Applications(),
 		Products:     catalogMod.Products(),
 		Companies:    companyMod.Companies(),
+		Checks:       integrationsMod.Checks(),
 	})
 	underwritingMod.Wire(underwriting.Ports{
 		Applications: originationMod.Applications(),

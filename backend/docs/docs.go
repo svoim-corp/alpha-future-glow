@@ -68,6 +68,148 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/prelim": {
+            "post": {
+                "description": "Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам в банке. Лимит или стоп-отказ. Требует согласие на БКИ.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Предварительное решение (этап 1)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scoring.prelimResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/prelim/choice": {
+            "post": {
+                "description": "REDUCE_AMOUNT — уменьшить сумму до лимита, KEEP_AMOUNT — оставить запрошенную (решит сотрудник банка).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Выбор при сумме выше лимита",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Выбор клиента",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/scoring.choiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scoring.choiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -440,6 +582,138 @@ const docTemplate = `{
                 }
             }
         },
+        "scoring.choiceParams": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "scoring.choiceRequest": {
+            "type": "object",
+            "required": [
+                "choice"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3000000
+                },
+                "choice": {
+                    "enum": [
+                        "REDUCE_AMOUNT",
+                        "KEEP_AMOUNT"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.PrelimChoice"
+                        }
+                    ],
+                    "example": "REDUCE_AMOUNT"
+                }
+            }
+        },
+        "scoring.choiceResponse": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/scoring.choiceParams"
+                },
+                "stage": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 9
+                }
+            }
+        },
+        "scoring.prelimCheck": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "example": "Действует, 11 лет"
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "EGRUL"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckStatus"
+                        }
+                    ],
+                    "example": "OK"
+                }
+            }
+        },
+        "scoring.prelimResponse": {
+            "type": "object",
+            "properties": {
+                "amountFits": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "checks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/scoring.prelimCheck"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "outcome": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.PrelimOutcome"
+                        }
+                    ],
+                    "example": "LIMIT"
+                },
+                "prelimPayment": {
+                    "type": "integer",
+                    "example": 77800
+                },
+                "prelimRate": {
+                    "type": "number",
+                    "example": 22
+                },
+                "requestedAmount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "stopReason": {
+                    "type": "string",
+                    "example": "BUSINESS_TOO_YOUNG"
+                },
+                "stopText": {
+                    "type": "string",
+                    "example": "Бизнес зарегистрирован меньше 6 месяцев назад"
+                },
+                "whatToDo": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "shared.CheckSource": {
             "type": "string",
             "enum": [
@@ -477,6 +751,21 @@ const docTemplate = `{
                 "SourceCourts"
             ]
         },
+        "shared.CheckStatus": {
+            "type": "string",
+            "enum": [
+                "OK",
+                "WARN",
+                "FAIL",
+                "UNAVAILABLE"
+            ],
+            "x-enum-varnames": [
+                "CheckOK",
+                "CheckWarn",
+                "CheckFail",
+                "CheckUnavailable"
+            ]
+        },
         "shared.PersonRole": {
             "type": "string",
             "enum": [
@@ -488,6 +777,28 @@ const docTemplate = `{
                 "PersonHead",
                 "PersonFounder",
                 "PersonRepresentative"
+            ]
+        },
+        "shared.PrelimChoice": {
+            "type": "string",
+            "enum": [
+                "REDUCE_AMOUNT",
+                "KEEP_AMOUNT"
+            ],
+            "x-enum-varnames": [
+                "ChoiceReduceAmount",
+                "ChoiceKeepAmount"
+            ]
+        },
+        "shared.PrelimOutcome": {
+            "type": "string",
+            "enum": [
+                "LIMIT",
+                "STOP"
+            ],
+            "x-enum-varnames": [
+                "PrelimLimit",
+                "PrelimStop"
             ]
         },
         "shared.Role": {

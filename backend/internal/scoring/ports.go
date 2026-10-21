@@ -7,15 +7,20 @@ import (
 )
 
 // Prelims отдаёт реализацию shared.Prelims другим зонам.
-func (m *Module) Prelims() shared.Prelims { return prelimsStub{} }
+func (m *Module) Prelims() shared.Prelims { return prelims{store: m.store} }
 
 // Decisions отдаёт реализацию shared.Decisions другим зонам.
 func (m *Module) Decisions() shared.Decisions { return decisionsStub{} }
 
-// prelimsStub — заглушка этапа 0: этап 1 ни у кого не пройден. Заменить реализацией (B).
-type prelimsStub struct{}
+type prelims struct{ store *Store }
 
-func (prelimsStub) Prelim(context.Context, string) (*shared.PrelimView, error) { return nil, nil }
+func (p prelims) Prelim(ctx context.Context, appID string) (*shared.PrelimView, error) {
+	r, err := p.store.LatestPrelim(ctx, appID)
+	if err != nil || r == nil {
+		return nil, err
+	}
+	return r.view(), nil
+}
 
 // decisionsStub — заглушка этапа 0: решений нет. Заменить реализацией (B).
 type decisionsStub struct{}

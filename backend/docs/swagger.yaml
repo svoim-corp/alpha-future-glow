@@ -188,6 +188,92 @@ definitions:
         - $ref: '#/definitions/shared.Role'
         example: CLIENT
     type: object
+  scoring.choiceParams:
+    properties:
+      amount:
+        example: 3000000
+        type: integer
+      term:
+        example: 24
+        type: integer
+    type: object
+  scoring.choiceRequest:
+    properties:
+      amount:
+        example: 3000000
+        minimum: 0
+        type: integer
+      choice:
+        allOf:
+        - $ref: '#/definitions/shared.PrelimChoice'
+        enum:
+        - REDUCE_AMOUNT
+        - KEEP_AMOUNT
+        example: REDUCE_AMOUNT
+    required:
+    - choice
+    type: object
+  scoring.choiceResponse:
+    properties:
+      params:
+        $ref: '#/definitions/scoring.choiceParams'
+      stage:
+        example: 2
+        type: integer
+      version:
+        example: 9
+        type: integer
+    type: object
+  scoring.prelimCheck:
+    properties:
+      label:
+        example: Действует, 11 лет
+        type: string
+      source:
+        allOf:
+        - $ref: '#/definitions/shared.CheckSource'
+        example: EGRUL
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.CheckStatus'
+        example: OK
+    type: object
+  scoring.prelimResponse:
+    properties:
+      amountFits:
+        example: true
+        type: boolean
+      checks:
+        items:
+          $ref: '#/definitions/scoring.prelimCheck'
+        type: array
+      limit:
+        example: 3000000
+        type: integer
+      outcome:
+        allOf:
+        - $ref: '#/definitions/shared.PrelimOutcome'
+        example: LIMIT
+      prelimPayment:
+        example: 77800
+        type: integer
+      prelimRate:
+        example: 22
+        type: number
+      requestedAmount:
+        example: 1500000
+        type: integer
+      stopReason:
+        example: BUSINESS_TOO_YOUNG
+        type: string
+      stopText:
+        example: Бизнес зарегистрирован меньше 6 месяцев назад
+        type: string
+      whatToDo:
+        items:
+          type: string
+        type: array
+    type: object
   shared.CheckSource:
     enum:
     - BANK
@@ -220,6 +306,18 @@ definitions:
     - SourceFNS
     - SourceGIRBO
     - SourceCourts
+  shared.CheckStatus:
+    enum:
+    - OK
+    - WARN
+    - FAIL
+    - UNAVAILABLE
+    type: string
+    x-enum-varnames:
+    - CheckOK
+    - CheckWarn
+    - CheckFail
+    - CheckUnavailable
   shared.PersonRole:
     enum:
     - HEAD
@@ -230,6 +328,22 @@ definitions:
     - PersonHead
     - PersonFounder
     - PersonRepresentative
+  shared.PrelimChoice:
+    enum:
+    - REDUCE_AMOUNT
+    - KEEP_AMOUNT
+    type: string
+    x-enum-varnames:
+    - ChoiceReduceAmount
+    - ChoiceKeepAmount
+  shared.PrelimOutcome:
+    enum:
+    - LIMIT
+    - STOP
+    type: string
+    x-enum-varnames:
+    - PrelimLimit
+    - PrelimStop
   shared.Role:
     enum:
     - CLIENT
@@ -278,6 +392,102 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Данные о компании для заявки
+      tags:
+      - applications
+  /applications/{id}/prelim:
+    post:
+      description: Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам
+        в банке. Лимит или стоп-отказ. Требует согласие на БКИ.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scoring.prelimResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Предварительное решение (этап 1)
+      tags:
+      - applications
+  /applications/{id}/prelim/choice:
+    post:
+      consumes:
+      - application/json
+      description: REDUCE_AMOUNT — уменьшить сумму до лимита, KEEP_AMOUNT — оставить
+        запрошенную (решит сотрудник банка).
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Выбор клиента
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scoring.choiceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scoring.choiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Выбор при сумме выше лимита
       tags:
       - applications
   /auth/login:

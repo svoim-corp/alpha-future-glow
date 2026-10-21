@@ -49,7 +49,7 @@ func fieldError(fe validator.FieldError) FieldError {
 		name = name[i+1:]
 	}
 	switch fe.Tag() {
-	case "required":
+	case "required", "required_if":
 		return FieldError{name, "REQUIRED", "Обязательное поле"}
 	case "min", "max", "gte", "lte", "gt", "lt":
 		return FieldError{name, "INVALID", "Значение вне допустимого диапазона"}
