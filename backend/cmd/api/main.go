@@ -109,13 +109,14 @@ func run(log *slog.Logger) error {
 		Checks:       integrationsMod.Checks(),
 	})
 	underwritingMod.Wire(underwriting.Ports{
-		Applications: originationMod.Applications(),
-		Companies:    companyMod.Companies(),
-		Products:     catalogMod.Products(),
-		Notifier:     notificationsMod.Notifier(),
-		Scores:       scoringMod.Scores(),
-		Prelims:      scoringMod.Prelims(),
-		Checks:       integrationsMod.Checks(),
+		Applications:  originationMod.Applications(),
+		Companies:     companyMod.Companies(),
+		Products:      catalogMod.Products(),
+		Notifier:      notificationsMod.Notifier(),
+		Scores:        scoringMod.Scores(),
+		Prelims:       scoringMod.Prelims(),
+		Checks:        integrationsMod.Checks(),
+		DecisionMaker: scoringMod.DecisionMaker(),
 	})
 	offerMod.Wire(offer.Ports{
 		Applications: originationMod.Applications(),

@@ -466,6 +466,27 @@ definitions:
     - StatusSigning
     - StatusIssued
     - StatusClosed
+  underwriting.answerBody:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/underwriting.infoAnswer'
+        maxItems: 10
+        minItems: 1
+        type: array
+    required:
+    - answers
+    type: object
+  underwriting.answerResponse:
+    properties:
+      applicationStatus:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: DATA_CHECK
+      requestStatus:
+        example: ANSWERED
+        type: string
+    type: object
   underwriting.applicantDTO:
     properties:
       authority:
@@ -535,6 +556,57 @@ definitions:
           $ref: '#/definitions/underwriting.issue'
         type: array
     type: object
+  underwriting.decisionBody:
+    properties:
+      amount:
+        example: 1200000
+        minimum: 0
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      rate:
+        example: 21.5
+        minimum: 0
+        type: number
+      reason:
+        example: Сумма снижена по уровню долговой нагрузки
+        maxLength: 2000
+        type: string
+      term:
+        example: 24
+        minimum: 0
+        type: integer
+      type:
+        enum:
+        - APPROVE
+        - COUNTER
+        - REJECT
+        example: COUNTER
+        type: string
+    required:
+    - type
+    type: object
+  underwriting.decisionResponse:
+    properties:
+      decidedAt:
+        example: "2026-10-20T13:10:00Z"
+        type: string
+      decidedBy:
+        example: u-9
+        type: string
+      decisionId:
+        example: dec-31
+        type: string
+      mode:
+        allOf:
+        - $ref: '#/definitions/shared.DecisionMode'
+        example: MANUAL
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: COUNTER_OFFER
+    type: object
   underwriting.guarantorDTO:
     properties:
       bkiConsent:
@@ -548,6 +620,93 @@ definitions:
         type: string
       personId:
         example: p-1
+        type: string
+    type: object
+  underwriting.infoAnswer:
+    properties:
+      key:
+        example: turnover_note
+        type: string
+      value:
+        example: Часть поступлений — возврат займа учредителя
+        maxLength: 4000
+        type: string
+    required:
+    - key
+    - value
+    type: object
+  underwriting.infoItem:
+    properties:
+      key:
+        example: turnover_note
+        maxLength: 64
+        type: string
+      label:
+        example: Почему выручка за 2025 год ниже оборотов по счёту
+        maxLength: 500
+        type: string
+      type:
+        enum:
+        - TEXT
+        example: TEXT
+        type: string
+    required:
+    - key
+    - label
+    - type
+    type: object
+  underwriting.infoRequestBody:
+    properties:
+      comment:
+        example: Обороты по счетам расходятся с отчётностью
+        maxLength: 2000
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/underwriting.infoItem'
+        maxItems: 10
+        minItems: 1
+        type: array
+    required:
+    - comment
+    - items
+    type: object
+  underwriting.infoRequestCreated:
+    properties:
+      applicationStatus:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: INFO_REQUESTED
+      id:
+        example: r-7
+        type: string
+      status:
+        example: OPEN
+        type: string
+    type: object
+  underwriting.infoRequestDTO:
+    properties:
+      answeredAt:
+        type: string
+      answers:
+        items:
+          $ref: '#/definitions/underwriting.infoAnswer'
+        type: array
+      comment:
+        example: Обороты по счетам расходятся с отчётностью
+        type: string
+      createdAt:
+        example: "2026-10-20T12:40:00Z"
+        type: string
+      id:
+        example: r-7
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/underwriting.infoItem'
+        type: array
+      status:
+        example: OPEN
         type: string
     type: object
   underwriting.issue:
@@ -820,6 +979,90 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Данные о компании для заявки
+      tags:
+      - applications
+  /applications/{id}/info-requests:
+    get:
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/underwriting.infoRequestDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Запросы банка по заявке
+      tags:
+      - applications
+  /applications/{id}/info-requests/{reqId}/answer:
+    post:
+      consumes:
+      - application/json
+      description: Ответ на каждый вопрос запроса. Заявка возвращается в DATA_CHECK.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID запроса
+        in: path
+        name: reqId
+        required: true
+        type: string
+      - description: Ответы
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/underwriting.answerBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.answerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Ответить на запрос банка
       tags:
       - applications
   /applications/{id}/prelim:
@@ -1208,6 +1451,110 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Полнота и корректность заявки
+      tags:
+      - bank
+  /bank/applications/{id}/decision:
+    post:
+      consumes:
+      - application/json
+      description: APPROVE — одобрить (без параметров — на условиях заявки), COUNTER
+        — иные условия, REJECT — отказ (нужен только reason).
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Решение
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/underwriting.decisionBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.decisionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Решение сотрудника
+      tags:
+      - bank
+  /bank/applications/{id}/info-requests:
+    post:
+      consumes:
+      - application/json
+      description: 'Только пояснения: данные, которые есть у банка, и документы не
+        запрашиваются. Заявка → INFO_REQUESTED.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Вопросы
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/underwriting.infoRequestBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/underwriting.infoRequestCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Запросить информацию у клиента
       tags:
       - bank
   /bank/applications/{id}/score:

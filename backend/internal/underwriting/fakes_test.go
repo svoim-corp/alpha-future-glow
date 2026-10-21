@@ -155,6 +155,54 @@ func (f *fakeChecks) Latest(_ context.Context, appID string) (*shared.CheckRepor
 	return &shared.CheckReport{}, nil
 }
 
+type sent struct {
+	userID string
+	n      shared.Notification
+}
+
+type fakeNotifier struct {
+	mu   sync.Mutex
+	sent []sent
+}
+
+func (f *fakeNotifier) Notify(_ context.Context, userID string, n shared.Notification) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.sent = append(f.sent, sent{userID, n})
+	return nil
+}
+
+func (f *fakeNotifier) types() []shared.NotificationType {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]shared.NotificationType, len(f.sent))
+	for i, s := range f.sent {
+		out[i] = s.n.Type
+	}
+	return out
+}
+
+// fakeDecider ведёт себя как Scoring: переводит заявку в статус решения и публикует DecisionMade.
+type fakeDecider struct {
+	apps *fakeApps
+	last *shared.DecisionInput
+	err  error
+}
+
+func (f *fakeDecider) Decide(ctx context.Context, appID string, in shared.DecisionInput, actor shared.Actor) (*shared.DecisionView, error) {
+	f.last = &in
+	if f.err != nil {
+		return nil, f.err
+	}
+	if err := f.apps.Transition(ctx, appID, in.Result, actor, "DECISION", in.Reason); err != nil {
+		return nil, err
+	}
+	if err := f.apps.bus.Publish(ctx, shared.DecisionMade{AppID: appID, DecisionID: "dec-1"}); err != nil {
+		return nil, err
+	}
+	return &shared.DecisionView{ID: "dec-1", Result: in.Result, Mode: shared.DecisionManual, DecidedBy: &actor.UserID, DecidedAt: today}, nil
+}
+
 type fakeScores map[string]*shared.ScoreView
 
 func (f fakeScores) Score(_ context.Context, appID string) (*shared.ScoreView, error) {
@@ -178,13 +226,15 @@ func submittedApp(id, company, product string, amount int64, at time.Time) *shar
 
 // env — модуль с фейками других зон. С БД — если задан TEST_DATABASE_URL.
 type env struct {
-	m       *Module
-	bus     *events.Bus
-	apps    *fakeApps
-	scores  fakeScores
-	prelims fakePrelims
-	checks  *fakeChecks
-	router  *gin.Engine
+	m        *Module
+	bus      *events.Bus
+	apps     *fakeApps
+	scores   fakeScores
+	prelims  fakePrelims
+	checks   *fakeChecks
+	notifier *fakeNotifier
+	decider  *fakeDecider
+	router   *gin.Engine
 }
 
 func newEnv(t *testing.T, withDB bool) *env {
@@ -203,7 +253,8 @@ func newEnv(t *testing.T, withDB bool) *env {
 		deps.DB = conn
 	}
 	e := &env{bus: deps.Bus, apps: newFakeApps(deps.Bus), scores: fakeScores{}, prelims: fakePrelims{},
-		checks: &fakeChecks{reports: map[string]*shared.CheckReport{}}}
+		checks: &fakeChecks{reports: map[string]*shared.CheckReport{}}, notifier: &fakeNotifier{}}
+	e.decider = &fakeDecider{apps: e.apps}
 	e.m = New(deps)
 	e.m.now = func() time.Time { return today }
 	if withDB {
@@ -216,6 +267,7 @@ func newEnv(t *testing.T, withDB bool) *env {
 	}
 	e.m.Wire(Ports{
 		Applications: e.apps, Scores: e.scores, Prelims: e.prelims, Checks: e.checks,
+		Notifier: e.notifier, DecisionMaker: e.decider,
 		Companies: fakeCompanies{"c-1": bakery, "c-8": trade},
 		Products:  fakeProducts{"WORKING": working, "EXPRESS": express},
 	})
@@ -231,7 +283,9 @@ func newEnv(t *testing.T, withDB bool) *env {
 
 var (
 	companyC1 = "c-1"
+	companyC8 = "c-8"
 	users     = fakeUsers{
+		"morozov": {ID: "u-10", Role: shared.RoleClient, CompanyID: &companyC8, FullName: "Морозов Алексей Игоревич"},
 		"ivanova": {ID: "u-9", Role: shared.RoleBankOfficer, FullName: "Иванова Елена Петровна"},
 		"sidorov": {ID: "u-14", Role: shared.RoleBankOfficer, FullName: "Сидоров Максим Андреевич"},
 		"smirnov": {ID: "u-1", Role: shared.RoleClient, CompanyID: &companyC1, FullName: "Смирнов Олег Викторович"},
@@ -262,4 +316,11 @@ func (e *env) move(t *testing.T, id string, to ...shared.Status) {
 			t.Fatalf("%s → %s: %v", id, s, err)
 		}
 	}
+}
+
+// setStatusForTest ставит статус без перехода и события — подготовка сценария.
+func (f *fakeApps) setStatusForTest(id string, s shared.Status) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.apps[id].Status = s
 }

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 )
 
 type Store struct{ db *sqlx.DB }
@@ -163,6 +165,94 @@ func (s *Store) Assign(ctx context.Context, appID, userID, name string, at time.
 }
 
 func (s *Store) Reset(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, `TRUNCATE underwriting.queue`)
+	_, err := s.db.ExecContext(ctx, `TRUNCATE underwriting.queue, underwriting.info_requests`)
+	return err
+}
+
+type infoItem struct {
+	Key   string `json:"key" binding:"required,max=64" example:"turnover_note"`
+	Type  string `json:"type" binding:"required,oneof=TEXT" example:"TEXT"`
+	Label string `json:"label" binding:"required,max=500" example:"Почему выручка за 2025 год ниже оборотов по счёту"`
+}
+
+type infoAnswer struct {
+	Key   string `json:"key" binding:"required" example:"turnover_note"`
+	Value string `json:"value" binding:"required,max=4000" example:"Часть поступлений — возврат займа учредителя"`
+}
+
+type infoRequestRow struct {
+	ID         string                `db:"id"`
+	AppID      string                `db:"app_id"`
+	Comment    string                `db:"comment"`
+	Items      db.JSON[[]infoItem]   `db:"items"`
+	Answers    db.JSON[[]infoAnswer] `db:"answers"`
+	Status     string                `db:"status"`
+	CreatedBy  string                `db:"created_by"`
+	CreatedAt  time.Time             `db:"created_at"`
+	AnsweredAt *time.Time            `db:"answered_at"`
+}
+
+const (
+	requestOpen     = "OPEN"
+	requestAnswered = "ANSWERED"
+	infoCols        = `id, app_id, comment, items, answers, status, created_by, created_at, answered_at`
+)
+
+// errOpenRequestExists — по заявке уже есть открытый запрос (уникальный индекс info_requests_one_open).
+var errOpenRequestExists = errors.New("open info request exists")
+
+// InsertInfoRequest присваивает запросу номер r-N.
+func (s *Store) InsertInfoRequest(ctx context.Context, r *infoRequestRow) error {
+	err := s.db.GetContext(ctx, &r.ID, `
+		INSERT INTO underwriting.info_requests (id, app_id, comment, items, status, created_by, created_at)
+		VALUES ('r-' || nextval('underwriting.info_request_seq'), $1, $2, $3, 'OPEN', $4, $5)
+		ON CONFLICT (app_id) WHERE status = 'OPEN' DO NOTHING
+		RETURNING id`, r.AppID, r.Comment, r.Items, r.CreatedBy, r.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return errOpenRequestExists
+	}
+	return err
+}
+
+func (s *Store) DeleteInfoRequest(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM underwriting.info_requests WHERE id = $1`, id)
+	return err
+}
+
+// InfoRequest — запрос заявки; (nil, nil) — такого запроса у заявки нет.
+func (s *Store) InfoRequest(ctx context.Context, appID, id string) (*infoRequestRow, error) {
+	var r infoRequestRow
+	err := s.db.GetContext(ctx, &r, `SELECT `+infoCols+` FROM underwriting.info_requests WHERE id = $1 AND app_id = $2`, id, appID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+func (s *Store) InfoRequests(ctx context.Context, appID string) ([]infoRequestRow, error) {
+	var rows []infoRequestRow
+	err := s.db.SelectContext(ctx, &rows, `SELECT `+infoCols+` FROM underwriting.info_requests
+		WHERE app_id = $1 ORDER BY created_at DESC, id`, appID)
+	return rows, err
+}
+
+// AnswerInfoRequest закрывает открытый запрос; false — запрос уже закрыт (ответили параллельно).
+func (s *Store) AnswerInfoRequest(ctx context.Context, id string, answers []infoAnswer, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE underwriting.info_requests SET status = 'ANSWERED', answers = $2, answered_at = $3
+		WHERE id = $1 AND status = 'OPEN'`, id, db.JSON[[]infoAnswer]{V: answers}, at)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n == 1, err
+}
+
+// ReopenInfoRequest возвращает запрос в OPEN, если перевод заявки после ответа не удался.
+func (s *Store) ReopenInfoRequest(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE underwriting.info_requests SET status = 'OPEN', answers = NULL, answered_at = NULL WHERE id = $1`, id)
 	return err
 }

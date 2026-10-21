@@ -68,6 +68,133 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/info-requests": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Запросы банка по заявке",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.infoRequestDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/info-requests/{reqId}/answer": {
+            "post": {
+                "description": "Ответ на каждый вопрос запроса. Заявка возвращается в DATA_CHECK.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Ответить на запрос банка",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID запроса",
+                        "name": "reqId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Ответы",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.answerBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.answerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/prelim": {
             "post": {
                 "description": "Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам в банке. Лимит или стоп-отказ. Требует согласие на БКИ.",
@@ -676,6 +803,160 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/decision": {
+            "post": {
+                "description": "APPROVE — одобрить (без параметров — на условиях заявки), COUNTER — иные условия, REJECT — отказ (нужен только reason).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Решение сотрудника",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ идемпотентности",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Решение",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.decisionBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.decisionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/info-requests": {
+            "post": {
+                "description": "Только пояснения: данные, которые есть у банка, и документы не запрашиваются. Заявка → INFO_REQUESTED.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Запросить информацию у клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Вопросы",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.infoRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.infoRequestCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrorBody"
                         }
@@ -1398,6 +1679,39 @@ const docTemplate = `{
                 "StatusClosed"
             ]
         },
+        "underwriting.answerBody": {
+            "type": "object",
+            "required": [
+                "answers"
+            ],
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoAnswer"
+                    }
+                }
+            }
+        },
+        "underwriting.answerResponse": {
+            "type": "object",
+            "properties": {
+                "applicationStatus": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "DATA_CHECK"
+                },
+                "requestStatus": {
+                    "type": "string",
+                    "example": "ANSWERED"
+                }
+            }
+        },
         "underwriting.applicantDTO": {
             "type": "object",
             "properties": {
@@ -1505,6 +1819,80 @@ const docTemplate = `{
                 }
             }
         },
+        "underwriting.decisionBody": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 1200000
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 21.5
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Сумма снижена по уровню долговой нагрузки"
+                },
+                "term": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 24
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "APPROVE",
+                        "COUNTER",
+                        "REJECT"
+                    ],
+                    "example": "COUNTER"
+                }
+            }
+        },
+        "underwriting.decisionResponse": {
+            "type": "object",
+            "properties": {
+                "decidedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T13:10:00Z"
+                },
+                "decidedBy": {
+                    "type": "string",
+                    "example": "u-9"
+                },
+                "decisionId": {
+                    "type": "string",
+                    "example": "dec-31"
+                },
+                "mode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.DecisionMode"
+                        }
+                    ],
+                    "example": "MANUAL"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "COUNTER_OFFER"
+                }
+            }
+        },
         "underwriting.guarantorDTO": {
             "type": "object",
             "properties": {
@@ -1523,6 +1911,130 @@ const docTemplate = `{
                 "personId": {
                     "type": "string",
                     "example": "p-1"
+                }
+            }
+        },
+        "underwriting.infoAnswer": {
+            "type": "object",
+            "required": [
+                "key",
+                "value"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "example": "turnover_note"
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "example": "Часть поступлений — возврат займа учредителя"
+                }
+            }
+        },
+        "underwriting.infoItem": {
+            "type": "object",
+            "required": [
+                "key",
+                "label",
+                "type"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "turnover_note"
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Почему выручка за 2025 год ниже оборотов по счёту"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "TEXT"
+                    ],
+                    "example": "TEXT"
+                }
+            }
+        },
+        "underwriting.infoRequestBody": {
+            "type": "object",
+            "required": [
+                "comment",
+                "items"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Обороты по счетам расходятся с отчётностью"
+                },
+                "items": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoItem"
+                    }
+                }
+            }
+        },
+        "underwriting.infoRequestCreated": {
+            "type": "object",
+            "properties": {
+                "applicationStatus": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "INFO_REQUESTED"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "r-7"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OPEN"
+                }
+            }
+        },
+        "underwriting.infoRequestDTO": {
+            "type": "object",
+            "properties": {
+                "answeredAt": {
+                    "type": "string"
+                },
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoAnswer"
+                    }
+                },
+                "comment": {
+                    "type": "string",
+                    "example": "Обороты по счетам расходятся с отчётностью"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-20T12:40:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "r-7"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoItem"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OPEN"
                 }
             }
         },

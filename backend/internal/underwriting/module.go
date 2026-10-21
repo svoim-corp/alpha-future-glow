@@ -18,13 +18,14 @@ var migrations embed.FS
 
 // Ports — данные и действия других зон, нужные зоне. Подставляются в cmd/api/main.go.
 type Ports struct {
-	Applications shared.Applications // анкета, переходы статусов
-	Companies    shared.Companies    // данные компании в очереди и анкете
-	Products     shared.Products     // название продукта в очереди
-	Notifier     shared.Notifier     // уведомление о запросе информации и решении
-	Scores       shared.Scores       // балл, риск и режим решения в очереди
-	Prelims      shared.Prelims      // предварительный результат в анкете
-	Checks       shared.Checks       // внешние проверки и их перезапрос
+	Applications  shared.Applications  // анкета, переходы статусов
+	Companies     shared.Companies     // данные компании в очереди и анкете
+	Products      shared.Products      // название продукта в очереди
+	Notifier      shared.Notifier      // уведомление о запросе информации и решении
+	Scores        shared.Scores        // балл, риск и режим решения в очереди
+	Prelims       shared.Prelims       // предварительный результат в анкете
+	Checks        shared.Checks        // внешние проверки и их перезапрос
+	DecisionMaker shared.DecisionMaker // ручное решение (Scoring)
 }
 
 type Module struct {
@@ -45,6 +46,7 @@ func (m *Module) Migrate(ctx context.Context) error {
 func (m *Module) Wire(p Ports) {
 	m.ports = p
 	m.deps.Bus.Subscribe(shared.ApplicationStatusChanged{}.Name(), m.onStatusChanged)
+	m.deps.Bus.Subscribe(shared.DecisionMade{}.Name(), m.onDecisionMade)
 }
 
 func (m *Module) Register(r httpx.Routes) {
@@ -55,7 +57,12 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Bank.GET("/applications/:id/completeness", m.bankCompleteness)
 	r.Bank.GET("/applications/:id/checks", m.bankChecks)
 	r.Bank.POST("/applications/:id/checks/refresh", m.bankRefreshChecks)
+	r.Bank.POST("/applications/:id/info-requests", m.bankRequestInfo)
+	r.Bank.POST("/applications/:id/decision", m.deps.Idem.Middleware(), m.bankDecision)
+
+	r.Client.GET("/applications/:id/info-requests", m.clientInfoRequests)
+	r.Client.POST("/applications/:id/info-requests/:reqId/answer", m.clientAnswerInfo)
 }
 
-// ResetDemo очищает очередь: она строится из заявок демо.
+// ResetDemo очищает очередь и запросы информации: они относятся к заявкам демо.
 func (m *Module) ResetDemo(ctx context.Context) error { return m.store.Reset(ctx) }
