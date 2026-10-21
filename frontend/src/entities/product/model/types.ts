@@ -13,13 +13,10 @@ export interface ProductSummary {
 	/** У овердрафта срока кредита нет */
 	term?: Range | null;
 	rate: Range;
-	noStatementThreshold: number | null;
-	bankClientsOnly: boolean;
 }
 
 export interface ProductRequirements {
 	minBusinessAgeMonths?: number | null;
-	bankClientsOnly: boolean;
 	guarantorForLlc: boolean;
 }
 
@@ -34,8 +31,6 @@ export interface ProductDetails {
 	rate: Range;
 	graceMaxMonths?: number | null;
 	requirements: ProductRequirements;
-	/** null — выписка нужна всегда */
-	noStatementThreshold: number | null;
 	limitRule?: string | null;
 	whatYouNeed: string[];
 }

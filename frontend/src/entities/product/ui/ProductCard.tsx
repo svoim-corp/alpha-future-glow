@@ -1,4 +1,4 @@
-import { formatCompactMoney, formatCompactMoneyRange, formatMoney, formatRateRange } from '@shared/lib/format';
+import { formatCompactMoney, formatCompactMoneyRange, formatRateRange } from '@shared/lib/format';
 import { Badge, Icon, type IconName } from '@shared/ui';
 import { useId } from 'react';
 
@@ -29,7 +29,6 @@ export const ProductCard = ({ product, fits, onSelect }: ProductCardProps) => {
 				<span className={styles.icon}><Icon name={ICONS[product.code] ?? 'catalog'} size={20} /></span>
 				<div className={styles.tags}>
 					{fits && <Badge tone="success">Подходит под задачу</Badge>}
-					{product.bankClientsOnly && <Badge tone="info">Только клиентам банка</Badge>}
 				</div>
 			</div>
 			<h3 id={titleId} className={styles.name}>{product.name}</h3>
@@ -49,11 +48,6 @@ export const ProductCard = ({ product, fits, onSelect }: ProductCardProps) => {
 					<dd>{formatRateRange(product.rate.min, product.rate.max)}</dd>
 				</div>
 			</dl>
-			<p className={styles.note}>
-				{product.noStatementThreshold === null
-					? 'Выписка по счёту нужна всегда'
-					: `Без выписки до ${formatMoney(product.noStatementThreshold)}`}
-			</p>
 			<button
 				type="button"
 				className={styles.cta}

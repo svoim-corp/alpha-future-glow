@@ -6,19 +6,21 @@
 	place-items: center;
 	padding: var(--space-4);
 	background: rgb(20 20 22 / 56%);
+	backdrop-filter: blur(4px);
 }
 
 .dialog {
 	display: grid;
-	gap: var(--space-4);
-	width: min(560px, 100%);
+	gap: var(--space-5);
+	width: min(520px, 100%);
 	max-height: calc(100vh - 32px);
 	overflow: auto;
-	padding: var(--space-6);
-	background: var(--color-surface);
+	padding: 28px;
 	color: var(--color-text);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
 	border-radius: var(--radius-card);
-	box-shadow: var(--shadow);
+	box-shadow: 0 24px 64px rgb(20 10 10 / 24%);
 
 	&:focus {
 		outline: none;
@@ -31,34 +33,74 @@
 
 .header {
 	display: flex;
+	gap: var(--space-4);
 	align-items: flex-start;
 	justify-content: space-between;
-	gap: var(--space-4);
 
 	h2 {
-		font-size: 20px;
+		margin: 4px 0 0;
+		font-size: 22px;
+		font-weight: 600;
 		line-height: 28px;
+		letter-spacing: -0.01em;
 	}
 }
 
 .close {
-	min-width: 44px;
-	min-height: 44px;
-	border: 0;
-	border-radius: var(--radius-sm);
-	background: transparent;
+	display: grid;
+	flex-shrink: 0;
+	place-items: center;
+	width: 40px;
+	height: 40px;
 	color: var(--color-text-muted);
-	font-size: 20px;
 	cursor: pointer;
+	background: var(--color-raised);
+	border: 0;
+	border-radius: var(--radius-pill);
+	transition: color var(--duration), background var(--duration);
 
 	&:hover {
-		background: var(--color-raised);
+		color: var(--color-primary-text);
+		background: var(--color-primary-soft);
 	}
+
+	&:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+}
+
+.body {
+	display: grid;
+	gap: var(--space-4);
+	min-width: 0;
 }
 
 .footer {
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: flex-end;
 	gap: var(--space-3);
+	justify-content: flex-end;
+	padding-top: var(--space-5);
+	border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 560px) {
+	.overlay {
+		place-items: end center;
+		padding: 0;
+	}
+
+	.dialog,
+	.wide {
+		width: 100%;
+		max-height: 92vh;
+		padding: 20px 16px 24px;
+		border-bottom: 0;
+		border-radius: var(--radius-card) var(--radius-card) 0 0;
+	}
+
+	.footer > * {
+		flex: 1 1 140px;
+	}
 }

@@ -19,7 +19,7 @@ export const timelineFixture: Timeline = {
 export const openInfoRequest: InfoRequest = {
 	id: 'r-7',
 	status: 'OPEN',
-	comment: 'Обороты в выписке расходятся с отчётностью',
+	comment: 'Обороты по счетам расходятся с отчётностью',
 	items: [
 		{ key: 'actual_address', type: 'TEXT', label: 'Адрес склада, где хранится товар' },
 		{ key: 'turnover_note', type: 'TEXT', label: 'Почему выручка за 2025 год ниже оборотов по счёту' },

@@ -15,10 +15,6 @@ const requirementsText = (details: ProductDetails): string => {
 		parts.push(`бизнесу не меньше ${age} мес.`);
 	}
 
-	if (details.requirements.bankClientsOnly) {
-		parts.push('только клиентам банка');
-	}
-
 	if (details.requirements.guarantorForLlc) {
 		parts.push('для ООО нужен поручитель');
 	}
@@ -40,13 +36,6 @@ export const buildConditionRows = (details: ProductDetails, goals: Goal[]): KeyV
 
 	rows.push({ label: 'Ставка', value: formatRateRange(details.rate.min, details.rate.max) });
 	rows.push({ label: 'Требования', value: requirementsText(details) });
-	rows.push({
-		label: 'Без выписки',
-		value: details.noStatementThreshold === null
-			? 'Выписка нужна всегда'
-			: `До ${formatMoney(details.noStatementThreshold)}`,
-	});
-
 	if (details.limitRule) {
 		rows.push({ label: 'Лимит', value: details.limitRule });
 	}

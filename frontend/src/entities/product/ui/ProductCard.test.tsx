@@ -9,14 +9,13 @@ const working = productsFixture[1]!;
 const overdraft = productsFixture[2]!;
 
 describe('ProductCard', () => {
-	it('показывает диапазон суммы, срок, ставку и порог без выписки', () => {
+	it('показывает диапазон суммы, срок и ставку', () => {
 		render(<ProductCard product={working} fits={false} onSelect={vi.fn()} />);
 
 		expect(screen.getByRole('heading', { name: 'Оборотный кредит' })).toBeInTheDocument();
 		expect(screen.getByText('300 тыс. — 10 млн ₽')).toBeInTheDocument();
 		expect(screen.getByText('3–36 мес.')).toBeInTheDocument();
 		expect(screen.getByText('20–28 % годовых')).toBeInTheDocument();
-		expect(screen.getByText(/Без выписки до/)).toBeInTheDocument();
 	});
 
 	it('подходящий продукт помечен, клик по «Посмотреть условия» отдаёт код', async () => {
@@ -29,11 +28,10 @@ describe('ProductCard', () => {
 		expect(onSelect).toHaveBeenCalledWith('EXPRESS');
 	});
 
-	it('овердрафт: вместо суммы — лимит, помечен для клиентов банка', () => {
+	it('овердрафт: вместо суммы — лимит', () => {
 		render(<ProductCard product={overdraft} fits={false} onSelect={vi.fn()} />);
 
 		expect(screen.getByText('Лимит до 5 млн ₽')).toBeInTheDocument();
 		expect(screen.getByText('Лимит на 12 месяцев')).toBeInTheDocument();
-		expect(screen.getByText('Только клиентам банка')).toBeInTheDocument();
 	});
 });

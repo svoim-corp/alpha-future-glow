@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+import { Icon } from '../Icon';
 import styles from './Modal.module.scss';
 
 export interface ModalProps {
@@ -88,9 +89,11 @@ export const Modal = ({ title, onClose, children, footer, wide = false }: ModalP
 			>
 				<div className={styles.header}>
 					<h2 id={titleId}>{title}</h2>
-					<button type="button" className={styles.close} aria-label="Закрыть" onClick={onClose}>×</button>
+					<button type="button" className={styles.close} aria-label="Закрыть" onClick={onClose}>
+						<Icon name="close" size={18} />
+					</button>
 				</div>
-				<div>{children}</div>
+				<div className={styles.body}>{children}</div>
 				{footer && <div className={styles.footer}>{footer}</div>}
 			</div>
 		</div>,

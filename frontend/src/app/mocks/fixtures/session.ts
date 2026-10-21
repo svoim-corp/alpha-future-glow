@@ -5,7 +5,7 @@ export const clientUser: CurrentUser = {
 	fullName: 'Смирнов Олег Викторович',
 	position: 'Генеральный директор',
 	role: 'CLIENT',
-	company: { id: 'c-1', inn: '7712345678', name: 'ООО «Северная пекарня»', isBankClient: true },
+	company: { id: 'c-1', inn: '7712345678', name: 'ООО «Северная пекарня»' },
 };
 
 export const officerUser: CurrentUser = {

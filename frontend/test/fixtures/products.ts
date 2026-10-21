@@ -15,8 +15,6 @@ export const productsFixture: ProductSummary[] = [
 		amount: { min: 100000, max: 1000000 },
 		term: { min: 3, max: 24 },
 		rate: { min: 24, max: 30 },
-		noStatementThreshold: 1000000,
-		bankClientsOnly: false,
 	},
 	{
 		code: 'WORKING',
@@ -26,8 +24,6 @@ export const productsFixture: ProductSummary[] = [
 		amount: { min: 300000, max: 10000000 },
 		term: { min: 3, max: 36 },
 		rate: { min: 20, max: 28 },
-		noStatementThreshold: 500000,
-		bankClientsOnly: false,
 	},
 	{
 		code: 'OVERDRAFT',
@@ -37,8 +33,6 @@ export const productsFixture: ProductSummary[] = [
 		amount: { min: 100000, max: 5000000 },
 		term: null,
 		rate: { min: 22, max: 30 },
-		noStatementThreshold: null,
-		bankClientsOnly: true,
 	},
 ];
 
@@ -50,9 +44,8 @@ export const workingDetails: ProductDetails = {
 	amount: { min: 300000, max: 10000000 },
 	term: { min: 3, max: 36 },
 	rate: { min: 20, max: 28 },
-	requirements: { minBusinessAgeMonths: null, bankClientsOnly: false, guarantorForLlc: false },
-	noStatementThreshold: 500000,
-	whatYouNeed: ['ИНН компании или ИП', 'Согласие на запрос в бюро кредитных историй'],
+	requirements: { minBusinessAgeMonths: null, guarantorForLlc: false },
+	whatYouNeed: ['Согласие на запрос в бюро кредитных историй'],
 };
 
 export const investDetails: ProductDetails = {
@@ -64,10 +57,9 @@ export const investDetails: ProductDetails = {
 	term: { min: 12, max: 84 },
 	rate: { min: 18, max: 26 },
 	graceMaxMonths: 6,
-	requirements: { minBusinessAgeMonths: 12, bankClientsOnly: false, guarantorForLlc: true },
-	noStatementThreshold: null,
-	limitRule: 'До 1,5 среднемесячных поступлений при подтверждении оборотов',
-	whatYouNeed: ['ИНН', 'Согласие на запрос в БКИ', 'Поручитель для ООО'],
+	requirements: { minBusinessAgeMonths: 12, guarantorForLlc: true },
+	limitRule: 'До 1,5 среднемесячных поступлений на счета в банке',
+	whatYouNeed: ['Согласие на запрос в БКИ', 'Для ООО — поручитель из руководителя или учредителей и его согласие на запрос в БКИ'],
 };
 
 export const overdraftDetails: ProductDetails = {
@@ -78,9 +70,8 @@ export const overdraftDetails: ProductDetails = {
 	amount: { min: 100000, max: 5000000 },
 	term: null,
 	rate: { min: 22, max: 30 },
-	requirements: { minBusinessAgeMonths: null, bankClientsOnly: true, guarantorForLlc: false },
-	noStatementThreshold: null,
-	whatYouNeed: ['ИНН компании или ИП'],
+	requirements: { minBusinessAgeMonths: null, guarantorForLlc: false },
+	whatYouNeed: ['Согласие на запрос в БКИ'],
 };
 
 export const matchFixture: ProductMatch[] = [

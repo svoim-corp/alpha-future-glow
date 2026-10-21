@@ -24,7 +24,6 @@ export interface CompanyRef {
 	id: string;
 	inn: string;
 	name: string;
-	isBankClient: boolean;
 }
 
 /** Ответ GET /auth/me */

@@ -63,7 +63,7 @@ export const bankDetailsFixture: BankApplicationDetails = {
 
 export const completenessFixture: Completeness = {
 	complete: true,
-	issues: [{ severity: 'WARN', code: 'TURNOVER_MISMATCH', text: 'Обороты по выписке выше выручки в ГИР БО на 7%' }],
+	issues: [{ severity: 'WARN', code: 'TURNOVER_MISMATCH', text: 'Обороты по счетам в банке выше выручки в ГИР БО на 7%' }],
 };
 
 export const checksFixture: ExternalCheck[] = [
@@ -75,7 +75,7 @@ export const scoreFixture: Score = {
 	score: 640,
 	riskBand: 'MEDIUM',
 	autoDecisionEligible: false,
-	autoDecisionReason: 'Пограничный балл и сумма выше лимита без выписки',
+	autoDecisionReason: 'Пограничный балл и сумма выше лимита',
 	factors: [
 		{ code: 'BKI_DISCIPLINE', label: 'Без просрочек', impact: 80 },
 		{ code: 'DEBT_LOAD', label: 'Долговая нагрузка 47% от оборота', impact: -70 },
