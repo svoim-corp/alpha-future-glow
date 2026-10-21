@@ -99,3 +99,15 @@ func TestProductDetails(t *testing.T) {
 		t.Fatalf("неизвестный продукт: %d", w.Code)
 	}
 }
+
+func TestListGoals(t *testing.T) {
+	_, r := newTestModule(t)
+	w := do(r, "GET", "/api/v1/products/goals", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", w.Code, w.Body.String())
+	}
+	got := decode[[]goalDTO](t, w)
+	if len(got) != 5 || got[0].Code != "WORKING_CAPITAL" || got[0].Name == "" {
+		t.Fatalf("цели: %+v", got)
+	}
+}

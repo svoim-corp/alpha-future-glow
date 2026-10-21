@@ -1,5 +1,14 @@
 basePath: /api/v1
 definitions:
+  catalog.goalDTO:
+    properties:
+      code:
+        example: WORKING_CAPITAL
+        type: string
+      name:
+        example: Пополнить оборотные средства
+        type: string
+    type: object
   catalog.moneyRangeDTO:
     properties:
       max:
@@ -2101,6 +2110,20 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Условия продукта
+      tags:
+      - catalog
+  /products/goals:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/catalog.goalDTO'
+            type: array
+      summary: Цели кредита для подбора по задаче
       tags:
       - catalog
 swagger: "2.0"

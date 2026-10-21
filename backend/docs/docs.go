@@ -1266,6 +1266,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/products/goals": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Цели кредита для подбора по задаче",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/catalog.goalDTO"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/products/{code}": {
             "get": {
                 "description": "Все условия для панели «Условия». whatYouNeed — только действия клиента: данные компании банк берёт сам.",
@@ -1304,6 +1326,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "catalog.goalDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Пополнить оборотные средства"
+                }
+            }
+        },
         "catalog.moneyRangeDTO": {
             "type": "object",
             "properties": {

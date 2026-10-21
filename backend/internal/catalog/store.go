@@ -54,3 +54,15 @@ func (s *Store) Product(ctx context.Context, code string) (*productRow, error) {
 	}
 	return &p, nil
 }
+
+type goalRow struct {
+	Code string `db:"code"`
+	Name string `db:"name"`
+}
+
+// Goals — цели кредита в порядке показа.
+func (s *Store) Goals(ctx context.Context) ([]goalRow, error) {
+	var out []goalRow
+	err := s.db.SelectContext(ctx, &out, `SELECT code, name FROM catalog.goals ORDER BY sort, code`)
+	return out, err
+}

@@ -27,5 +27,6 @@ func (m *Module) Migrate(ctx context.Context) error {
 // Register — каталог открыт без входа: его смотрят до решения оформить заявку (docs/catalog.md).
 func (m *Module) Register(r httpx.Routes) {
 	r.Public.GET("/products", m.listProducts)
+	r.Public.GET("/products/goals", m.listGoals)
 	r.Public.GET("/products/:code", m.productDetails)
 }

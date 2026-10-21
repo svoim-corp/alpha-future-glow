@@ -113,3 +113,28 @@ func (m *Module) productDetails(c *gin.Context) {
 		WhatYouNeed:       p.WhatYouNeed.V,
 	})
 }
+
+type goalDTO struct {
+	Code string `json:"code" example:"WORKING_CAPITAL"`
+	Name string `json:"name" example:"Пополнить оборотные средства"`
+}
+
+// listGoals godoc
+//
+//	@Summary	Цели кредита для подбора по задаче
+//	@Tags		catalog
+//	@Produce	json
+//	@Success	200	{array}	goalDTO
+//	@Router		/products/goals [get]
+func (m *Module) listGoals(c *gin.Context) {
+	goals, err := m.store.Goals(c.Request.Context())
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	out := make([]goalDTO, len(goals))
+	for i, g := range goals {
+		out[i] = goalDTO{Code: g.Code, Name: g.Name}
+	}
+	httpx.JSON(c, http.StatusOK, out)
+}
