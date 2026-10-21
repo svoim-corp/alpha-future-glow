@@ -123,7 +123,7 @@ func run(log *slog.Logger) error {
 		Decisions:    scoringMod.Decisions(),
 		Companies:    companyMod.Companies(),
 	})
-	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier()})
+	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier(), Products: catalogMod.Products()})
 	supportMod.Wire(support.Ports{Applications: originationMod.Applications()})
 	plannerMod.Wire(planner.Ports{
 		Matcher:  catalogMod.ProductMatcher(),

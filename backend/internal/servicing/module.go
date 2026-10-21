@@ -3,27 +3,42 @@ package servicing
 
 import (
 	"context"
+	"embed"
+	"time"
 
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
+//go:embed migrations/*.sql
+var migrations embed.FS
+
 // Ports — данные и действия других зон, нужные зоне. Подставляются в cmd/api/main.go.
 type Ports struct {
 	Notifier shared.Notifier // напоминания PAYMENT_DUE
+	Products shared.Products // название продукта кредита
 }
 
 type Module struct {
 	deps  module.Deps
+	store *Store
 	ports Ports
+	now   func() time.Time
 }
 
-func New(deps module.Deps) *Module { return &Module{deps: deps} }
+func New(deps module.Deps) *Module {
+	return &Module{deps: deps, store: &Store{db: deps.DB}, now: time.Now}
+}
 
-// Migrate — миграций пока нет. Когда появятся таблицы, добавьте migrations/ и db.Migrate (образец — identity).
-func (m *Module) Migrate(ctx context.Context) error { return nil }
+func (m *Module) Migrate(ctx context.Context) error {
+	return db.Migrate(ctx, m.deps.DB, "servicing", migrations)
+}
 
 func (m *Module) Wire(p Ports) { m.ports = p }
 
 func (m *Module) Register(r httpx.Routes) {}
+
+// ResetDemo удаляет кредиты и графики: в демо их выдают заново.
+func (m *Module) ResetDemo(ctx context.Context) error { return m.store.Reset(ctx) }
