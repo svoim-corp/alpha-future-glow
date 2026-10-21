@@ -458,6 +458,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/contract/disburse": {
+            "post": {
+                "description": "Имитация выдачи по подписанному договору: кредит и график платежей, заявка — ISSUED. Тела нет.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Выдать кредит",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ идемпотентности",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/offer.disburseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Договор не подписан или кредит уже выдан",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/contract/documents/{docId}": {
             "get": {
                 "description": "HTML для открытия в новой вкладке. Формирует банк по условиям принятого предложения; это не загрузка файлов клиента.",
@@ -3258,6 +3311,31 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 1000,
                     "example": "Нашли финансирование в другом месте"
+                }
+            }
+        },
+        "offer.disburseResponse": {
+            "type": "object",
+            "properties": {
+                "accountMasked": {
+                    "type": "string",
+                    "example": "•••• 5678"
+                },
+                "disbursedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T14:01:00Z"
+                },
+                "loanId": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "ISSUED"
                 }
             }
         },

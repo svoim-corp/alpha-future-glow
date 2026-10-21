@@ -468,6 +468,22 @@ definitions:
     required:
     - reason
     type: object
+  offer.disburseResponse:
+    properties:
+      accountMasked:
+        example: •••• 5678
+        type: string
+      disbursedAt:
+        example: "2026-10-20T14:01:00Z"
+        type: string
+      loanId:
+        example: l-55
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: ISSUED
+    type: object
   offer.documentDTO:
     properties:
       id:
@@ -2424,6 +2440,42 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Договор к подписанию
+      tags:
+      - offer
+  /applications/{id}/contract/disburse:
+    post:
+      description: 'Имитация выдачи по подписанному договору: кредит и график платежей,
+        заявка — ISSUED. Тела нет.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.disburseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Договор не подписан или кредит уже выдан
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Выдать кредит
       tags:
       - offer
   /applications/{id}/contract/documents/{docId}:

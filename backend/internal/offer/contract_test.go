@@ -112,3 +112,40 @@ func TestSignContract(t *testing.T) {
 		t.Fatal("в печатной форме нет отметки о подписи")
 	}
 }
+
+func TestDisburse(t *testing.T) {
+	e := newEnv(t)
+	e.decide(t, "a-1", "c-1", approved)
+	path := "/api/v1/applications/a-1/contract/disburse"
+	e.do("POST", "/api/v1/applications/a-1/offer/accept", "smirnov", "")
+	if w := e.do("POST", path, "smirnov", ""); w.Code != http.StatusConflict {
+		t.Fatalf("без подписи: %d", w.Code)
+	}
+	e.do("POST", "/api/v1/applications/a-1/contract/sign", "smirnov", `{"confirm":true}`)
+
+	key := fmt.Sprintf("disburse-%d", time.Now().UnixNano())
+	w := e.do("POST", path, "smirnov", "", "Idempotency-Key", key)
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	got := decode[disburseResponse](t, w)
+	if got.Status != shared.StatusIssued || got.LoanID != "l-a-1" || !got.DisbursedAt.Equal(today) || got.AccountMasked != "•••• 5678" {
+		t.Fatalf("выдача: %+v", got)
+	}
+	in := e.loans.opened["a-1"]
+	if in.Amount != 1_500_000 || in.Rate != 21.5 || in.Term != 24 || in.ApplicantID != "u-1" || !strings.HasPrefix(in.ContractNumber, "КД-") {
+		t.Fatalf("условия кредита: %+v", in)
+	}
+	if e.apps.status("a-1") != shared.StatusIssued {
+		t.Fatalf("статус: %s", e.apps.status("a-1"))
+	}
+	if again := e.do("POST", path, "smirnov", "", "Idempotency-Key", key); again.Body.String() != w.Body.String() {
+		t.Fatalf("повтор по ключу: %s", again.Body.String())
+	}
+	if w := e.do("POST", path, "smirnov", ""); w.Code != http.StatusConflict {
+		t.Fatalf("повторная выдача: %d", w.Code)
+	}
+	if k := decode[contractResponse](t, e.do("GET", "/api/v1/applications/a-1/contract", "smirnov", "")); !k.Disbursed || k.Terms.FirstPaymentDate != "2026-11-21" {
+		t.Fatalf("договор после выдачи: %+v", k)
+	}
+}

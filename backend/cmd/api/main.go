@@ -122,6 +122,7 @@ func run(log *slog.Logger) error {
 		Applications: originationMod.Applications(),
 		Decisions:    scoringMod.Decisions(),
 		Companies:    companyMod.Companies(),
+		Loans:        servicingMod.Loans(),
 	})
 	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier(), Products: catalogMod.Products()})
 	supportMod.Wire(support.Ports{Applications: originationMod.Applications()})

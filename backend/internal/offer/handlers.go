@@ -227,6 +227,7 @@ func (m *Module) getContract(c *gin.Context) {
 		},
 		Documents: make([]documentDTO, len(k.docs)),
 		Signed:    o.SignedAt != nil,
+		Disbursed: o.DisbursedAt != nil,
 	}
 	for i, d := range k.docs {
 		resp.Documents[i] = documentDTO{ID: d, Title: docTitles[d], URL: documentURL(k.app.ID, d)}
@@ -308,4 +309,38 @@ func (m *Module) signContract(c *gin.Context) {
 		return
 	}
 	httpx.JSON(c, http.StatusOK, signResponse{Signed: true, SignedAt: o.SignedAt.UTC(), SignatureID: *o.SignatureID})
+}
+
+type disburseResponse struct {
+	Status        shared.Status `json:"status" example:"ISSUED"`
+	LoanID        string        `json:"loanId" example:"l-55"`
+	DisbursedAt   time.Time     `json:"disbursedAt" example:"2026-10-20T14:01:00Z"`
+	AccountMasked string        `json:"accountMasked" example:"•••• 5678"`
+}
+
+// disburseLoan godoc
+//
+//	@Summary		Выдать кредит
+//	@Description	Имитация выдачи по подписанному договору: кредит и график платежей, заявка — ISSUED. Тела нет.
+//	@Tags			offer
+//	@Produce		json
+//	@Param			id				path		string	true	"ID заявки"
+//	@Param			Idempotency-Key	header		string	false	"Ключ идемпотентности"
+//	@Success		200				{object}	disburseResponse
+//	@Failure		403				{object}	httpx.ErrorBody
+//	@Failure		404				{object}	httpx.ErrorBody
+//	@Failure		409				{object}	httpx.ErrorBody	"Договор не подписан или кредит уже выдан"
+//	@Router			/applications/{id}/contract/disburse [post]
+func (m *Module) disburseLoan(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	d, err := m.disburse(c.Request.Context(), c.Param("id"), company, clientActor(c))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, disburseResponse{Status: shared.StatusIssued, LoanID: d.loanID, DisbursedAt: d.at, AccountMasked: d.accountMasked})
 }

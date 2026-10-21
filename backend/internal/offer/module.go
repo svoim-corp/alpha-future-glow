@@ -21,6 +21,7 @@ type Ports struct {
 	Applications shared.Applications // переходы SIGNING, ISSUED, CLOSED
 	Decisions    shared.Decisions    // условия оффера по событию DecisionMade
 	Companies    shared.Companies    // договор поручительства только для ООО
+	Loans        shared.Loans        // кредит и график при выдаче (Servicing)
 }
 
 type Module struct {
@@ -50,6 +51,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/applications/:id/contract", m.getContract)
 	r.Client.GET("/applications/:id/contract/documents/:docId", m.getDocument)
 	r.Client.POST("/applications/:id/contract/sign", m.deps.Idem.Middleware(), m.signContract)
+	r.Client.POST("/applications/:id/contract/disburse", m.deps.Idem.Middleware(), m.disburseLoan)
 }
 
 // ResetDemo удаляет предложения и договоры: они относятся к заявкам демо.

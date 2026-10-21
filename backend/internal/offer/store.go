@@ -36,13 +36,15 @@ type offerRow struct {
 	DeclinedAt           *time.Time                    `db:"declined_at"`
 	SignedAt             *time.Time                    `db:"signed_at"`
 	SignatureID          *string                       `db:"signature_id"`
+	DisbursedAt          *time.Time                    `db:"disbursed_at"`
+	LoanID               *string                       `db:"loan_id"`
 }
 
 const offerCols = `app_id, decision_id, decision, product_code, amount, term, rate, grace_months, monthly_payment,
 	requested_product_code, requested_amount, requested_term, explanation, alternatives, valid_until, created_at`
 
 // contractCols — состояние ответа клиента и договора; меняется только командами клиента, не новым решением.
-const contractCols = `accepted_at, contract_number, declined_at, signed_at, signature_id`
+const contractCols = `accepted_at, contract_number, declined_at, signed_at, signature_id, disbursed_at, loan_id`
 
 // SaveOffer записывает предложение по заявке; новое решение заменяет прежнее предложение.
 func (s *Store) SaveOffer(ctx context.Context, o *offerRow) error {
@@ -126,6 +128,24 @@ func (s *Store) Sign(ctx context.Context, appID, signatureID string, at time.Tim
 	}
 	n, err := res.RowsAffected()
 	return n > 0, err
+}
+
+// Disburse отмечает выдачу; false — договор не подписан или кредит уже выдан.
+func (s *Store) Disburse(ctx context.Context, appID, loanID string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET disbursed_at = $2, loan_id = $3
+		WHERE app_id = $1 AND signed_at IS NOT NULL AND disbursed_at IS NULL`, appID, at, loanID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Undisburse откатывает отметку о выдаче, если перевести заявку в «Выдано» не удалось.
+func (s *Store) Undisburse(ctx context.Context, appID string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET disbursed_at = NULL, loan_id = NULL WHERE app_id = $1`, appID)
+	return err
 }
 
 func (s *Store) Reset(ctx context.Context) error {

@@ -102,6 +102,21 @@ func (f fakeCompanies) Profile(_ context.Context, id string) (*shared.CompanyPro
 	return f[id], nil
 }
 
+// fakeLoans — Servicing: один кредит на заявку, повтор возвращает тот же.
+type fakeLoans struct {
+	mu     sync.Mutex
+	opened map[string]shared.LoanOpening
+}
+
+func (f *fakeLoans) Open(_ context.Context, in shared.LoanOpening) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.opened[in.AppID]; !ok {
+		f.opened[in.AppID] = in
+	}
+	return "l-" + in.AppID, nil
+}
+
 var users = map[string]*auth.User{
 	"smirnov": {ID: "u-1", Role: shared.RoleClient, CompanyID: ptr("c-1"), FullName: "Смирнов Олег Викторович"},
 	"orlova":  {ID: "u-4", Role: shared.RoleClient, CompanyID: ptr("c-3"), FullName: "Орлова Мария Игоревна"},
@@ -118,6 +133,7 @@ type env struct {
 	bus       *events.Bus
 	apps      *fakeApps
 	decisions fakeDecisions
+	loans     *fakeLoans
 	router    *gin.Engine
 }
 
@@ -139,12 +155,14 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 
-	e := &env{bus: events.New(), apps: &fakeApps{apps: map[string]*shared.ApplicationView{}}, decisions: fakeDecisions{}}
+	e := &env{bus: events.New(), apps: &fakeApps{apps: map[string]*shared.ApplicationView{}}, decisions: fakeDecisions{},
+		loans: &fakeLoans{opened: map[string]shared.LoanOpening{}}}
 	e.m = New(module.Deps{DB: conn, Bus: e.bus, Idem: idempotency.New(conn)})
 	e.m.now = func() time.Time { return today }
 	e.m.Wire(Ports{
 		Applications: e.apps,
 		Decisions:    e.decisions,
+		Loans:        e.loans,
 		Companies: fakeCompanies{
 			"c-1": {CompanyView: shared.CompanyView{ID: "c-1", INN: "7712345678", Name: "ООО «Северная пекарня»", Type: shared.CompanyLLC},
 				GuarantorCandidates: []shared.Person{{PersonID: "p-1", FullName: "Смирнов Олег Викторович"}}},
