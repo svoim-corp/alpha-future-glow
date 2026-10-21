@@ -650,6 +650,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/offer/accept": {
+            "post": {
+                "description": "Одобрение или иные условия. Договор получает номер, заявка — статус SIGNING. Тела нет.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Принять предложение банка",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/offer.statusResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Отказ, уже принято или заявка не в статусе решения",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Срок действия предложения истёк",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/prelim": {
             "post": {
                 "description": "Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам в банке. Лимит или стоп-отказ. Требует согласие на БКИ.",
@@ -2987,6 +3040,23 @@ const docTemplate = `{
                 "term": {
                     "type": "integer",
                     "example": 24
+                }
+            }
+        },
+        "offer.statusResponse": {
+            "type": "object",
+            "properties": {
+                "redirect": {
+                    "type": "string",
+                    "example": "/applications/a-1031/sign"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "SIGNING"
                 }
             }
         },

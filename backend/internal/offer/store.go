@@ -31,6 +31,8 @@ type offerRow struct {
 	Alternatives         db.JSON[[]shared.Alternative] `db:"alternatives"`
 	ValidUntil           time.Time                     `db:"valid_until"`
 	CreatedAt            time.Time                     `db:"created_at"`
+	AcceptedAt           *time.Time                    `db:"accepted_at"`
+	ContractNumber       *string                       `db:"contract_number"`
 }
 
 const offerCols = `app_id, decision_id, decision, product_code, amount, term, rate, grace_months, monthly_payment,
@@ -54,7 +56,7 @@ func (s *Store) SaveOffer(ctx context.Context, o *offerRow) error {
 // Offer — предложение по заявке; (nil, nil) — решения ещё нет.
 func (s *Store) Offer(ctx context.Context, appID string) (*offerRow, error) {
 	var o offerRow
-	err := s.db.GetContext(ctx, &o, `SELECT `+offerCols+` FROM offer.offers WHERE app_id = $1`, appID)
+	err := s.db.GetContext(ctx, &o, `SELECT `+offerCols+`, accepted_at, contract_number FROM offer.offers WHERE app_id = $1`, appID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -62,6 +64,31 @@ func (s *Store) Offer(ctx context.Context, appID string) (*offerRow, error) {
 		return nil, err
 	}
 	return &o, nil
+}
+
+// NextContractNumber — порядковый номер договора. Пропуски допустимы: номер берётся до принятия.
+func (s *Store) NextContractNumber(ctx context.Context) (int64, error) {
+	var n int64
+	err := s.db.GetContext(ctx, &n, `SELECT nextval('offer.contract_seq')`)
+	return n, err
+}
+
+// Accept отмечает предложение принятым и присваивает номер договора; false — его уже приняли.
+func (s *Store) Accept(ctx context.Context, appID, contractNumber string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET accepted_at = $2, contract_number = $3 WHERE app_id = $1 AND accepted_at IS NULL`,
+		appID, at, contractNumber)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Unaccept откатывает принятие, если перевести заявку в подписание не удалось.
+func (s *Store) Unaccept(ctx context.Context, appID string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET accepted_at = NULL, contract_number = NULL WHERE app_id = $1`, appID)
+	return err
 }
 
 func (s *Store) Reset(ctx context.Context) error {

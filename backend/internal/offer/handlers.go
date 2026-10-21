@@ -92,3 +92,41 @@ func (m *Module) getOffer(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, toOfferResponse(o))
 }
+
+// clientActor — клиент как автор действия в истории заявки.
+func clientActor(c *gin.Context) shared.Actor {
+	u := auth.UserFrom(c)
+	return shared.Actor{Type: shared.ActorClient, UserID: u.ID, Name: u.FullName}
+}
+
+type statusResponse struct {
+	Status   shared.Status `json:"status" example:"SIGNING"`
+	Redirect string        `json:"redirect,omitempty" example:"/applications/a-1031/sign"`
+}
+
+// acceptOffer godoc
+//
+//	@Summary		Принять предложение банка
+//	@Description	Одобрение или иные условия. Договор получает номер, заявка — статус SIGNING. Тела нет.
+//	@Tags			offer
+//	@Produce		json
+//	@Param			id	path		string	true	"ID заявки"
+//	@Success		200	{object}	statusResponse
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Failure		409	{object}	httpx.ErrorBody	"Отказ, уже принято или заявка не в статусе решения"
+//	@Failure		422	{object}	httpx.ErrorBody	"Срок действия предложения истёк"
+//	@Router			/applications/{id}/offer/accept [post]
+func (m *Module) acceptOffer(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	id := c.Param("id")
+	if err := m.accept(c.Request.Context(), id, company, clientActor(c)); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, statusResponse{Status: shared.StatusSigning, Redirect: "/applications/" + id + "/sign"})
+}

@@ -474,6 +474,16 @@ definitions:
         example: 24
         type: integer
     type: object
+  offer.statusResponse:
+    properties:
+      redirect:
+        example: /applications/a-1031/sign
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: SIGNING
+    type: object
   origination.applicationDTO:
     properties:
       authority:
@@ -2462,6 +2472,42 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Решение банка и предложение
+      tags:
+      - offer
+  /applications/{id}/offer/accept:
+    post:
+      description: Одобрение или иные условия. Договор получает номер, заявка — статус
+        SIGNING. Тела нет.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.statusResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Отказ, уже принято или заявка не в статусе решения
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Срок действия предложения истёк
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Принять предложение банка
       tags:
       - offer
   /applications/{id}/prelim:

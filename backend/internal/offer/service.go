@@ -3,6 +3,7 @@ package offer
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
@@ -125,4 +126,42 @@ func (m *Module) offerOf(ctx context.Context, appID, companyID string) (*shared.
 		return nil, nil, httpx.NotFound("Решения по заявке ещё нет")
 	}
 	return app, o, nil
+}
+
+const actionOfferAccept = "OFFER_ACCEPT"
+
+// accept — клиент принимает одобрение или иные условия: договор получает номер, заявка — статус «Подписание».
+// Принятие записывается раньше перехода: страница подписания сразу видит договор. Переход не удался — откат.
+func (m *Module) accept(ctx context.Context, appID, companyID string, actor shared.Actor) error {
+	_, o, err := m.offerOf(ctx, appID, companyID)
+	if err != nil {
+		return err
+	}
+	now := m.now().UTC()
+	switch {
+	case o.Decision == string(shared.StatusRejected):
+		return httpx.InvalidTransition("Банк отказал — принимать нечего")
+	case o.AcceptedAt != nil:
+		return httpx.InvalidTransition("Предложение уже принято")
+	case !now.Before(o.ValidUntil.AddDate(0, 0, 1)): // действует по дату validUntil включительно
+		return httpx.BusinessRule("Срок действия предложения истёк. Оформите новую заявку")
+	}
+	seq, err := m.store.NextContractNumber(ctx)
+	if err != nil {
+		return fmt.Errorf("next contract number: %w", err)
+	}
+	ok, err := m.store.Accept(ctx, appID, fmt.Sprintf("КД-%d-%04d", now.Year(), seq), now)
+	if err != nil {
+		return fmt.Errorf("accept offer %s: %w", appID, err)
+	}
+	if !ok {
+		return httpx.InvalidTransition("Предложение уже принято")
+	}
+	if err := m.ports.Applications.Transition(ctx, appID, shared.StatusSigning, actor, actionOfferAccept, ""); err != nil {
+		if uerr := m.store.Unaccept(ctx, appID); uerr != nil {
+			slog.Error("rollback offer acceptance", "appId", appID, "err", uerr)
+		}
+		return err
+	}
+	return nil
 }

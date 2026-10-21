@@ -45,6 +45,7 @@ func (m *Module) Wire(p Ports) {
 
 func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/applications/:id/offer", m.getOffer)
+	r.Client.POST("/applications/:id/offer/accept", m.acceptOffer)
 }
 
 // ResetDemo удаляет предложения и договоры: они относятся к заявкам демо.
