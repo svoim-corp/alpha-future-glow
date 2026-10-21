@@ -1,5 +1,7 @@
 import { formatDateTime } from '@shared/lib/format';
 
+import styles from './SavedIndicator.module.scss';
+
 interface SavedIndicatorProps {
 	savedAt: string | null;
 	saving: boolean;
@@ -18,5 +20,5 @@ export const SavedIndicator = ({ savedAt, saving, failed }: SavedIndicatorProps)
 		text = `Черновик сохранён ${formatDateTime(savedAt)}`;
 	}
 
-	return <p role="status" aria-live="polite">{text}</p>;
+	return <p role="status" aria-live="polite" className={styles.status}>{text}</p>;
 };
