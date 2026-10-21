@@ -1,11 +1,23 @@
 # Умный кредитный кабинет — спецификация API и доменные зоны
 
-Версия: 20.10.2026. Источник структуры — холст в Design «Схемы кредитного кабинета» (схема страниц, формы заявки, схема решения, статусы). Требования — ТЗ; ссылки вида «стр. N».
+Версия: 21.10.2026. Источник структуры — холст в Design «Схемы кредитного кабинета» (схема страниц, формы заявки, схема решения, статусы). Требования — ТЗ; ссылки вида «стр. N».
 
 Обозначения:
 - **ТЗ** — требование из ТЗ, указан пункт.
 - **Доп.** — наше допущение, в ТЗ нет.
+- **Уточн.** — пояснение организаторов к ТЗ.
 - Все внешние источники — локальные моки (стр. 10, п. 04; стр. 12, п. 5), перечислены в THIRD_PARTY_NOTICES (стр. 7).
+
+### Пользователи — действующие клиенты банка (Уточн., 21.10.2026)
+
+Все компании и ИП, которые входят в кабинет, уже обслуживаются в банке. Данные, нужные для кредита, у банка есть всегда, поэтому кабинет **не спрашивает их у пользователя и не просит загружать документы**:
+
+- **Карточка компании** — реквизиты, адреса, руководитель, учредители, налоговый режим. Берётся из клиентской базы банка (АБС) и сверяется с реестрами. ИНН не вводится: компания известна по пользователю.
+- **Обороты** — по счетам в банке. Выписки из 1С и других банков нет.
+- **Полномочия заявителя** (руководитель или доверенность МЧД) — берутся из данных банка о представителях клиента. Номер МЧД пользователь не вводит.
+- **Поручитель** (для ООО) — выбирается из руководителя и учредителей, известных банку. ФИО и ИНН не вводятся.
+
+От клиента нужны только решения и согласия: продукт, сумма, срок, цель, согласия на запрос в БКИ, подтверждение достоверности и ответы на уточняющие вопросы банка. Признак «клиент банка» и правила продуктов «только для клиентов банка» больше не нужны: клиенты все.
 
 ---
 
@@ -13,11 +25,11 @@
 
 | # | Зона | За что отвечает | Владеет данными | Основа |
 |---|---|---|---|---|
-| 1 | **Identity** (доступ) | Вход, сессия, роли, привязка пользователя к компании, проверка полномочий (руководитель / МЧД) | `User`, `Session`, `Authority` | стр. 5 (кто подаёт), стр. 7 (тест. учётки); МЧД — Доп. |
+| 1 | **Identity** (доступ) | Вход, сессия, роли, привязка пользователя к компании, проверка полномочий (руководитель / МЧД) по данным банка | `User`, `Session`, `Authority` | стр. 5 (кто подаёт), стр. 7 (тест. учётки); МЧД — Доп.; источник полномочий — Уточн. |
 | 2 | **Catalog** (продукты) | Линейка продуктов, их рамки, подбор по задаче, калькулятор платежа | `Product`, `Goal` | стр. 6, п. 3; стр. 13; калькулятор — Доп. |
-| 3 | **Company** (клиент-юрлицо) | Профиль компании/ИП, собранный из реестров; фактический адрес, налоговый режим, обороты | `Company`, `Turnover` | стр. 4 (без повторного ввода), стр. 13 |
+| 3 | **Company** (клиент-юрлицо) | Профиль компании/ИП из клиентской базы банка, сверенный с реестрами: адреса, руководитель и учредители, налоговый режим, обороты по счетам в банке | `Company`, `Person`, `Turnover` | стр. 4 (без повторного ввода), стр. 13; Уточн. |
 | 4 | **Origination** (заявка) | Черновик, этап 1 и этап 2, проверка полноты, отправка, машина состояний, история | `Application`, `StatusEvent` | стр. 6, п. 3, 5; стр. 13 |
-| 5 | **Integrations** (моки) | Адаптеры к ЕГРЮЛ/ЕГРИП, «Прозрачный бизнес», БКИ, ФНС, ГИР БО, КАД/ФССП/ЕФРСБ, реестр МЧД, внутренние обороты, парсер выписки 1С | `CheckResult` (снимок ответа) | стр. 13; стр. 12, п. 5; часть источников — Доп. |
+| 5 | **Integrations** (моки) | Адаптеры к АБС банка (профиль клиента, представители, обороты), ЕГРЮЛ/ЕГРИП, «Прозрачный бизнес», БКИ, ФНС, ГИР БО, КАД/ФССП/ЕФРСБ, реестр МЧД | `CheckResult` (снимок ответа) | стр. 13; стр. 12, п. 5; часть источников — Доп. |
 | 6 | **Scoring & Decision** (риск) | Предварительный лимит (этап 1), полный скоринг с факторами, кредитная логика, авторешение | `ScoreResult`, `Decision` | стр. 14–15; стр. 11, п. 06 |
 | 7 | **Underwriting** (рабочее место банка) | Очередь, разбор заявки, запрос доп. информации, ручное решение, иные условия | `InfoRequest`, назначение | стр. 6, п. 4; стр. 12, п. 3; стр. 15 |
 | 8 | **Offer & Contract** (оформление) | Оффер, принятие условий, имитация подписи и выдачи | `Offer`, `Contract` | стр. 11, п. 06; стр. 15 |
@@ -71,7 +83,7 @@ Identity ──► Origination ◄── Catalog
 
 ## 3. Соглашения API
 
-- Префикс: `/api/v1`. Формат: `application/json; charset=utf-8`, файл выписки — `multipart/form-data`.
+- Префикс: `/api/v1`. Формат: `application/json; charset=utf-8`. Загрузки файлов нет: данные клиента банк берёт сам (Уточн.).
 - Аутентификация: httpOnly cookie `session` после `/auth/login`. Роли: `CLIENT`, `BANK_OFFICER`. Клиент видит только заявки своей компании; `/bank/*` — только `BANK_OFFICER`.
 - Деньги — целые рубли (`number`), ставки — проценты годовых (`number`, `22.5`), сроки — месяцы. Даты — ISO 8601 (`2026-10-20`, `2026-10-20T15:57:00Z`).
 - Оптимистичная блокировка: заявка возвращает `version`, изменения передают её в заголовке `If-Match`. Несовпадение → `412`.
@@ -85,7 +97,7 @@ Identity ──► Origination ◄── Catalog
   "code": "VALIDATION_ERROR",
   "message": "Не все поля заполнены",
   "fields": [
-    { "field": "guarantor.inn", "code": "REQUIRED", "message": "Укажите ИНН поручителя" }
+    { "field": "stage2.guarantor.personId", "code": "REQUIRED", "message": "Выберите поручителя" }
   ],
   "traceId": "b7f3c2a1"
 }
@@ -95,11 +107,11 @@ Identity ──► Origination ◄── Catalog
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | Неверные или пропущенные поля |
 | 401 | `UNAUTHORIZED` | Нет сессии |
-| 403 | `FORBIDDEN` | Чужая заявка, не та роль, нет полномочий (МЧД не проверена) |
+| 403 | `FORBIDDEN` | Чужая заявка, не та роль, нет полномочий (по данным банка заявитель не руководитель и действующей МЧД нет) |
 | 404 | `NOT_FOUND` | Нет объекта |
 | 409 | `INVALID_TRANSITION` | Действие недопустимо в текущем статусе |
 | 412 | `VERSION_CONFLICT` | Заявку изменили параллельно |
-| 422 | `BUSINESS_RULE` | Нарушено правило продукта (сумма вне рамок, овердрафт не клиенту банка) |
+| 422 | `BUSINESS_RULE` | Нарушено правило продукта (сумма или срок вне рамок, отсрочка длиннее разрешённой) |
 | 502 | `UPSTREAM_UNAVAILABLE` | Мок внешнего сервиса не ответил |
 
 ### Общие объекты
@@ -164,9 +176,10 @@ Identity ──► Origination ◄── Catalog
   "fullName": "Петрова Анна Сергеевна",
   "position": "Главный бухгалтер",
   "role": "CLIENT",
-  "company": { "id": "c-1", "inn": "7712345678", "name": "ООО «Северная пекарня»", "isBankClient": true }
+  "company": { "id": "c-1", "inn": "7712345678", "name": "ООО «Северная пекарня»" }
 }
 ```
+Признака `isBankClient` нет: все пользователи — клиенты банка (Уточн.).
 
 ### 4.2 Шапка клиента (на всех страницах)
 
@@ -237,9 +250,7 @@ Identity ──► Origination ◄── Catalog
     "goals": ["WORKING_CAPITAL"],
     "amount": { "min": 300000, "max": 10000000 },
     "term": { "min": 3, "max": 36 },
-    "rate": { "min": 20, "max": 28 },
-    "noStatementThreshold": 500000,
-    "bankClientsOnly": false
+    "rate": { "min": 20, "max": 28 }
   }
 ]
 ```
@@ -260,15 +271,13 @@ Identity ──► Origination ◄── Catalog
   "graceMaxMonths": 6,
   "requirements": {
     "minBusinessAgeMonths": 12,
-    "bankClientsOnly": false,
     "guarantorForLlc": true
   },
-  "noStatementThreshold": null,
-  "limitRule": "До 1,5 среднемесячных поступлений при подтверждении оборотов",
-  "whatYouNeed": ["ИНН", "Согласие на запрос в БКИ", "Выписка из 1С, если сумма выше лимита без выписки", "Поручитель для ООО"]
+  "limitRule": "До 1,5 среднемесячных поступлений на счета в банке",
+  "whatYouNeed": ["Согласие на запрос в БКИ", "Для ООО — поручитель из руководителя или учредителей и его согласие на запрос в БКИ"]
 }
 ```
-`noStatementThreshold: null` — выписка нужна всегда.
+`whatYouNeed` перечисляет только действия клиента. Данные компании и обороты банк берёт сам (Уточн.).
 
 #### `GET /products/goals`
 Цели для блока «Подбор по задаче».
@@ -293,13 +302,13 @@ Identity ──► Origination ◄── Catalog
 ```json
 [
   { "code": "WORKING", "fits": true, "reason": "Подходит по цели, сумме и сроку" },
-  { "code": "OVERDRAFT", "fits": false, "reason": "Только для клиентов банка" },
+  { "code": "OVERDRAFT", "fits": false, "reason": "Подходит для кассовых разрывов, а не для оборотных средств" },
   { "code": "EXPRESS", "fits": false, "reason": "Сумма больше 1 000 000 ₽" }
 ]
 ```
 
 #### `POST /applications`
-Кнопка «Оформить»: создаёт черновик с параметрами из подбора и ведёт в мастер.
+Кнопка «Оформить»: создаёт черновик с параметрами из подбора и ведёт в мастер. Компания берётся из пользователя. Её карточка и полномочия заявителя подтягиваются из данных банка при создании черновика (Уточн.).
 
 Запрос:
 ```json
@@ -309,10 +318,15 @@ Identity ──► Origination ◄── Catalog
 ```json
 { "id": "a-1031", "status": "DRAFT", "version": 1, "redirect": "/applications/a-1031/edit" }
 ```
-Ошибка: `422 BUSINESS_RULE`, если сумма или срок вне рамок продукта.
+Ошибки:
+- `422 BUSINESS_RULE` — сумма или срок вне рамок продукта.
+- `403 FORBIDDEN` — по данным банка у заявителя нет полномочий подавать заявку: он не руководитель и действующей МЧД с полномочием `CREDIT_APPLICATION` нет. Текст ошибки объясняет, что сделать: оформить МЧД или подать заявку от имени руководителя.
+- `502 UPSTREAM_UNAVAILABLE` — данные банка или реестра МЧД недоступны.
 
 ### 4.5 Мастер заявки — `/applications/:id/edit`
-Зоны: Origination (владелец), Identity, Integrations, Scoring, Catalog. ТЗ: стр. 13 (сумма, срок, цель, сведения о клиенте; проверка полноты), стр. 4 (без повторного ввода), стр. 6, п. 5 (сохранение данных). Двухэтапность, МЧД, выписка, поручитель — Доп.
+Зоны: Origination (владелец), Identity, Company, Integrations, Scoring, Catalog. ТЗ: стр. 13 (сумма, срок, цель, сведения о клиенте; проверка полноты), стр. 4 (без повторного ввода), стр. 6, п. 5 (сохранение данных). Двухэтапность, МЧД, поручитель — Доп.
+
+Сведения о клиенте (карточка компании, адреса, обороты, полномочия, кандидаты в поручители) мастер только показывает. Клиент их не вводит и не правит (Уточн.).
 
 #### `GET /applications/{id}`
 Полное состояние заявки. Мастер по нему решает, какой этап и какие поля показать и что заблокировать.
@@ -342,26 +356,28 @@ Identity ──► Origination ◄── Catalog
     "regDate": "2015-03-12",
     "state": "ACTIVE"
   },
-  "authority": { "type": "HEAD", "verified": true },
+  "authority": { "type": "MCHD", "verified": true, "validUntil": "2027-03-01" },
   "consents": { "bki": { "given": true, "at": "2026-10-20T10:05:00Z" } },
   "prelim": {
     "outcome": "LIMIT",
-    "limitNoStatement": 500000,
-    "limitWithStatement": 3000000,
+    "limit": 3000000,
     "prelimRate": 22,
-    "choice": "STATEMENT"
+    "amountFits": true,
+    "choice": null
   },
   "stage2": {
-    "actualAddress": { "sameAsRegistration": true, "address": null },
-    "turnover": { "source": "STATEMENT", "avgMonthlyIncome": 1840000, "periodMonths": 12 },
-    "guarantor": { "fullName": "Смирнов Олег Викторович", "inn": "771234567890", "bkiConsent": true },
+    "actualAddress": "г. Москва, ул. Складская, 3",
+    "turnover": { "source": "BANK_ACCOUNTS", "avgMonthlyIncome": 1840000, "periodMonths": 12 },
+    "guarantor": { "personId": "p-1", "fullName": "Смирнов Олег Викторович", "bkiConsent": true },
     "truthConfirmed": false
   },
-  "locks": { "paramsLocked": false, "stage2Available": true },
+  "locks": { "stage2Available": true },
   "savedAt": "2026-10-20T10:12:00Z"
 }
 ```
-`locks.paramsLocked = true`, пока заявитель не руководитель и МЧД не проверена.
+- `company`, `authority`, `stage2.actualAddress` и `stage2.turnover` — данные банка, только для чтения (Уточн.).
+- `authority.type`: `HEAD` — заявитель руководитель, `MCHD` — действует по доверенности, известной банку.
+- `stage2.guarantor` — `null`, пока поручитель не выбран. Для ИП поля нет.
 
 #### `PATCH /applications/{id}`
 Автосохранение черновика. Передаются только изменённые поля. Работает только в `DRAFT`.
@@ -369,61 +385,22 @@ Identity ──► Origination ◄── Catalog
 Заголовок: `If-Match: 7`. Запрос:
 ```json
 {
-  "params": { "amount": 1200000, "purposeText": "Закупка муки" },
-  "stage2": { "actualAddress": { "sameAsRegistration": false, "address": "г. Москва, ул. Складская, 3" } }
+  "params": { "amount": 1200000, "purposeText": "Закупка муки" }
 }
 ```
 Ответ `200`:
 ```json
 { "version": 8, "savedAt": "2026-10-20T10:13:00Z", "prelimInvalidated": true }
 ```
-`prelimInvalidated: true` — изменилась сумма, срок или продукт, этап 1 нужно пройти заново. Ошибки: `412 VERSION_CONFLICT`, `409 INVALID_TRANSITION` (не черновик).
+`prelimInvalidated: true` — изменилась сумма, срок или продукт, этап 1 нужно пройти заново.
+
+Принимаются только `params` (`amount`, `term`, `goal`, `purposeText`, `graceMonths`, `overdraftLimit`) и `stage2.guarantor.personId`. Данные банка (`company`, `authority`, `stage2.actualAddress`, `stage2.turnover`) через PATCH не меняются: попытка — `400 VALIDATION_ERROR`.
+
+Ошибки: `412 VERSION_CONFLICT`, `409 INVALID_TRANSITION` (не черновик).
 
 #### Этап 1 — предварительное решение
 
-##### `POST /applications/{id}/company`
-По ИНН подтягивает карточку компании из ЕГРЮЛ/ЕГРИП и сверяет заявителя с руководителем.
-
-Запрос:
-```json
-{ "inn": "7712345678" }
-```
-Ответ `200`:
-```json
-{
-  "company": {
-    "inn": "7712345678",
-    "type": "LLC",
-    "name": "ООО «Северная пекарня»",
-    "ogrn": "1157746000000",
-    "regDate": "2015-03-12",
-    "state": "ACTIVE",
-    "head": "Смирнов Олег Викторович"
-  },
-  "applicantIsHead": false,
-  "authorityRequired": "MCHD"
-}
-```
-`authorityRequired`: `NONE` — заявитель руководитель, `MCHD` — нужна доверенность. Ошибки: `400` (неверный ИНН), `404` (нет в реестре), `502` (мок недоступен).
-
-##### `POST /applications/{id}/authority`
-Проверяет номер МЧД в реестре доверенностей. Без успеха параметры, согласие на БКИ и решение остаются заблокированы.
-
-Запрос:
-```json
-{ "mchdNumber": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d" }
-```
-Ответ `200`:
-```json
-{
-  "verified": true,
-  "principal": "ООО «Северная пекарня»",
-  "representative": "Петрова Анна Сергеевна",
-  "validUntil": "2027-03-01",
-  "powers": ["CREDIT_APPLICATION", "BKI_CONSENT"]
-}
-```
-Если недействительна: `200` с `{ "verified": false, "reason": "Срок действия истёк" }` — подать может только руководитель.
+Компания и полномочия заявителя определяются при создании черновика (`POST /applications`) по данным банка. Отдельных шагов «ввести ИНН» и «ввести номер МЧД» нет (Уточн.). Этап 1 — это параметры кредита, согласие на БКИ и предварительное решение.
 
 ##### `POST /calculator/payment`
 Калькулятор под суммой и сроком. Ставку до проверки не знаем, поэтому платёж — диапазоном по ставке продукта.
@@ -454,25 +431,25 @@ Identity ──► Origination ◄── Catalog
 ```json
 { "given": true, "by": "u-1", "at": "2026-10-20T10:05:00Z" }
 ```
-Ошибка: `403 FORBIDDEN`, если полномочия не подтверждены.
+Ошибка: `403 FORBIDDEN`, если по доверенности у заявителя нет полномочия `BKI_CONSENT`.
 
 ##### `POST /applications/{id}/prelim`
-Запускает этап 1: ЕГРЮЛ/ЕГРИП, БКИ, ФНС, КАД/ФССП/ЕФРСБ, ГИР БО (только ООО), внутренние обороты. Возвращает два лимита или стоп-отказ. Синхронно — моки отвечают быстро.
+Запускает этап 1: ЕГРЮЛ/ЕГРИП, БКИ, ФНС, КАД/ФССП/ЕФРСБ, ГИР БО (только ООО), обороты по счетам в банке. Возвращает лимит или стоп-отказ. Работает синхронно: моки отвечают быстро.
 
-Запрос: тела нет (данные берутся из черновика). Требует согласие на БКИ.
+Запрос: тела нет (данные берутся из черновика и из банка). Требует согласие на БКИ.
 
 Ответ `200` — лимит:
 ```json
 {
   "outcome": "LIMIT",
   "requestedAmount": 1500000,
-  "limitNoStatement": 500000,
-  "limitWithStatement": 3000000,
+  "limit": 3000000,
   "prelimRate": 22,
   "prelimPayment": 77800,
-  "needsChoice": true,
+  "amountFits": true,
   "checks": [
     { "source": "EGRUL", "status": "OK", "label": "Компания действует, 11 лет" },
+    { "source": "BANK_ACCOUNTS", "status": "OK", "label": "Обороты по счетам учтены" },
     { "source": "BKI", "status": "OK", "label": "Просрочек нет" },
     { "source": "FNS", "status": "OK", "label": "Налоговой задолженности нет" },
     { "source": "COURTS", "status": "WARN", "label": "1 арбитражное дело, некритично" },
@@ -480,7 +457,10 @@ Identity ──► Origination ◄── Catalog
   ]
 }
 ```
-`needsChoice: true` — сумма больше лимита без выписки, клиент выбирает дальше. Цифры ГИР БО клиенту не показываем, только «учтена».
+- `limit` считается по оборотам на счетах в банке, без выписок (Уточн.).
+- `amountFits: true` — сумма в пределах лимита, этап 2 открывается сразу.
+- `amountFits: false` — сумма больше лимита, клиент выбирает дальше (`prelim/choice`).
+- Цифры ГИР БО клиенту не показываем, только «учтена».
 
 Ответ `200` — стоп-отказ:
 ```json
@@ -494,72 +474,58 @@ Identity ──► Origination ◄── Catalog
 `stopReason`: `COMPANY_INACTIVE`, `BUSINESS_TOO_YOUNG`, `BKI_OVERDUE`, `CRITICAL_RISK`. Ошибки: `403` (нет согласия или полномочий), `502`.
 
 ##### `POST /applications/{id}/prelim/choice`
-Выбор клиента, если сумма выше лимита без выписки: подтвердить обороты выпиской или уменьшить сумму.
+Выбор клиента, если сумма больше лимита (`amountFits: false`): уменьшить сумму до лимита или оставить запрошенную. Во втором случае решение примет сотрудник банка, вероятны иные условия. Доп.
 
 Запрос:
 ```json
-{ "choice": "REDUCE_AMOUNT", "amount": 500000 }
+{ "choice": "REDUCE_AMOUNT", "amount": 3000000 }
 ```
 или
 ```json
-{ "choice": "STATEMENT" }
+{ "choice": "KEEP_AMOUNT" }
 ```
 Ответ `200`:
 ```json
-{ "stage": 2, "statementRequired": false, "params": { "amount": 500000, "term": 24 }, "version": 9 }
+{ "stage": 2, "params": { "amount": 3000000, "term": 24 }, "version": 9 }
 ```
+Ошибки: `409 INVALID_TRANSITION`, если `amountFits: true` или этап 1 не пройден; `422 BUSINESS_RULE`, если `amount` больше лимита или вне рамок продукта.
 
 #### Этап 2 — полная заявка
 
+Этап 2 — это проверка данных банка, выбор поручителя, согласие поручителя и подтверждение достоверности. Документы не загружаются (Уточн.).
+
 ##### `GET /applications/{id}/company-profile`
-Данные из реестров только для чтения. Клиент их не правит — устаревшие данные обновляет через налоговую.
+Данные о компании из клиентской базы банка, сверенные с реестрами. Только для чтения. Если данные устарели, клиент обновляет их в банке, а не в заявке.
 
 Ответ `200`:
 ```json
 {
-  "source": ["EGRUL", "TRANSPARENT_BUSINESS"],
+  "source": ["BANK", "EGRUL", "TRANSPARENT_BUSINESS"],
   "regAddress": "г. Москва, ул. Пекарская, 7",
+  "actualAddress": "г. Москва, ул. Складская, 3",
   "okved": { "code": "10.71", "name": "Производство хлеба" },
-  "head": "Смирнов Олег Викторович",
-  "founders": [{ "name": "Смирнов Олег Викторович", "share": 100 }],
+  "head": { "personId": "p-1", "fullName": "Смирнов Олег Викторович" },
+  "founders": [{ "personId": "p-1", "fullName": "Смирнов Олег Викторович", "share": 100 }],
+  "guarantorCandidates": [{ "personId": "p-1", "fullName": "Смирнов Олег Викторович", "roles": ["HEAD", "FOUNDER"] }],
   "taxRegime": "USN_INCOME_MINUS_EXPENSES",
-  "isBankClient": true,
-  "internalTurnover": { "avgMonthlyIncome": 1840000, "periodMonths": 12 },
+  "turnover": { "source": "BANK_ACCOUNTS", "avgMonthlyIncome": 1840000, "periodMonths": 12 },
   "girbo": { "accounted": true }
 }
 ```
-
-##### `POST /applications/{id}/statement`
-Загрузка выписки. В MVP только файл из 1С (формат 1CClientBankExchange) — упрощение описать в README.
-
-Запрос: `multipart/form-data`, поле `file` (`.txt`, до 10 МБ).
-
-Ответ `200`:
-```json
-{
-  "parsed": true,
-  "period": { "from": "2025-10-01", "to": "2026-09-30" },
-  "operations": 1284,
-  "avgMonthlyIncome": 1910000,
-  "newLimit": 2865000,
-  "amountFits": true
-}
-```
-Ошибка: `400` с `code: "STATEMENT_FORMAT"`, если файл не 1С или ИНН в выписке не совпал.
+`guarantorCandidates` — руководитель и учредители-физлица. Для ИП — пустой массив.
 
 ##### `PATCH /applications/{id}` (этап 2)
-Тот же эндпоинт автосохранения: фактический адрес и поручитель.
+Тот же эндпоинт автосохранения: выбор поручителя из `guarantorCandidates`.
 
 Запрос:
 ```json
 {
   "stage2": {
-    "actualAddress": { "sameAsRegistration": true },
-    "guarantor": { "fullName": "Смирнов Олег Викторович", "inn": "771234567890" }
+    "guarantor": { "personId": "p-1" }
   }
 }
 ```
-Поручитель обязателен для ООО, для ИП поле не показывается.
+Поручитель обязателен для ООО, для ИП поле не показывается. ФИО и ИНН поручителя банк знает, клиент их не вводит (Уточн.). `personId` не из списка кандидатов — `400 VALIDATION_ERROR`.
 
 ##### `POST /applications/{id}/guarantor/consent-bki`
 Согласие поручителя на запрос его кредитной истории.
@@ -581,7 +547,8 @@ Identity ──► Origination ◄── Catalog
 {
   "valid": false,
   "missing": [
-    { "field": "stage2.guarantor.inn", "message": "Укажите ИНН поручителя" },
+    { "field": "stage2.guarantor.personId", "message": "Выберите поручителя" },
+    { "field": "stage2.guarantor.bkiConsent", "message": "Нужно согласие поручителя на запрос в БКИ" },
     { "field": "stage2.truthConfirmed", "message": "Подтвердите достоверность сведений" }
   ]
 }
@@ -633,7 +600,7 @@ Identity ──► Origination ◄── Catalog
 `actor` — чей ход: `CLIENT` или `BANK`.
 
 #### `GET /applications/{id}/info-requests`
-Открытые и закрытые запросы банка.
+Открытые и закрытые запросы банка. Банк запрашивает только пояснения, которых нет в его данных. Реквизиты, адреса, обороты и документы, которые у банка уже есть, не запрашиваются (Уточн.).
 
 Ответ `200`:
 ```json
@@ -641,10 +608,10 @@ Identity ──► Origination ◄── Catalog
   {
     "id": "r-7",
     "status": "OPEN",
-    "comment": "Обороты в выписке расходятся с отчётностью",
+    "comment": "Обороты по счетам расходятся с отчётностью",
     "items": [
-      { "key": "actual_address", "type": "TEXT", "label": "Адрес склада, где хранится товар" },
-      { "key": "turnover_note", "type": "TEXT", "label": "Почему выручка за 2025 год ниже оборотов по счёту" }
+      { "key": "turnover_note", "type": "TEXT", "label": "Почему выручка за 2025 год ниже оборотов по счёту" },
+      { "key": "purpose_details", "type": "TEXT", "label": "У каких поставщиков планируете закупку" }
     ],
     "createdAt": "2026-10-20T12:40:00Z"
   }
@@ -658,8 +625,8 @@ Identity ──► Origination ◄── Catalog
 ```json
 {
   "answers": [
-    { "key": "actual_address", "value": "г. Москва, ул. Складская, 3" },
-    { "key": "turnover_note", "value": "Часть поступлений — возврат займа учредителя" }
+    { "key": "turnover_note", "value": "Часть поступлений — возврат займа учредителя" },
+    { "key": "purpose_details", "value": "Мелькомбинат «Заря», упаковка — «ПакСервис»" }
   ]
 }
 ```
@@ -812,7 +779,7 @@ Identity ──► Origination ◄── Catalog
 Ответ `200`:
 ```json
 [
-  { "id": "f-3", "step": "APPLICATION", "question": "Зачем выписка из 1С?", "answer": "Она подтверждает обороты и позволяет получить больший лимит" }
+  { "id": "f-3", "step": "APPLICATION", "question": "Нужно ли загружать документы?", "answer": "Нет. Данные о компании и оборотах банк берёт из ваших счетов и реестров" }
 ]
 ```
 
@@ -821,7 +788,7 @@ Identity ──► Origination ◄── Catalog
 
 Запрос:
 ```json
-{ "subject": "Не загружается выписка", "text": "Файл из 1С выдаёт ошибку формата", "applicationId": "a-1031" }
+{ "subject": "Устаревший фактический адрес", "text": "В заявке старый адрес склада, мы переехали", "applicationId": "a-1031" }
 ```
 Ответ `201`:
 ```json
@@ -834,7 +801,7 @@ Identity ──► Origination ◄── Catalog
 Ответ `200`:
 ```json
 [
-  { "id": "t-12", "subject": "Не загружается выписка", "status": "ANSWERED", "reply": "Выгрузите выписку в формате 1CClientBankExchange", "applicationId": "a-1031", "updatedAt": "2026-10-20T11:30:00Z" }
+  { "id": "t-12", "subject": "Устаревший фактический адрес", "status": "ANSWERED", "reply": "Обновили адрес в данных банка, в заявке он уже новый", "applicationId": "a-1031", "updatedAt": "2026-10-20T11:30:00Z" }
 ]
 ```
 
@@ -897,13 +864,13 @@ Identity ──► Origination ◄── Catalog
   "id": "a-1024",
   "number": "КЗ-2026-001024",
   "status": "ON_DECISION",
-  "applicant": { "fullName": "Петрова Анна Сергеевна", "authority": "MCHD", "mchdValidUntil": "2027-03-01" },
-  "company": { "inn": "7712345678", "name": "ООО «Северная пекарня»", "type": "LLC", "regDate": "2015-03-12", "okved": "10.71", "taxRegime": "USN_INCOME_MINUS_EXPENSES", "actualAddress": "г. Москва, ул. Складская, 3" },
+  "applicant": { "fullName": "Петрова Анна Сергеевна", "authority": "MCHD", "mchdNumber": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "mchdValidUntil": "2027-03-01" },
+  "company": { "inn": "7712345678", "name": "ООО «Северная пекарня»", "type": "LLC", "regDate": "2015-03-12", "okved": "10.71", "taxRegime": "USN_INCOME_MINUS_EXPENSES", "actualAddress": "г. Москва, ул. Складская, 3", "clientSince": "2016-02-01" },
   "request": { "productCode": "WORKING", "amount": 1500000, "term": 24, "goal": "WORKING_CAPITAL", "purposeText": "Закупка муки и упаковки к сезону" },
-  "turnover": { "source": "STATEMENT", "avgMonthlyIncome": 1910000 },
+  "turnover": { "source": "BANK_ACCOUNTS", "avgMonthlyIncome": 1840000, "periodMonths": 12 },
   "girbo": { "year": 2025, "revenue": 21400000, "netProfit": 2100000 },
-  "guarantor": { "fullName": "Смирнов Олег Викторович", "inn": "771234567890", "bkiConsent": true },
-  "prelim": { "limitNoStatement": 500000, "limitWithStatement": 3000000, "prelimRate": 22 }
+  "guarantor": { "personId": "p-1", "fullName": "Смирнов Олег Викторович", "inn": "771234567890", "bkiConsent": true },
+  "prelim": { "limit": 3000000, "prelimRate": 22, "amountFits": true, "choice": null }
 }
 ```
 
@@ -915,7 +882,7 @@ Identity ──► Origination ◄── Catalog
 {
   "complete": true,
   "issues": [
-    { "severity": "WARN", "code": "TURNOVER_MISMATCH", "text": "Обороты по выписке выше выручки в ГИР БО на 7%" }
+    { "severity": "WARN", "code": "TURNOVER_MISMATCH", "text": "Обороты по счетам в банке выше выручки в ГИР БО на 7%" }
   ]
 }
 ```
@@ -927,6 +894,7 @@ Identity ──► Origination ◄── Catalog
 Ответ `200`:
 ```json
 [
+  { "source": "BANK", "status": "OK", "requestedAt": "2026-10-20T10:26:00Z", "summary": "Клиент банка с 2016 года, обороты 1,84 млн ₽/мес.", "details": { "clientSince": "2016-02-01", "avgMonthlyIncome": 1840000 } },
   { "source": "EGRUL", "status": "OK", "requestedAt": "2026-10-20T10:26:00Z", "summary": "Действует, 11 лет", "details": { "state": "ACTIVE", "regDate": "2015-03-12" } },
   { "source": "BKI", "status": "OK", "requestedAt": "2026-10-20T10:26:00Z", "summary": "2 кредита, просрочек нет", "details": { "activeLoans": 2, "totalDebt": 900000, "overdueDays": 0 } },
   { "source": "TRANSPARENT_BUSINESS", "status": "OK", "requestedAt": "2026-10-20T10:26:00Z", "summary": "Нет признаков массового адреса" },
@@ -951,12 +919,12 @@ Identity ──► Origination ◄── Catalog
   "score": 640,
   "riskBand": "MEDIUM",
   "autoDecisionEligible": false,
-  "autoDecisionReason": "Пограничный балл и сумма выше лимита без выписки",
+  "autoDecisionReason": "Пограничный балл",
   "factors": [
     { "code": "BUSINESS_AGE", "label": "Возраст бизнеса 11 лет", "impact": 60 },
     { "code": "BKI_DISCIPLINE", "label": "Без просрочек", "impact": 80 },
     { "code": "DEBT_LOAD", "label": "Долговая нагрузка 47% от оборота", "impact": -70 },
-    { "code": "TURNOVER_STABILITY", "label": "Обороты стабильны 12 мес.", "impact": 40 },
+    { "code": "TURNOVER_STABILITY", "label": "Обороты по счетам в банке стабильны 12 мес.", "impact": 40 },
     { "code": "COURTS", "label": "Арбитражное дело", "impact": -20 }
   ],
   "suggested": { "decision": "COUNTER_OFFER", "amount": 1200000, "rate": 21.5 },
@@ -970,12 +938,13 @@ Identity ──► Origination ◄── Catalog
 Запрос:
 ```json
 {
-  "comment": "Обороты в выписке расходятся с отчётностью",
+  "comment": "Обороты по счетам расходятся с отчётностью",
   "items": [
     { "key": "turnover_note", "type": "TEXT", "label": "Почему выручка за 2025 год ниже оборотов по счёту" }
   ]
 }
 ```
+Пункты запроса — только пояснения. Данные, которые есть у банка, и загрузка документов не запрашиваются (Уточн.).
 Ответ `201`:
 ```json
 { "id": "r-7", "status": "OPEN", "applicationStatus": "INFO_REQUESTED" }
@@ -1031,14 +1000,19 @@ Identity ──► Origination ◄── Catalog
 
 | Путь мока | Источник | Основа | Ответ (суть) |
 |---|---|---|---|
-| `GET /mock/egrul/{inn}`, `GET /mock/egrip/{inn}` | ЕГРЮЛ/ЕГРИП | ТЗ, стр. 13 | `{ name, ogrn, state, regDate, regAddress, okved, head, founders[] }` |
+| `GET /mock/core-banking/clients/{inn}` | АБС банка: профиль клиента | Уточн. | `{ inn, name, type, clientSince, regAddress, actualAddress, taxRegime, persons[{ personId, fullName, inn, roles[HEAD/FOUNDER/REPRESENTATIVE], share?, mchdNumber? }] }` |
+| `GET /mock/core-banking/turnover/{inn}` | АБС банка: обороты по счетам | Уточн. | `{ avgMonthlyIncome, months[{ month, income, outcome }] }` |
 | `GET /mock/transparent-business/{inn}` | «Прозрачный бизнес» ФНС | ТЗ, стр. 13 | `{ massAddress, massHead, taxRegime, employees }` |
 | `POST /mock/bki/report` | БКИ | ТЗ, стр. 13 | запрос `{ inn, consentId }` → `{ loans[{ amount, balance, overdueDays }], totalDebt, maxOverdueDays }` |
 | `GET /mock/fns/debts/{inn}` | Налоговая задолженность | Доп. | `{ hasDebt, amount }` |
 | `GET /mock/girbo/{inn}` | ГИР БО (только ООО) | Доп. | `{ year, revenue, netProfit }` |
 | `GET /mock/courts/{inn}` | КАД / ФССП / ЕФРСБ | Доп. | `{ arbitration[], enforcement[], bankruptcy }` |
-| `GET /mock/mchd/{number}` | Реестр МЧД | Доп. | `{ valid, principalInn, representative, validUntil, powers[] }` |
-| `GET /mock/core-banking/turnover/{inn}` | Внутренние обороты клиента банка | Доп. | `{ isClient, avgMonthlyIncome, months[] }` |
+| `GET /mock/mchd/{number}` | Реестр МЧД (номер берётся из АБС, не от пользователя) | Доп. | `{ valid, principalInn, representative, validUntil, powers[] }` |
+
+Связь пользователя с данными банка: у `User` есть `personInn`. Полномочия определяются так:
+1. Если среди `persons` клиента есть запись с этим ИНН и ролью `HEAD` — это руководитель.
+2. Если есть роль `REPRESENTATIVE` с `mchdNumber` — доверенность проверяется в реестре МЧД.
+3. Иначе полномочий нет.
 
 Пример — ЕГРЮЛ:
 ```json
@@ -1061,13 +1035,15 @@ Identity ──► Origination ◄── Catalog
 
 | Сущность | Ключевые поля | Зона |
 |---|---|---|
-| `User` | id, login, passwordHash, role, companyId, fullName, position | Identity |
-| `Authority` | applicationId, type (HEAD/MCHD), mchdNumber, validUntil, verifiedAt | Identity |
-| `Product` | code, type, goals[], amountMin/Max, termMin/Max, rateMin/Max, noStatementThreshold, minBusinessAgeMonths, bankClientsOnly, guarantorForLlc, graceMaxMonths | Catalog |
-| `Company` | inn, ogrn, type (LLC/IE), name, state, regDate, regAddress, okved, head, founders[], taxRegime, isBankClient | Company |
-| `Application` | id, number, companyId, applicantId, productCode, amount, term, goal, purposeText, graceMonths, actualAddress, guarantor, status, stage, version | Origination |
+| `User` | id, login, passwordHash, role, companyId, personInn, fullName, position | Identity |
+| `Authority` | applicationId, type (HEAD/MCHD), mchdNumber, validUntil, verifiedAt — снимок данных банка при создании черновика | Identity |
+| `Product` | code, type, goals[], amountMin/Max, termMin/Max, rateMin/Max, minBusinessAgeMonths, guarantorForLlc, graceMaxMonths | Catalog |
+| `Company` | inn, ogrn, type (LLC/IE), name, state, regDate, regAddress, actualAddress, okved, taxRegime, clientSince | Company |
+| `Person` | personId, companyInn, fullName, inn, roles[] (HEAD/FOUNDER/REPRESENTATIVE), share, mchdNumber | Company |
+| `Turnover` | companyInn, avgMonthlyIncome, periodMonths, months[] — по счетам в банке | Company |
+| `Application` | id, number, companyId, applicantId, productCode, amount, term, goal, purposeText, graceMonths, guarantorPersonId, status, stage, version | Origination |
 | `Consent` | applicationId, subject (APPLICANT/GUARANTOR), type (BKI), givenBy, givenAt | Origination |
-| `Prelim` | applicationId, outcome, limitNoStatement, limitWithStatement, prelimRate, stopReason, choice | Scoring |
+| `Prelim` | applicationId, outcome, limit, prelimRate, amountFits, stopReason, choice (REDUCE_AMOUNT/KEEP_AMOUNT), amount, term, productCode (параметры, по которым посчитан) | Scoring |
 | `CheckResult` | applicationId, source, status, requestedAt, payload, summary | Integrations |
 | `ScoreResult` | applicationId, score, riskBand, factors[{code, label, impact}], autoDecisionEligible, modelVersion | Scoring |
 | `Decision` | id, applicationId, type, amount, term, productCode, rate, reason, mode (AUTO/MANUAL), officerId | Scoring / Underwriting |
@@ -1086,7 +1062,7 @@ Identity ──► Origination ◄── Catalog
 - Коллекция запросов (Postman / Bruno / .http) по сквозному сценарию: вход → каталог → черновик → этап 1 → этап 2 → отправка → разбор сотрудником → решение → принятие оффера → подписание → выдача.
 - Диаграмма состояний заявки (раздел 2).
 - Модель данных (раздел 5).
-- Тестовые сценарии и синтетические данные: компании под каждую ветку «Схемы решения» (одобрение, стоп-отказ, выписка, иные условия, запрос информации, МЧД).
+- Тестовые сценарии и синтетические данные: компании-клиенты банка под каждую ветку «Схемы решения». Ветки: одобрение, стоп-отказ, сумма выше лимита, иные условия, запрос информации, заявитель по МЧД, МЧД недействительна (нет полномочий).
 - THIRD_PARTY_NOTICES со всеми моками из 4.14.
 
 ---
