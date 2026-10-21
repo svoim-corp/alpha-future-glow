@@ -503,6 +503,77 @@
                 }
             }
         },
+        "/applications/{id}/contract/sign": {
+            "post": {
+                "description": "Имитация подписи без SMS (модалка «Подтверждение подписи»). Только в статусе SIGNING.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Подписать договор",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ идемпотентности",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Подтверждение",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/offer.signRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/offer.signResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Не статус подписания или уже подписан",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/guarantor/consent-bki": {
             "post": {
                 "description": "Для выбранного поручителя, на этапе 2. При смене поручителя согласие нужно дать заново.",
@@ -3276,6 +3347,35 @@
                 "term": {
                     "type": "integer",
                     "example": 24
+                }
+            }
+        },
+        "offer.signRequest": {
+            "type": "object",
+            "required": [
+                "confirm"
+            ],
+            "properties": {
+                "confirm": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "offer.signResponse": {
+            "type": "object",
+            "properties": {
+                "signatureId": {
+                    "type": "string",
+                    "example": "SIM-8F2A"
+                },
+                "signed": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "signedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T14:00:00Z"
                 }
             }
         },

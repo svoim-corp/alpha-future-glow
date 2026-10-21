@@ -2,7 +2,10 @@ package offer
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/finance"
@@ -50,4 +53,33 @@ func (m *Module) contractOf(ctx context.Context, appID, companyID string) (*cont
 // firstPaymentDate — через месяц после выдачи. До выдачи — через месяц от сегодня: клиент видит ориентир.
 func (k *contract) firstPaymentDate(now time.Time) time.Time {
 	return finance.PaymentDate(now, 1)
+}
+
+// sign — имитация подписи без SMS: подтверждение клиента и идентификатор подписи. Статус заявки не меняется —
+// подписание заканчивается выдачей.
+func (m *Module) sign(ctx context.Context, appID, companyID string) (*offerRow, error) {
+	k, err := m.contractOf(ctx, appID, companyID)
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case k.app.Status != shared.StatusSigning:
+		return nil, httpx.InvalidTransition("Договор подписывается в статусе «Подписание»")
+	case k.o.SignedAt != nil:
+		return nil, httpx.InvalidTransition("Договор уже подписан")
+	}
+	b := make([]byte, 2)
+	if _, err := rand.Read(b); err != nil {
+		return nil, fmt.Errorf("signature id: %w", err)
+	}
+	sig, now := "SIM-"+strings.ToUpper(hex.EncodeToString(b)), m.now().UTC()
+	ok, err := m.store.Sign(ctx, appID, sig, now)
+	if err != nil {
+		return nil, fmt.Errorf("sign contract %s: %w", appID, err)
+	}
+	if !ok {
+		return nil, httpx.InvalidTransition("Договор уже подписан")
+	}
+	k.o.SignedAt, k.o.SignatureID = &now, &sig
+	return k.o, nil
 }

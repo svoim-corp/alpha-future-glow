@@ -1,9 +1,14 @@
 package offer
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
 func TestGetContract(t *testing.T) {
@@ -67,5 +72,43 @@ func TestGetDocument(t *testing.T) {
 	e.do("POST", "/api/v1/applications/a-2/offer/accept", "orlova", "")
 	if w := e.do("GET", "/api/v1/applications/a-2/contract/documents/d-2", "orlova", ""); w.Code != http.StatusNotFound {
 		t.Fatalf("поручительство у ИП: %d", w.Code)
+	}
+}
+
+func TestSignContract(t *testing.T) {
+	e := newEnv(t)
+	e.decide(t, "a-1", "c-1", approved)
+	path := "/api/v1/applications/a-1/contract/sign"
+	if w := e.do("POST", path, "smirnov", `{"confirm":true}`); w.Code != http.StatusNotFound {
+		t.Fatalf("до принятия: %d", w.Code)
+	}
+	e.do("POST", "/api/v1/applications/a-1/offer/accept", "smirnov", "")
+	if w := e.do("POST", path, "smirnov", `{"confirm":false}`); w.Code != http.StatusBadRequest {
+		t.Fatalf("без подтверждения: %d", w.Code)
+	}
+
+	key := fmt.Sprintf("sign-%d", time.Now().UnixNano()) // ключи хранятся между прогонами
+	w := e.do("POST", path, "smirnov", `{"confirm":true}`, "Idempotency-Key", key)
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	got := decode[signResponse](t, w)
+	if !got.Signed || !got.SignedAt.Equal(today) || !regexp.MustCompile(`^SIM-[0-9A-F]{4}$`).MatchString(got.SignatureID) {
+		t.Fatalf("подпись: %+v", got)
+	}
+	if e.apps.status("a-1") != shared.StatusSigning {
+		t.Fatalf("подпись не меняет статус: %s", e.apps.status("a-1"))
+	}
+	if again := e.do("POST", path, "smirnov", `{"confirm":true}`, "Idempotency-Key", key); again.Body.String() != w.Body.String() {
+		t.Fatalf("повтор по ключу: %s", again.Body.String())
+	}
+	if w := e.do("POST", path, "smirnov", `{"confirm":true}`); w.Code != http.StatusConflict {
+		t.Fatalf("повторная подпись: %d", w.Code)
+	}
+	if k := decode[contractResponse](t, e.do("GET", "/api/v1/applications/a-1/contract", "smirnov", "")); !k.Signed {
+		t.Fatalf("договор подписан: %+v", k)
+	}
+	if doc := e.do("GET", "/api/v1/applications/a-1/contract/documents/d-1", "smirnov", "").Body.String(); !strings.Contains(doc, got.SignatureID) {
+		t.Fatal("в печатной форме нет отметки о подписи")
 	}
 }

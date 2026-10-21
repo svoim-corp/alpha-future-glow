@@ -57,6 +57,9 @@ func (m *Module) renderDocument(ctx context.Context, appID, companyID, docID str
 	if o.GraceMonths != nil {
 		d.GraceMonths = *o.GraceMonths
 	}
+	if o.SignedAt != nil {
+		d.Signed = o.SignedAt.UTC().Format(humanDate) + ", подпись " + *o.SignatureID
+	}
 	if g := k.app.GuarantorPersonID; g != nil {
 		d.Guarantor = *g
 		for _, c := range prof.GuarantorCandidates {

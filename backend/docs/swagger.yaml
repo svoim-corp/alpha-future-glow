@@ -534,6 +534,26 @@ definitions:
         example: 24
         type: integer
     type: object
+  offer.signRequest:
+    properties:
+      confirm:
+        example: true
+        type: boolean
+    required:
+    - confirm
+    type: object
+  offer.signResponse:
+    properties:
+      signatureId:
+        example: SIM-8F2A
+        type: string
+      signed:
+        example: true
+        type: boolean
+      signedAt:
+        example: "2026-10-20T14:00:00Z"
+        type: string
+    type: object
   offer.statusResponse:
     properties:
       redirect:
@@ -2440,6 +2460,54 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Печатная форма документа договора
+      tags:
+      - offer
+  /applications/{id}/contract/sign:
+    post:
+      consumes:
+      - application/json
+      description: Имитация подписи без SMS (модалка «Подтверждение подписи»). Только
+        в статусе SIGNING.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Подтверждение
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/offer.signRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.signResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Не статус подписания или уже подписан
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Подписать договор
       tags:
       - offer
   /applications/{id}/guarantor/consent-bki:

@@ -34,13 +34,15 @@ type offerRow struct {
 	AcceptedAt           *time.Time                    `db:"accepted_at"`
 	ContractNumber       *string                       `db:"contract_number"`
 	DeclinedAt           *time.Time                    `db:"declined_at"`
+	SignedAt             *time.Time                    `db:"signed_at"`
+	SignatureID          *string                       `db:"signature_id"`
 }
 
 const offerCols = `app_id, decision_id, decision, product_code, amount, term, rate, grace_months, monthly_payment,
 	requested_product_code, requested_amount, requested_term, explanation, alternatives, valid_until, created_at`
 
 // contractCols — состояние ответа клиента и договора; меняется только командами клиента, не новым решением.
-const contractCols = `accepted_at, contract_number, declined_at`
+const contractCols = `accepted_at, contract_number, declined_at, signed_at, signature_id`
 
 // SaveOffer записывает предложение по заявке; новое решение заменяет прежнее предложение.
 func (s *Store) SaveOffer(ctx context.Context, o *offerRow) error {
@@ -112,6 +114,18 @@ func (s *Store) Decline(ctx context.Context, appID, reason string, at time.Time)
 func (s *Store) Undecline(ctx context.Context, appID string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET declined_at = NULL, decline_reason = NULL WHERE app_id = $1`, appID)
 	return err
+}
+
+// Sign отмечает договор подписанным; false — договор не принят или уже подписан.
+func (s *Store) Sign(ctx context.Context, appID, signatureID string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET signed_at = $2, signature_id = $3
+		WHERE app_id = $1 AND accepted_at IS NOT NULL AND signed_at IS NULL`, appID, at, signatureID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
 }
 
 func (s *Store) Reset(ctx context.Context) error {

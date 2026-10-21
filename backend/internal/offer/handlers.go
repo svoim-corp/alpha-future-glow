@@ -2,6 +2,7 @@ package offer
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -225,6 +226,7 @@ func (m *Module) getContract(c *gin.Context) {
 			FirstPaymentDate: k.firstPaymentDate(m.now()).Format(dateLayout),
 		},
 		Documents: make([]documentDTO, len(k.docs)),
+		Signed:    o.SignedAt != nil,
 	}
 	for i, d := range k.docs {
 		resp.Documents[i] = documentDTO{ID: d, Title: docTitles[d], URL: documentURL(k.app.ID, d)}
@@ -257,4 +259,53 @@ func (m *Module) getDocument(c *gin.Context) {
 	}
 	c.Header("Content-Disposition", "inline")
 	c.Data(http.StatusOK, "text/html; charset=utf-8", html)
+}
+
+type signRequest struct {
+	Confirm *bool `json:"confirm" binding:"required" example:"true"`
+}
+
+type signResponse struct {
+	Signed      bool      `json:"signed" example:"true"`
+	SignedAt    time.Time `json:"signedAt" example:"2026-10-20T14:00:00Z"`
+	SignatureID string    `json:"signatureId" example:"SIM-8F2A"`
+}
+
+// signContract godoc
+//
+//	@Summary		Подписать договор
+//	@Description	Имитация подписи без SMS (модалка «Подтверждение подписи»). Только в статусе SIGNING.
+//	@Tags			offer
+//	@Accept			json
+//	@Produce		json
+//	@Param			id				path		string		true	"ID заявки"
+//	@Param			Idempotency-Key	header		string		false	"Ключ идемпотентности"
+//	@Param			body			body		signRequest	true	"Подтверждение"
+//	@Success		200				{object}	signResponse
+//	@Failure		400				{object}	httpx.ErrorBody
+//	@Failure		403				{object}	httpx.ErrorBody
+//	@Failure		404				{object}	httpx.ErrorBody
+//	@Failure		409				{object}	httpx.ErrorBody	"Не статус подписания или уже подписан"
+//	@Router			/applications/{id}/contract/sign [post]
+func (m *Module) signContract(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	var req signRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if !*req.Confirm {
+		httpx.Fail(c, httpx.Validation("", httpx.FieldError{Field: "confirm", Code: "INVALID", Message: "Подтвердите подпись договора"}))
+		return
+	}
+	o, err := m.sign(c.Request.Context(), c.Param("id"), company)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, signResponse{Signed: true, SignedAt: o.SignedAt.UTC(), SignatureID: *o.SignatureID})
 }
