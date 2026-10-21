@@ -602,6 +602,47 @@
                 }
             }
         },
+        "/applications/{id}/offer": {
+            "get": {
+                "description": "Появляется после решения. Одобрение и иные условия — запрошенные и предложенные условия; отказ — причина и альтернативы.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Решение банка и предложение",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/offer.offerResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Заявки нет или решения ещё нет",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/prelim": {
             "post": {
                 "description": "Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам в банке. Лимит или стоп-отказ. Требует согласие на БКИ.",
@@ -2847,6 +2888,98 @@
                         }
                     ],
                     "example": "INFO_REQUESTED"
+                }
+            }
+        },
+        "offer.alternativeDTO": {
+            "type": "object",
+            "properties": {
+                "maxAmount": {
+                    "type": "integer",
+                    "example": 500000
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "EXPRESS"
+                }
+            }
+        },
+        "offer.offerResponse": {
+            "type": "object",
+            "properties": {
+                "alternatives": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/offer.alternativeDTO"
+                    }
+                },
+                "decision": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "COUNTER_OFFER"
+                },
+                "explanation": {
+                    "type": "string",
+                    "example": "Сумма снижена по уровню долговой нагрузки"
+                },
+                "offered": {
+                    "$ref": "#/definitions/offer.offeredDTO"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Высокая долговая нагрузка по данным БКИ"
+                },
+                "requested": {
+                    "$ref": "#/definitions/offer.requestedDTO"
+                },
+                "validUntil": {
+                    "type": "string",
+                    "example": "2026-10-27"
+                }
+            }
+        },
+        "offer.offeredDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "monthlyPayment": {
+                    "type": "integer",
+                    "example": 61958
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 21.5
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "offer.requestedDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
                 }
             }
         },

@@ -43,7 +43,9 @@ func (m *Module) Wire(p Ports) {
 	m.deps.Bus.Subscribe(shared.DecisionMade{}.Name(), m.onDecisionMade)
 }
 
-func (m *Module) Register(r httpx.Routes) {}
+func (m *Module) Register(r httpx.Routes) {
+	r.Client.GET("/applications/:id/offer", m.getOffer)
+}
 
 // ResetDemo удаляет предложения и договоры: они относятся к заявкам демо.
 func (m *Module) ResetDemo(ctx context.Context) error { return m.store.Reset(ctx) }

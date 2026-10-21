@@ -411,6 +411,69 @@ definitions:
         - $ref: '#/definitions/shared.NotificationType'
         example: INFO_REQUESTED
     type: object
+  offer.alternativeDTO:
+    properties:
+      maxAmount:
+        example: 500000
+        type: integer
+      productCode:
+        example: EXPRESS
+        type: string
+    type: object
+  offer.offerResponse:
+    properties:
+      alternatives:
+        items:
+          $ref: '#/definitions/offer.alternativeDTO'
+        type: array
+      decision:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: COUNTER_OFFER
+      explanation:
+        example: Сумма снижена по уровню долговой нагрузки
+        type: string
+      offered:
+        $ref: '#/definitions/offer.offeredDTO'
+      reason:
+        example: Высокая долговая нагрузка по данным БКИ
+        type: string
+      requested:
+        $ref: '#/definitions/offer.requestedDTO'
+      validUntil:
+        example: "2026-10-27"
+        type: string
+    type: object
+  offer.offeredDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      monthlyPayment:
+        example: 61958
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      rate:
+        example: 21.5
+        type: number
+      term:
+        example: 24
+        type: integer
+    type: object
+  offer.requestedDTO:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
   origination.applicationDTO:
     properties:
       authority:
@@ -2373,6 +2436,34 @@ paths:
       summary: Ответить на запрос банка
       tags:
       - applications
+  /applications/{id}/offer:
+    get:
+      description: Появляется после решения. Одобрение и иные условия — запрошенные
+        и предложенные условия; отказ — причина и альтернативы.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.offerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Заявки нет или решения ещё нет
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Решение банка и предложение
+      tags:
+      - offer
   /applications/{id}/prelim:
     post:
       description: Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам

@@ -8,6 +8,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/events"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/finance"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
@@ -93,4 +94,35 @@ func clientText(d *shared.DecisionView) *string {
 func dateOf(t time.Time) time.Time {
 	y, mo, d := t.UTC().Date()
 	return time.Date(y, mo, d, 0, 0, 0, 0, time.UTC)
+}
+
+// ownApplication — заявка компании клиента: нет — 404, чужая — 403.
+func (m *Module) ownApplication(ctx context.Context, appID, companyID string) (*shared.ApplicationView, error) {
+	app, err := m.ports.Applications.Application(ctx, appID)
+	if err != nil {
+		return nil, fmt.Errorf("load application %s: %w", appID, err)
+	}
+	if app == nil {
+		return nil, httpx.NotFound("Заявка не найдена")
+	}
+	if app.CompanyID != companyID {
+		return nil, httpx.Forbidden("Заявка принадлежит другой компании")
+	}
+	return app, nil
+}
+
+// offerOf — предложение по заявке своей компании; решения ещё нет — 404.
+func (m *Module) offerOf(ctx context.Context, appID, companyID string) (*shared.ApplicationView, *offerRow, error) {
+	app, err := m.ownApplication(ctx, appID, companyID)
+	if err != nil {
+		return nil, nil, err
+	}
+	o, err := m.store.Offer(ctx, app.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("load offer %s: %w", app.ID, err)
+	}
+	if o == nil {
+		return nil, nil, httpx.NotFound("Решения по заявке ещё нет")
+	}
+	return app, o, nil
 }
