@@ -16,6 +16,11 @@ const readSaved = (): Theme | null => {
 
 const systemTheme = (): Theme => (globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
+/** Применяет сохранённую или системную тему к странице до отрисовки: так вход и 404 тоже следуют теме */
+export const applyTheme = () => {
+	document.documentElement.dataset.theme = readSaved() ?? systemTheme();
+};
+
 /** Тема оформления: выбор пользователя запоминается, иначе берётся тема системы */
 export const useTheme = () => {
 	const [theme, setTheme] = useState<Theme>(() => readSaved() ?? systemTheme());

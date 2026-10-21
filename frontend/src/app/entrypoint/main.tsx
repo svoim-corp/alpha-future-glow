@@ -1,5 +1,6 @@
 import '../styles/index.scss';
 
+import { applyTheme } from '@shared/lib/theme';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
@@ -19,6 +20,8 @@ const start = async () => {
 		const { startMockApi } = await import('../mocks');
 		await startMockApi();
 	}
+
+	applyTheme();
 
 	const store = setupStore();
 	const router = createAppRouter();

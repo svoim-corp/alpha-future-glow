@@ -1,1 +1,1 @@
-export { useTheme } from './useTheme';
+export { applyTheme, useTheme } from './useTheme';
