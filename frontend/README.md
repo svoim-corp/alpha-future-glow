@@ -2,6 +2,16 @@
 
 Веб-клиент: ЛК предпринимателя и кабинет сотрудника банка. React 19 + TypeScript, Redux Toolkit / RTK Query, React Router, архитектура Feature-Sliced Design.
 
+## С чего начать
+
+- [Контекст проекта и состояние реализации](docs/PROJECT_CONTEXT.md) — что за продукт, что уже есть, что осталось и где лежит код.
+- [План приведения интерфейса к дизайну](docs/UI_ALIGNMENT_PLAN.md) — порядок исправления компонентов, оболочки и страниц, критерии готовности.
+- [AGENTS.md](AGENTS.md) — правила архитектуры, UI и проверок.
+- [Основная спецификация API](../API_SPEC.md) и [дополнение для планера](../API_SPEC_ADDITIONAL.md) — требования и контракты.
+- [UI-kit](docs/ui-kit/README.md), [витрина компонентов](docs/ui-kit/index.html), [галерея макетов](docs/designs/index.html) и [описание макетов](docs/designs/README.md) — визуальная основа интерфейса.
+
+Страницы и основные сценарии уже реализованы на MSW; перенос дизайна частичный, есть расхождения с актуальным API. Большинство бизнес-эндпоинтов сервера пока отсутствует. Наличие страницы в клиенте не означает готовность сквозного сценария с сервером.
+
 ## Требования
 
 - Node.js 22 (`.nvmrc`), npm 10
@@ -23,6 +33,7 @@ npm run dev:mock   # то же, но без бэкенда: запросы к AP
 |---|---|---|---|
 | `VITE_API_BASE_URL` | сборка | `/api/v1` | базовый URL API для RTK Query |
 | `VITE_API_PROXY_TARGET` | dev | `http://localhost:8080` | куда Vite проксирует `/api` |
+| `VITE_MOCK` | сборка / dev | не задана; `true` в `.env.mock` | включить MSW в браузере; используется в `dev:mock` |
 
 ## Скрипты
 
@@ -40,16 +51,17 @@ npm run dev:mock   # то же, но без бэкенда: запросы к AP
 
 ```
 src/
-  app/        entrypoint (main.tsx, провайдеры), model (стор), routes, styles
-  pages/      home (пустая главная), not-found
-  widgets/    — пусто
-  features/   — пусто
-  entities/   — пусто
-  shared/     api (baseApi RTK Query), config, lib (format, store), ui (Button)
+  app/        entrypoint, model (стор), routes, styles, mocks (демо API)
+  pages/      главная, вход, каталог, заявки, кредиты, планер, поддержка, документы, банк, 404
+  widgets/    оболочка клиента, каталог, мастер заявки, трекер, календарь, очередь банка
+  features/   вход/выход, создание и отправка заявки, оффер, подписание, планы, решение банка
+  entities/   session, product, application, contract, loan, notification, plan, support, document
+  shared/     api (baseApi RTK Query), config, lib, ui (переиспользуемые компоненты)
 test/         setup, renderWithProviders, MSW-сервер и фикстуры
+docs/         PROJECT_CONTEXT.md, ui-kit/, designs/
 ```
 
-Правила архитектуры и тестирования — [AGENTS.md](./AGENTS.md). Контракт API — [`../API_SPEC.md`](../API_SPEC.md).
+`pages/documents`, `entities/document` и связанные фичи пока сохранены в коде, но библиотека файлов исключена актуальным контрактом. Ввод ИНН сохраняется до отдельной задачи.
 
 В составе всего проекта клиент собирается `Dockerfile` и раздаётся nginx (`nginx.conf`, `/api` → `backend:8080`), запуск — из `../deploy`.
 
@@ -70,5 +82,17 @@ Vitest + Testing Library + MSW. Сеть мокается на уровне HTTP
 
 - логины: `smirnov` (клиент), `ivanova` (сотрудник банка); пароль у всех `demo123`;
 - поданная клиентом заявка появляется в очереди банка, а решение сотрудника — у клиента в заявке;
-- данные — копии `test/fixtures`; контракты — `API_SPEC.md` и `API_SPEC_ADDITIONAL.md`;
+- исходные фикстуры находятся в `src/app/mocks/fixtures`, тестовые — в `test/fixtures`; это отдельные копии, их нужно согласованно обновлять. Целевые контракты — `API_SPEC.md` и `API_SPEC_ADDITIONAL.md`; известные отставания моков описаны в контексте проекта;
 - Service Worker (`public/mockServiceWorker.js`) создан `npx msw init public`; в обычных режимах не подключается.
+
+## Просмотр дизайнов
+
+Из директории `frontend/`:
+
+```bash
+python3 -m http.server 8766 --bind 127.0.0.1 --directory docs
+```
+
+Галерея: [http://127.0.0.1:8766/designs/](http://127.0.0.1:8766/designs/), UI-kit: [http://127.0.0.1:8766/ui-kit/](http://127.0.0.1:8766/ui-kit/). HTML также открывается напрямую, сборка не нужна.
+
+Известные ошибки проверок на дату аудита — в [контексте проекта](docs/PROJECT_CONTEXT.md#проверки).

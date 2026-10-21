@@ -15,6 +15,328 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/applications/{id}/company-profile": {
+            "get": {
+                "description": "Профиль из клиентской базы банка, сверенный с реестрами. Только для чтения.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Данные о компании для заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/company.profileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/info-requests": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Запросы банка по заявке",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.infoRequestDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/info-requests/{reqId}/answer": {
+            "post": {
+                "description": "Ответ на каждый вопрос запроса. Заявка возвращается в DATA_CHECK.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Ответить на запрос банка",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID запроса",
+                        "name": "reqId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Ответы",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.answerBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.answerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/prelim": {
+            "post": {
+                "description": "Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам в банке. Лимит или стоп-отказ. Требует согласие на БКИ.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Предварительное решение (этап 1)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scoring.prelimResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/applications/{id}/prelim/choice": {
+            "post": {
+                "description": "REDUCE_AMOUNT — уменьшить сумму до лимита, KEEP_AMOUNT — оставить запрошенную (решит сотрудник банка).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Выбор при сумме выше лимита",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Выбор клиента",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/scoring.choiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scoring.choiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -103,9 +425,979 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/bank/applications": {
+            "get": {
+                "description": "Таблица заявок с фильтрами. sort: submittedAt, updatedAt, amount, score; «-» в начале — по убыванию.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Очередь заявок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Статус",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Код продукта",
+                        "name": "product",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "LOW, MEDIUM, HIGH",
+                        "name": "risk",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "AUTO, MANUAL",
+                        "name": "decisionMode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "-submittedAt",
+                        "description": "Сортировка",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Страница",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Размер страницы",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.queuePage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Счётчики очереди",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.statsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}": {
+            "get": {
+                "description": "Отличие от клиентской версии — цифры ГИР БО, предварительный результат и заявитель.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Анкета заявки для сотрудника",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.reviewResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/assign": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Взять заявку в работу",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.assignResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/checks": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Результаты внешних проверок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.checkDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/checks/refresh": {
+            "post": {
+                "description": "Тело необязательно: без sources перезапрашиваются все источники.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Перезапросить проверки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Источники",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.refreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.checkDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/completeness": {
+            "get": {
+                "description": "severity: INFO, WARN, BLOCKER. complete = нет блокеров.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Полнота и корректность заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.completenessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/decision": {
+            "post": {
+                "description": "APPROVE — одобрить (без параметров — на условиях заявки), COUNTER — иные условия, REJECT — отказ (нужен только reason).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Решение сотрудника",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ идемпотентности",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Решение",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.decisionBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.decisionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/info-requests": {
+            "post": {
+                "description": "Только пояснения: данные, которые есть у банка, и документы не запрашиваются. Заявка → INFO_REQUESTED.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Запросить информацию у клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Вопросы",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.infoRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.infoRequestCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/score": {
+            "get": {
+                "description": "Итоговый балл, вклад каждого фактора и рекомендация решения. Только для сотрудника банка.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Скоринг заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scoring.scoreResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans": {
+            "get": {
+                "description": "По умолчанию — все, кроме ARCHIVED. recommendation — подбор на сегодня или null.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Планы компании",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ACTIVE, PAUSED, DONE, ARCHIVED",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/planner.plansResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Создать план",
+                "parameters": [
+                    {
+                        "description": "План",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/planner.createPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/planner.planDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/recommendations": {
+            "get": {
+                "description": "Виджет главной. Пустой массив — виджет не показывается.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Планы с подходящим продуктом",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/planner.planRecommendationDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}": {
+            "delete": {
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Удалить план",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID плана",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Только переданные поля. Пустая строка в note очищает описание; даты сбрасываются переходом на UNSCHEDULED.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Изменить план",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID плана",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Изменения",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/planner.patchPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/planner.planDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "company.candidateDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shared.PersonRole"
+                    },
+                    "example": [
+                        "HEAD",
+                        "FOUNDER"
+                    ]
+                }
+            }
+        },
+        "company.founderDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                },
+                "share": {
+                    "type": "number",
+                    "example": 100
+                }
+            }
+        },
+        "company.girboDTO": {
+            "type": "object",
+            "properties": {
+                "accounted": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "company.okvedDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "10.71"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Производство хлеба"
+                }
+            }
+        },
+        "company.personRefDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                }
+            }
+        },
+        "company.profileResponse": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Складская, 3"
+                },
+                "founders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/company.founderDTO"
+                    }
+                },
+                "girbo": {
+                    "description": "null у ИП: ГИР БО ведётся только по юрлицам",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/company.girboDTO"
+                        }
+                    ]
+                },
+                "guarantorCandidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/company.candidateDTO"
+                    }
+                },
+                "head": {
+                    "$ref": "#/definitions/company.personRefDTO"
+                },
+                "okved": {
+                    "$ref": "#/definitions/company.okvedDTO"
+                },
+                "regAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Пекарская, 7"
+                },
+                "source": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shared.CheckSource"
+                    },
+                    "example": [
+                        "BANK",
+                        "EGRUL"
+                    ]
+                },
+                "taxRegime": {
+                    "type": "string",
+                    "example": "USN_INCOME_MINUS_EXPENSES"
+                },
+                "turnover": {
+                    "$ref": "#/definitions/company.turnoverDTO"
+                }
+            }
+        },
+        "company.turnoverDTO": {
+            "type": "object",
+            "properties": {
+                "avgMonthlyIncome": {
+                    "type": "integer",
+                    "example": 1840000
+                },
+                "periodMonths": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
         "httpx.ErrorBody": {
             "type": "object",
             "properties": {
@@ -235,6 +1527,618 @@ const docTemplate = `{
                 }
             }
         },
+        "planner.createPlanRequest": {
+            "type": "object",
+            "required": [
+                "budgetRub",
+                "dateMode",
+                "goal",
+                "title"
+            ],
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "dateMode": {
+                    "type": "string",
+                    "enum": [
+                        "DAY",
+                        "PERIOD",
+                        "UNSCHEDULED"
+                    ],
+                    "example": "UNSCHEDULED"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2027-08-31"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "EQUIPMENT"
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Увеличить выпуск хлеба"
+                },
+                "notifications": {
+                    "$ref": "#/definitions/planner.notificationsInput"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Новая печь для пекарни"
+                }
+            }
+        },
+        "planner.notificationsDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "inApp": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "planner.notificationsInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "inApp": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "planner.patchPlanRequest": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "dateMode": {
+                    "type": "string",
+                    "enum": [
+                        "DAY",
+                        "PERIOD",
+                        "UNSCHEDULED"
+                    ],
+                    "example": "DAY"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "example": "EQUIPMENT"
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": ""
+                },
+                "notifications": {
+                    "$ref": "#/definitions/planner.notificationsInput"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "PAUSED",
+                        "DONE",
+                        "ARCHIVED"
+                    ],
+                    "example": "PAUSED"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "example": "Новая печь для пекарни"
+                }
+            }
+        },
+        "planner.planDTO": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 2400000
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-20T09:00:00Z"
+                },
+                "dateMode": {
+                    "type": "string",
+                    "example": "PERIOD"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2027-08-31"
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "REAL_ESTATE"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "p-1"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "Обновить торговый зал и зону выпечки"
+                },
+                "notifications": {
+                    "$ref": "#/definitions/planner.notificationsDTO"
+                },
+                "recommendation": {
+                    "$ref": "#/definitions/planner.recommendationDTO"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "state": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Ремонт помещения"
+                }
+            }
+        },
+        "planner.planRecommendationDTO": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "planId": {
+                    "type": "string",
+                    "example": "p-3"
+                },
+                "planTitle": {
+                    "type": "string",
+                    "example": "Новая печь для пекарни"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "INVEST"
+                },
+                "productName": {
+                    "type": "string",
+                    "example": "Инвестиционный кредит"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Сумма и цель укладываются в рамки продукта"
+                }
+            }
+        },
+        "planner.plansResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/planner.planDTO"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/planner.summaryDTO"
+                }
+            }
+        },
+        "planner.recommendationDTO": {
+            "type": "object",
+            "properties": {
+                "availableFrom": {
+                    "type": "string",
+                    "example": "2026-10-20"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "INVEST"
+                },
+                "productName": {
+                    "type": "string",
+                    "example": "Инвестиционный кредит"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Цель и сумма укладываются в рамки продукта"
+                }
+            }
+        },
+        "planner.summaryDTO": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "description": "сумма ориентиров, а не кредитных обязательств",
+                    "type": "integer",
+                    "example": 4250000
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "unscheduled": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "withPeriod": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "scoring.choiceParams": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "scoring.choiceRequest": {
+            "type": "object",
+            "required": [
+                "choice"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3000000
+                },
+                "choice": {
+                    "enum": [
+                        "REDUCE_AMOUNT",
+                        "KEEP_AMOUNT"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.PrelimChoice"
+                        }
+                    ],
+                    "example": "REDUCE_AMOUNT"
+                }
+            }
+        },
+        "scoring.choiceResponse": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/scoring.choiceParams"
+                },
+                "stage": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 9
+                }
+            }
+        },
+        "scoring.factorDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "DEBT_LOAD"
+                },
+                "impact": {
+                    "type": "integer",
+                    "example": -70
+                },
+                "label": {
+                    "type": "string",
+                    "example": "Долговая нагрузка 47% от оборота"
+                }
+            }
+        },
+        "scoring.prelimCheck": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "example": "Действует, 11 лет"
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "EGRUL"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckStatus"
+                        }
+                    ],
+                    "example": "OK"
+                }
+            }
+        },
+        "scoring.prelimResponse": {
+            "type": "object",
+            "properties": {
+                "amountFits": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "checks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/scoring.prelimCheck"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "outcome": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.PrelimOutcome"
+                        }
+                    ],
+                    "example": "LIMIT"
+                },
+                "prelimPayment": {
+                    "type": "integer",
+                    "example": 77800
+                },
+                "prelimRate": {
+                    "type": "number",
+                    "example": 22
+                },
+                "requestedAmount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "stopReason": {
+                    "type": "string",
+                    "example": "BUSINESS_TOO_YOUNG"
+                },
+                "stopText": {
+                    "type": "string",
+                    "example": "Бизнес зарегистрирован меньше 6 месяцев назад"
+                },
+                "whatToDo": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "scoring.scoreResponse": {
+            "type": "object",
+            "properties": {
+                "autoDecisionEligible": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "autoDecisionReason": {
+                    "type": "string",
+                    "example": "Пограничный балл"
+                },
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/scoring.factorDTO"
+                    }
+                },
+                "modelVersion": {
+                    "type": "string",
+                    "example": "rules-v1"
+                },
+                "riskBand": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.RiskBand"
+                        }
+                    ],
+                    "example": "MEDIUM"
+                },
+                "score": {
+                    "type": "integer",
+                    "example": 640
+                },
+                "suggested": {
+                    "$ref": "#/definitions/scoring.suggestedDTO"
+                }
+            }
+        },
+        "scoring.suggestedDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "decision": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "COUNTER_OFFER"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 21.5
+                }
+            }
+        },
+        "shared.AuthorityType": {
+            "type": "string",
+            "enum": [
+                "HEAD",
+                "MCHD",
+                "NONE"
+            ],
+            "x-enum-varnames": [
+                "AuthorityHead",
+                "AuthorityMCHD",
+                "AuthorityNone"
+            ]
+        },
+        "shared.CheckSource": {
+            "type": "string",
+            "enum": [
+                "BANK",
+                "BANK_ACCOUNTS",
+                "EGRUL",
+                "TRANSPARENT_BUSINESS",
+                "BKI",
+                "FNS",
+                "GIRBO",
+                "COURTS"
+            ],
+            "x-enum-comments": {
+                "SourceEGRUL": "ЕГРЮЛ или ЕГРИП — по типу компании",
+                "SourceGIRBO": "только ООО"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "ЕГРЮЛ или ЕГРИП — по типу компании",
+                "",
+                "",
+                "",
+                "только ООО",
+                ""
+            ],
+            "x-enum-varnames": [
+                "SourceBank",
+                "SourceBankAccounts",
+                "SourceEGRUL",
+                "SourceTransparentBusiness",
+                "SourceBKI",
+                "SourceFNS",
+                "SourceGIRBO",
+                "SourceCourts"
+            ]
+        },
+        "shared.CheckStatus": {
+            "type": "string",
+            "enum": [
+                "OK",
+                "WARN",
+                "FAIL",
+                "UNAVAILABLE"
+            ],
+            "x-enum-varnames": [
+                "CheckOK",
+                "CheckWarn",
+                "CheckFail",
+                "CheckUnavailable"
+            ]
+        },
+        "shared.CompanyType": {
+            "type": "string",
+            "enum": [
+                "LLC",
+                "IE"
+            ],
+            "x-enum-varnames": [
+                "CompanyLLC",
+                "CompanyIE"
+            ]
+        },
+        "shared.DecisionMode": {
+            "type": "string",
+            "enum": [
+                "AUTO",
+                "MANUAL"
+            ],
+            "x-enum-varnames": [
+                "DecisionAuto",
+                "DecisionManual"
+            ]
+        },
+        "shared.PersonRole": {
+            "type": "string",
+            "enum": [
+                "HEAD",
+                "FOUNDER",
+                "REPRESENTATIVE"
+            ],
+            "x-enum-varnames": [
+                "PersonHead",
+                "PersonFounder",
+                "PersonRepresentative"
+            ]
+        },
+        "shared.PrelimChoice": {
+            "type": "string",
+            "enum": [
+                "REDUCE_AMOUNT",
+                "KEEP_AMOUNT"
+            ],
+            "x-enum-varnames": [
+                "ChoiceReduceAmount",
+                "ChoiceKeepAmount"
+            ]
+        },
+        "shared.PrelimOutcome": {
+            "type": "string",
+            "enum": [
+                "LIMIT",
+                "STOP"
+            ],
+            "x-enum-varnames": [
+                "PrelimLimit",
+                "PrelimStop"
+            ]
+        },
+        "shared.RiskBand": {
+            "type": "string",
+            "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+            ],
+            "x-enum-varnames": [
+                "RiskLow",
+                "RiskMedium",
+                "RiskHigh"
+            ]
+        },
         "shared.Role": {
             "type": "string",
             "enum": [
@@ -245,6 +2149,738 @@ const docTemplate = `{
                 "RoleClient",
                 "RoleBankOfficer"
             ]
+        },
+        "shared.Status": {
+            "type": "string",
+            "enum": [
+                "DRAFT",
+                "SUBMITTED",
+                "DATA_CHECK",
+                "INFO_REQUESTED",
+                "SCORING",
+                "ON_DECISION",
+                "APPROVED",
+                "COUNTER_OFFER",
+                "REJECTED",
+                "SIGNING",
+                "ISSUED",
+                "CLOSED"
+            ],
+            "x-enum-varnames": [
+                "StatusDraft",
+                "StatusSubmitted",
+                "StatusDataCheck",
+                "StatusInfoRequested",
+                "StatusScoring",
+                "StatusOnDecision",
+                "StatusApproved",
+                "StatusCounterOffer",
+                "StatusRejected",
+                "StatusSigning",
+                "StatusIssued",
+                "StatusClosed"
+            ]
+        },
+        "underwriting.answerBody": {
+            "type": "object",
+            "required": [
+                "answers"
+            ],
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoAnswer"
+                    }
+                }
+            }
+        },
+        "underwriting.answerResponse": {
+            "type": "object",
+            "properties": {
+                "applicationStatus": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "DATA_CHECK"
+                },
+                "requestStatus": {
+                    "type": "string",
+                    "example": "ANSWERED"
+                }
+            }
+        },
+        "underwriting.applicantDTO": {
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.AuthorityType"
+                        }
+                    ],
+                    "example": "MCHD"
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Петрова Анна Сергеевна"
+                },
+                "mchdNumber": {
+                    "type": "string",
+                    "example": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+                },
+                "mchdValidUntil": {
+                    "type": "string",
+                    "example": "2027-03-01"
+                }
+            }
+        },
+        "underwriting.assignResponse": {
+            "type": "object",
+            "properties": {
+                "assignee": {
+                    "$ref": "#/definitions/underwriting.assigneeDTO"
+                }
+            }
+        },
+        "underwriting.assigneeDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Иванова Е. П."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "u-9"
+                }
+            }
+        },
+        "underwriting.checkDTO": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "requestedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T10:26:00Z"
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BKI"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckStatus"
+                        }
+                    ],
+                    "example": "OK"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "2 кредита, просрочек нет"
+                }
+            }
+        },
+        "underwriting.companyRefDTO": {
+            "type": "object",
+            "properties": {
+                "inn": {
+                    "type": "string",
+                    "example": "7712345678"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ООО «Северная пекарня»"
+                }
+            }
+        },
+        "underwriting.completenessResponse": {
+            "type": "object",
+            "properties": {
+                "complete": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "issues": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.issue"
+                    }
+                }
+            }
+        },
+        "underwriting.decisionBody": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 1200000
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 21.5
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Сумма снижена по уровню долговой нагрузки"
+                },
+                "term": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 24
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "APPROVE",
+                        "COUNTER",
+                        "REJECT"
+                    ],
+                    "example": "COUNTER"
+                }
+            }
+        },
+        "underwriting.decisionResponse": {
+            "type": "object",
+            "properties": {
+                "decidedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T13:10:00Z"
+                },
+                "decidedBy": {
+                    "type": "string",
+                    "example": "u-9"
+                },
+                "decisionId": {
+                    "type": "string",
+                    "example": "dec-31"
+                },
+                "mode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.DecisionMode"
+                        }
+                    ],
+                    "example": "MANUAL"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "COUNTER_OFFER"
+                }
+            }
+        },
+        "underwriting.guarantorDTO": {
+            "type": "object",
+            "properties": {
+                "bkiConsent": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "771234567890"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                }
+            }
+        },
+        "underwriting.infoAnswer": {
+            "type": "object",
+            "required": [
+                "key",
+                "value"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "example": "turnover_note"
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "example": "Часть поступлений — возврат займа учредителя"
+                }
+            }
+        },
+        "underwriting.infoItem": {
+            "type": "object",
+            "required": [
+                "key",
+                "label",
+                "type"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "turnover_note"
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Почему выручка за 2025 год ниже оборотов по счёту"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "TEXT"
+                    ],
+                    "example": "TEXT"
+                }
+            }
+        },
+        "underwriting.infoRequestBody": {
+            "type": "object",
+            "required": [
+                "comment",
+                "items"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Обороты по счетам расходятся с отчётностью"
+                },
+                "items": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoItem"
+                    }
+                }
+            }
+        },
+        "underwriting.infoRequestCreated": {
+            "type": "object",
+            "properties": {
+                "applicationStatus": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "INFO_REQUESTED"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "r-7"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OPEN"
+                }
+            }
+        },
+        "underwriting.infoRequestDTO": {
+            "type": "object",
+            "properties": {
+                "answeredAt": {
+                    "type": "string"
+                },
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoAnswer"
+                    }
+                },
+                "comment": {
+                    "type": "string",
+                    "example": "Обороты по счетам расходятся с отчётностью"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-20T12:40:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "r-7"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.infoItem"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OPEN"
+                }
+            }
+        },
+        "underwriting.issue": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "TURNOVER_MISMATCH"
+                },
+                "severity": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/underwriting.severity"
+                        }
+                    ],
+                    "example": "WARN"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Обороты по счетам в банке выше выручки в ГИР БО на 7%"
+                }
+            }
+        },
+        "underwriting.productRefDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
+                }
+            }
+        },
+        "underwriting.queueItemDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "assignee": {
+                    "$ref": "#/definitions/underwriting.assigneeDTO"
+                },
+                "company": {
+                    "$ref": "#/definitions/underwriting.companyRefDTO"
+                },
+                "decisionMode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.DecisionMode"
+                        }
+                    ],
+                    "example": "MANUAL"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a-1024"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КЗ-2026-001024"
+                },
+                "product": {
+                    "$ref": "#/definitions/underwriting.productRefDTO"
+                },
+                "riskBand": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.RiskBand"
+                        }
+                    ],
+                    "example": "MEDIUM"
+                },
+                "score": {
+                    "type": "integer",
+                    "example": 640
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "ON_DECISION"
+                },
+                "submittedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T10:25:00Z"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "underwriting.queuePage": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.queueItemDTO"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "underwriting.refreshRequest": {
+            "type": "object",
+            "properties": {
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shared.CheckSource"
+                    },
+                    "example": [
+                        "BKI",
+                        "COURTS"
+                    ]
+                }
+            }
+        },
+        "underwriting.requestDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "purposeText": {
+                    "type": "string",
+                    "example": "Закупка муки и упаковки к сезону"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "underwriting.reviewCompanyDTO": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Складская, 3"
+                },
+                "clientSince": {
+                    "type": "string",
+                    "example": "2016-02-01"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7712345678"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ООО «Северная пекарня»"
+                },
+                "okved": {
+                    "type": "string",
+                    "example": "10.71"
+                },
+                "regDate": {
+                    "type": "string",
+                    "example": "2015-03-12"
+                },
+                "taxRegime": {
+                    "type": "string",
+                    "example": "USN_INCOME_MINUS_EXPENSES"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CompanyType"
+                        }
+                    ],
+                    "example": "LLC"
+                }
+            }
+        },
+        "underwriting.reviewGIRBODTO": {
+            "type": "object",
+            "properties": {
+                "netProfit": {
+                    "type": "integer",
+                    "example": 2100000
+                },
+                "revenue": {
+                    "type": "integer",
+                    "example": 21400000
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2025
+                }
+            }
+        },
+        "underwriting.reviewPrelimDTO": {
+            "type": "object",
+            "properties": {
+                "amountFits": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "choice": {
+                    "$ref": "#/definitions/shared.PrelimChoice"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "prelimRate": {
+                    "type": "number",
+                    "example": 22
+                }
+            }
+        },
+        "underwriting.reviewResponse": {
+            "type": "object",
+            "properties": {
+                "applicant": {
+                    "$ref": "#/definitions/underwriting.applicantDTO"
+                },
+                "company": {
+                    "$ref": "#/definitions/underwriting.reviewCompanyDTO"
+                },
+                "girbo": {
+                    "$ref": "#/definitions/underwriting.reviewGIRBODTO"
+                },
+                "guarantor": {
+                    "$ref": "#/definitions/underwriting.guarantorDTO"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a-1024"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КЗ-2026-001024"
+                },
+                "prelim": {
+                    "$ref": "#/definitions/underwriting.reviewPrelimDTO"
+                },
+                "request": {
+                    "$ref": "#/definitions/underwriting.requestDTO"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "ON_DECISION"
+                },
+                "turnover": {
+                    "$ref": "#/definitions/underwriting.reviewTurnoverDTO"
+                }
+            }
+        },
+        "underwriting.reviewTurnoverDTO": {
+            "type": "object",
+            "properties": {
+                "avgMonthlyIncome": {
+                    "type": "integer",
+                    "example": 1840000
+                },
+                "periodMonths": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
+        "underwriting.severity": {
+            "type": "string",
+            "enum": [
+                "INFO",
+                "WARN",
+                "BLOCKER"
+            ],
+            "x-enum-varnames": [
+                "sevInfo",
+                "sevWarn",
+                "sevBlocker"
+            ]
+        },
+        "underwriting.statsResponse": {
+            "type": "object",
+            "properties": {
+                "DATA_CHECK": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "INFO_REQUESTED": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "ON_DECISION": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "SCORING": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "SUBMITTED": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "decidedToday": {
+                    "type": "integer",
+                    "example": 7
+                }
+            }
         }
     }
 }`

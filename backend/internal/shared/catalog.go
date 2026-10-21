@@ -20,3 +20,10 @@ type ProductView struct {
 	MinBusinessAgeMonths int
 	GuarantorForLLC      bool
 }
+
+// ProductMatcher — подбор продуктов по задаче клиента. Реализует: разработчик A (Catalog). Использует: Planner (B).
+// Отдельно от Products, чтобы не менять уже используемый интерфейс.
+type ProductMatcher interface {
+	// Match — продукты, у которых есть цель goal и в рамки которых укладывается amount; лучшие первыми. Пусто — подходящих нет.
+	Match(ctx context.Context, goal string, amount int64) ([]ProductView, error)
+}

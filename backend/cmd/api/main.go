@@ -90,6 +90,11 @@ func run(log *slog.Logger) error {
 	plannerMod := planner.New(deps)
 
 	// Связи между зонами (shared-интерфейсы). Пока у поставщика нет реализации, он отдаёт заглушку из своего ports.go.
+	companyMod.Wire(company.Ports{
+		BankData:     integrationsMod.BankData(),
+		Registries:   integrationsMod.Registries(),
+		Applications: originationMod.Applications(),
+	})
 	identityMod.Wire(identity.Ports{Companies: companyMod.Companies()})
 	originationMod.Wire(origination.Ports{
 		Products:    catalogMod.Products(),
@@ -101,12 +106,17 @@ func run(log *slog.Logger) error {
 		Applications: originationMod.Applications(),
 		Products:     catalogMod.Products(),
 		Companies:    companyMod.Companies(),
+		Checks:       integrationsMod.Checks(),
 	})
 	underwritingMod.Wire(underwriting.Ports{
-		Applications: originationMod.Applications(),
-		Companies:    companyMod.Companies(),
-		Products:     catalogMod.Products(),
-		Notifier:     notificationsMod.Notifier(),
+		Applications:  originationMod.Applications(),
+		Companies:     companyMod.Companies(),
+		Products:      catalogMod.Products(),
+		Notifier:      notificationsMod.Notifier(),
+		Scores:        scoringMod.Scores(),
+		Prelims:       scoringMod.Prelims(),
+		Checks:        integrationsMod.Checks(),
+		DecisionMaker: scoringMod.DecisionMaker(),
 	})
 	offerMod.Wire(offer.Ports{
 		Applications: originationMod.Applications(),
@@ -115,7 +125,7 @@ func run(log *slog.Logger) error {
 	})
 	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier()})
 	plannerMod.Wire(planner.Ports{
-		Products: catalogMod.Products(),
+		Matcher:  catalogMod.ProductMatcher(),
 		Notifier: notificationsMod.Notifier(),
 	})
 
@@ -128,6 +138,18 @@ func run(log *slog.Logger) error {
 			return err
 		}
 	}
+
+	// Фоновый конвейер Scoring: останавливается вместе с сервером и дожидается текущего шага.
+	pipelineCtx, stopPipeline := context.WithCancel(ctx)
+	pipelineDone := make(chan struct{})
+	go func() {
+		defer close(pipelineDone)
+		scoringMod.Run(pipelineCtx)
+	}()
+	defer func() {
+		stopPipeline()
+		<-pipelineDone
+	}()
 
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
