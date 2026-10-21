@@ -111,3 +111,21 @@ func TestListGoals(t *testing.T) {
 		t.Fatalf("цели: %+v", got)
 	}
 }
+
+func TestMatchProducts(t *testing.T) {
+	_, r := newTestModule(t)
+	w := do(r, "POST", "/api/v1/products/match", `{"goal":"WORKING_CAPITAL","amount":1500000,"term":24}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", w.Code, w.Body.String())
+	}
+	got := decode[[]matchDTO](t, w)
+	if len(got) != 4 || got[0].Code != "WORKING" || !got[0].Fits || got[1].Fits {
+		t.Fatalf("подбор: %+v", got)
+	}
+
+	for _, body := range []string{`{"goal":"UNKNOWN","amount":1500000}`, `{"goal":"WORKING_CAPITAL","amount":0}`, `{"amount":1}`} {
+		if w := do(r, "POST", "/api/v1/products/match", body); w.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d", body, w.Code)
+		}
+	}
+}

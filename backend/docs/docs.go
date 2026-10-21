@@ -1288,6 +1288,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/products/match": {
+            "post": {
+                "description": "Для каждого продукта — подходит ли он под цель, сумму и срок и почему. Подходящие — первыми.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Подбор продукта по задаче",
+                "parameters": [
+                    {
+                        "description": "Задача клиента",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/catalog.matchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/catalog.matchDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/products/{code}": {
             "get": {
                 "description": "Все условия для панели «Условия». whatYouNeed — только действия клиента: данные компании банк берёт сам.",
@@ -1336,6 +1379,46 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Пополнить оборотные средства"
+                }
+            }
+        },
+        "catalog.matchDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "fits": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Подходит по цели, сумме и сроку"
+                }
+            }
+        },
+        "catalog.matchRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "goal"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "term": {
+                    "description": "0 или нет поля — срок не проверяется",
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 24
                 }
             }
         },

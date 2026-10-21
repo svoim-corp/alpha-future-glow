@@ -29,4 +29,5 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Public.GET("/products", m.listProducts)
 	r.Public.GET("/products/goals", m.listGoals)
 	r.Public.GET("/products/:code", m.productDetails)
+	r.Public.POST("/products/match", m.matchProducts)
 }

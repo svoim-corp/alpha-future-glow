@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 
@@ -135,6 +136,59 @@ func (m *Module) listGoals(c *gin.Context) {
 	out := make([]goalDTO, len(goals))
 	for i, g := range goals {
 		out[i] = goalDTO{Code: g.Code, Name: g.Name}
+	}
+	httpx.JSON(c, http.StatusOK, out)
+}
+
+type matchRequest struct {
+	Goal   string `json:"goal" binding:"required" example:"WORKING_CAPITAL"`
+	Amount int64  `json:"amount" binding:"required,gt=0" example:"1500000"`
+	Term   int    `json:"term" binding:"gte=0" example:"24"` // 0 или нет поля — срок не проверяется
+}
+
+type matchDTO struct {
+	Code   string `json:"code" example:"WORKING"`
+	Fits   bool   `json:"fits" example:"true"`
+	Reason string `json:"reason" example:"Подходит по цели, сумме и сроку"`
+}
+
+// matchProducts godoc
+//
+//	@Summary		Подбор продукта по задаче
+//	@Description	Для каждого продукта — подходит ли он под цель, сумму и срок и почему. Подходящие — первыми.
+//	@Tags			catalog
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		matchRequest	true	"Задача клиента"
+//	@Success		200		{array}		matchDTO
+//	@Failure		400		{object}	httpx.ErrorBody
+//	@Router			/products/match [post]
+func (m *Module) matchProducts(c *gin.Context) {
+	var req matchRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	goals, err := m.store.Goals(ctx)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	i := slices.IndexFunc(goals, func(g goalRow) bool { return g.Code == req.Goal })
+	if i < 0 {
+		httpx.Fail(c, httpx.Validation("", httpx.FieldError{Field: "goal", Code: "INVALID", Message: "Такой цели нет в каталоге"}))
+		return
+	}
+	products, err := m.store.Products(ctx)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	results := match(products, req.Goal, goals[i].Name, req.Amount, req.Term)
+	out := make([]matchDTO, len(results))
+	for i, r := range results {
+		out[i] = matchDTO{Code: r.code, Fits: r.fits, Reason: r.reason}
 	}
 	httpx.JSON(c, http.StatusOK, out)
 }

@@ -9,6 +9,35 @@ definitions:
         example: Пополнить оборотные средства
         type: string
     type: object
+  catalog.matchDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      fits:
+        example: true
+        type: boolean
+      reason:
+        example: Подходит по цели, сумме и сроку
+        type: string
+    type: object
+  catalog.matchRequest:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      term:
+        description: 0 или нет поля — срок не проверяется
+        example: 24
+        minimum: 0
+        type: integer
+    required:
+    - amount
+    - goal
+    type: object
   catalog.moneyRangeDTO:
     properties:
       max:
@@ -2124,6 +2153,35 @@ paths:
               $ref: '#/definitions/catalog.goalDTO'
             type: array
       summary: Цели кредита для подбора по задаче
+      tags:
+      - catalog
+  /products/match:
+    post:
+      consumes:
+      - application/json
+      description: Для каждого продукта — подходит ли он под цель, сумму и срок и
+        почему. Подходящие — первыми.
+      parameters:
+      - description: Задача клиента
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/catalog.matchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/catalog.matchDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Подбор продукта по задаче
       tags:
       - catalog
 swagger: "2.0"
