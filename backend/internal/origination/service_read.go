@@ -30,6 +30,7 @@ type dossier struct {
 	product *shared.ProductView    // nil — продукт убрали из каталога
 	profile *shared.CompanyProfile // nil — данные банка сейчас недоступны
 	stage   stageState
+	consent *consentRow // согласие заявителя на БКИ; nil — не дано
 }
 
 // dossier собирает состояние заявки. Недоступность данных банка не ломает мастер: заявка показывается без них,
@@ -48,6 +49,9 @@ func (m *Module) dossier(ctx context.Context, a *appRow) (*dossier, error) {
 		return nil, fmt.Errorf("load prelim %s: %w", a.ID, err)
 	}
 	d.stage = stageOf(a, prelim)
+	if d.consent, err = m.store.Consent(ctx, a.ID, shared.ConsentApplicant); err != nil {
+		return nil, fmt.Errorf("load bki consent %s: %w", a.ID, err)
+	}
 	return d, nil
 }
 

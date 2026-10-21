@@ -140,6 +140,45 @@ func (s *Store) Events(ctx context.Context, appID string) ([]eventRow, error) {
 	return out, err
 }
 
+type consentRow struct {
+	ID       string    `db:"id"`
+	AppID    string    `db:"app_id"`
+	Subject  string    `db:"subject"`
+	PersonID *string   `db:"person_id"`
+	Text     string    `db:"text"`
+	GivenBy  string    `db:"given_by"`
+	GivenAt  time.Time `db:"given_at"`
+}
+
+const consentCols = `id, app_id, subject, person_id, text, given_by, given_at`
+
+// SaveConsent сохраняет согласие, если по этому субъекту его ещё нет. В c — согласие, которое действует.
+func (s *Store) SaveConsent(ctx context.Context, c *consentRow) error {
+	return s.db.GetContext(ctx, c, `
+		WITH ins AS (
+			INSERT INTO origination.consents (id, app_id, subject, person_id, text, given_by, given_at)
+			VALUES ('cs-' || nextval('origination.consent_seq'), $1, $2, $3, $4, $5, $6)
+			ON CONFLICT (app_id, subject) DO NOTHING
+			RETURNING `+consentCols+`)
+		SELECT `+consentCols+` FROM ins
+		UNION ALL
+		SELECT `+consentCols+` FROM origination.consents WHERE app_id = $1 AND subject = $2 AND NOT EXISTS (SELECT 1 FROM ins)`,
+		c.AppID, c.Subject, c.PersonID, c.Text, c.GivenBy, c.GivenAt)
+}
+
+// Consent — согласие по заявке от субъекта; (nil, nil) — согласия нет.
+func (s *Store) Consent(ctx context.Context, appID string, subject shared.ConsentSubject) (*consentRow, error) {
+	var c consentRow
+	err := s.db.GetContext(ctx, &c, `SELECT `+consentCols+` FROM origination.consents WHERE app_id = $1 AND subject = $2`, appID, subject)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 // CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.
 func (s *Store) CompanyApplications(ctx context.Context, companyID string, limit, offset int) ([]appRow, int, error) {
 	var total int

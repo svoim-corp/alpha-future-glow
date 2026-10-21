@@ -141,6 +141,9 @@ func toApplicationDTO(d *dossier) applicationDTO {
 		resp.Stage2.ActualAddress = &p.ActualAddress
 		resp.Stage2.Turnover = &turnoverDTO{Source: shared.SourceBankAccounts, AvgMonthlyIncome: p.Turnover.AvgMonthlyIncome, PeriodMonths: p.Turnover.PeriodMonths}
 	}
+	if c := d.consent; c != nil {
+		resp.Consents.BKI = &consentDTO{Given: true, At: c.GivenAt}
+	}
 	if id := a.GuarantorPersonID; id != nil {
 		resp.Stage2.Guarantor = &guarantorDTO{PersonID: *id, FullName: d.guarantorName(*id)}
 	}

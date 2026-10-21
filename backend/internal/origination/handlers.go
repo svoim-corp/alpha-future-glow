@@ -288,3 +288,60 @@ func (m *Module) patch(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, patchResponse{Version: a.Version, SavedAt: a.UpdatedAt, PrelimInvalidated: invalidated})
 }
+
+type consentRequest struct {
+	Given *bool  `json:"given" binding:"required" example:"true"`
+	Text  string `json:"text" binding:"required,max=1000" example:"Согласен на запрос моей кредитной истории в бюро кредитных историй"`
+}
+
+type consentResponse struct {
+	Given bool      `json:"given" example:"true"`
+	By    string    `json:"by" example:"u-1"`
+	At    time.Time `json:"at" example:"2026-10-20T10:05:00Z"`
+}
+
+// mustGive — согласие нельзя «не дать»: без него нет этапа 1, а отказ клиента — просто отсутствие запроса.
+func mustGive(given *bool) error {
+	if !*given {
+		return httpx.Validation("", httpx.FieldError{Field: "given", Code: "INVALID", Message: "Без согласия банк не сможет запросить кредитную историю"})
+	}
+	return nil
+}
+
+// consentBKI godoc
+//
+//	@Summary		Согласие на запрос в БКИ
+//	@Description	Фиксирует согласие заявителя: кто, когда, по какой заявке. Нужно для этапа 1. Повтор возвращает уже данное.
+//	@Tags			applications
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string			true	"ID заявки"
+//	@Param			body	body		consentRequest	true	"Согласие"
+//	@Success		201		{object}	consentResponse
+//	@Failure		400		{object}	httpx.ErrorBody
+//	@Failure		403		{object}	httpx.ErrorBody	"Нет полномочия BKI_CONSENT по доверенности"
+//	@Failure		404		{object}	httpx.ErrorBody
+//	@Failure		409		{object}	httpx.ErrorBody
+//	@Router			/applications/{id}/consents/bki [post]
+func (m *Module) consentBKI(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	var req consentRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if err := mustGive(req.Given); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	cs, err := m.giveBKIConsent(c.Request.Context(), c.Param("id"), who, req.Text)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusCreated, consentResponse{Given: true, By: cs.GivenBy, At: cs.GivenAt})
+}

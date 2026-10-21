@@ -551,6 +551,31 @@ definitions:
         example: true
         type: boolean
     type: object
+  origination.consentRequest:
+    properties:
+      given:
+        example: true
+        type: boolean
+      text:
+        example: Согласен на запрос моей кредитной истории в бюро кредитных историй
+        maxLength: 1000
+        type: string
+    required:
+    - given
+    - text
+    type: object
+  origination.consentResponse:
+    properties:
+      at:
+        example: "2026-10-20T10:05:00Z"
+        type: string
+      by:
+        example: u-1
+        type: string
+      given:
+        example: true
+        type: boolean
+    type: object
   origination.consentsDTO:
     properties:
       bki:
@@ -1928,6 +1953,50 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Данные о компании для заявки
+      tags:
+      - applications
+  /applications/{id}/consents/bki:
+    post:
+      consumes:
+      - application/json
+      description: 'Фиксирует согласие заявителя: кто, когда, по какой заявке. Нужно
+        для этапа 1. Повтор возвращает уже данное.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Согласие
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.consentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/origination.consentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Нет полномочия BKI_CONSENT по доверенности
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Согласие на запрос в БКИ
       tags:
       - applications
   /applications/{id}/info-requests:
