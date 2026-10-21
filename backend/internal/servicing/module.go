@@ -42,6 +42,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/loans/summary", m.summary)
 	r.Client.GET("/loans", m.list)
 	r.Client.GET("/loans/schedule", m.schedule)
+	r.Client.GET("/loans/schedule/upcoming", m.upcoming)
 	r.Client.GET("/loans/:id", m.get)
 }
 

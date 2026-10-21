@@ -2162,6 +2162,50 @@
                 }
             }
         },
+        "/loans/schedule/upcoming": {
+            "get": {
+                "description": "Неоплаченные платежи всех кредитов компании сегодня и позже, ближайшие первыми.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Ближайшие платежи",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 3,
+                        "description": "Сколько платежей (1–12)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/servicing.scheduleItemDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/loans/summary": {
             "get": {
                 "description": "Сколько действующих кредитов и ближайший платёж: сумма всех платежей компании в ближайшую дату.",

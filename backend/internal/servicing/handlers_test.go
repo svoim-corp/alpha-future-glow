@@ -91,3 +91,31 @@ func TestSchedule(t *testing.T) {
 		}
 	}
 }
+
+func TestUpcoming(t *testing.T) {
+	e := newEnv(t)
+	a := e.open(t, "a-1", "c-1", today.AddDate(0, -2, 0)) // 21.09 просрочен, 21.10 — сегодня
+	b := e.open(t, "a-2", "c-1", time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC))
+
+	got := decode[[]scheduleItemDTO](t, e.do("GET", "/api/v1/loans/schedule/upcoming", "smirnov"))
+	want := []string{"2026-10-21 " + a, "2026-11-05 " + b, "2026-11-21 " + a}
+	if len(got) != 3 {
+		t.Fatalf("по умолчанию — три: %+v", got)
+	}
+	for i, w := range want {
+		if g := got[i].Date + " " + got[i].LoanID; g != w || got[i].Status != "PLANNED" {
+			t.Errorf("строка %d: %+v, want %s", i, got[i], w)
+		}
+	}
+	if got := decode[[]scheduleItemDTO](t, e.do("GET", "/api/v1/loans/schedule/upcoming?limit=1", "smirnov")); len(got) != 1 {
+		t.Fatalf("limit=1: %+v", got)
+	}
+	for _, q := range []string{"0", "13", "x"} {
+		if w := e.do("GET", "/api/v1/loans/schedule/upcoming?limit="+q, "smirnov"); w.Code != http.StatusBadRequest {
+			t.Errorf("limit=%s: %d", q, w.Code)
+		}
+	}
+	if w := e.do("GET", "/api/v1/loans/schedule/upcoming", "orlova"); w.Body.String() != "[]" {
+		t.Fatalf("без кредитов: %s", w.Body.String())
+	}
+}

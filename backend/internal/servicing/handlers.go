@@ -2,6 +2,7 @@ package servicing
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -291,4 +292,43 @@ func (m *Module) schedule(c *gin.Context) {
 		return
 	}
 	httpx.JSON(c, http.StatusOK, toScheduleItems(rows, m.today()))
+}
+
+// Сколько ближайших платежей показывать: по умолчанию три, как в блоке на главной, и не больше года по одному кредиту.
+const (
+	defaultUpcoming = 3
+	maxUpcoming     = 12
+)
+
+// upcoming godoc
+//
+//	@Summary		Ближайшие платежи
+//	@Description	Неоплаченные платежи всех кредитов компании сегодня и позже, ближайшие первыми.
+//	@Tags			loans
+//	@Produce		json
+//	@Param			limit	query		int	false	"Сколько платежей (1–12)"	default(3)
+//	@Success		200		{array}		scheduleItemDTO
+//	@Failure		400		{object}	httpx.ErrorBody
+//	@Failure		403		{object}	httpx.ErrorBody
+//	@Router			/loans/schedule/upcoming [get]
+func (m *Module) upcoming(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	limit := defaultUpcoming
+	if q := c.Query("limit"); q != "" {
+		if limit, err = strconv.Atoi(q); err != nil || limit < 1 || limit > maxUpcoming {
+			httpx.Fail(c, httpx.Validation("", httpx.FieldError{Field: "limit", Code: "INVALID", Message: "Значение вне допустимого диапазона"}))
+			return
+		}
+	}
+	today := m.today()
+	rows, err := m.store.UpcomingPayments(c.Request.Context(), company, today, limit)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, toScheduleItems(rows, today))
 }

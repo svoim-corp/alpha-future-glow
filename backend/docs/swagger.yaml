@@ -3762,6 +3762,36 @@ paths:
       summary: Платёжный календарь
       tags:
       - loans
+  /loans/schedule/upcoming:
+    get:
+      description: Неоплаченные платежи всех кредитов компании сегодня и позже, ближайшие
+        первыми.
+      parameters:
+      - default: 3
+        description: Сколько платежей (1–12)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.scheduleItemDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Ближайшие платежи
+      tags:
+      - loans
   /loans/summary:
     get:
       description: 'Сколько действующих кредитов и ближайший платёж: сумма всех платежей
