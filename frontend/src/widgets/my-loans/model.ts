@@ -1,0 +1,48 @@
+import { type Loan, type LoanPayment } from '@entities/loan';
+
+/** Сколько ближайших платежей показываем на графике и в таблице (макет loans.html) */
+export const UPCOMING_COUNT = 6;
+
+const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+
+/** Основной долг по всем действующим кредитам */
+export const totalBalance = (loans: Loan[]) => sum(loans.map((loan) => loan.balance));
+
+/** Ежемесячный платёж: ближайшие платежи действующих кредитов */
+export const totalMonthly = (loans: Loan[]) => sum(loans.map((loan) => loan.nextPayment?.amount ?? 0));
+
+/** Дата ближайшего платежа среди всех кредитов */
+export const earliestPaymentDate = (loans: Loan[]) =>
+	loans.flatMap((loan) => (loan.nextPayment ? [loan.nextPayment.date] : [])).sort()[0] ?? null;
+
+/** Доля погашенного основного долга, % */
+export const repaidPercent = (loan: Loan) =>
+	loan.amount > 0 ? Math.min(100, Math.max(0, Math.round(((loan.amount - loan.balance) / loan.amount) * 100))) : 0;
+
+export const upcomingPayments = (payments: LoanPayment[]) =>
+	payments.filter((payment) => payment.status !== 'PAID').slice(0, UPCOMING_COUNT);
+
+export const remainingCount = (payments: LoanPayment[]) => payments.filter((payment) => payment.status !== 'PAID').length;
+
+/** «ноя» — подпись столбца графика */
+export const monthLabel = (iso: string) => {
+	const label = new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${iso}T00:00:00`)).slice(0, 3);
+
+	return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+/** «15 ноября» и «2026» для блока ближайшего платежа */
+export const paymentDay = (iso: string) => {
+	const date = new Date(`${iso}T00:00:00`);
+
+	return {
+		day: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(date),
+		year: String(date.getFullYear()),
+	};
+};
+
+/** Верх шкалы графика: ближайшая «круглая» отметка выше максимального платежа (кратно 20 тыс.) */
+export const chartCeiling = (payments: LoanPayment[]) =>
+	Math.max(20000, Math.ceil(Math.max(0, ...payments.map((payment) => payment.total)) / 20000) * 20000);
+
+export const thousands = (value: number) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(value / 1000)} тыс.`;

@@ -16,13 +16,16 @@ export interface DataTableProps<T> {
 	columns: DataTableColumn<T>[];
 	rows: T[];
 	getRowKey: (row: T) => string;
+	/** Подпись нужна скринридеру, но на экране не показывается (заголовок уже есть рядом) */
+	hideCaption?: boolean;
+	className?: string;
 }
 
 /** Таблица со своим горизонтальным скроллом: на узком экране прокручивается контейнер, а не страница */
-export const DataTable = <T,>({ caption, columns, rows, getRowKey }: DataTableProps<T>) => (
-	<div className={styles.wrap}>
+export const DataTable = <T,>({ caption, columns, rows, getRowKey, hideCaption, className }: DataTableProps<T>) => (
+	<div className={clsx(styles.wrap, className)}>
 		<table className={styles.table}>
-			<caption>{caption}</caption>
+			<caption className={clsx(hideCaption && 'visually-hidden')}>{caption}</caption>
 			<thead>
 				<tr>
 					{columns.map((column) => (
