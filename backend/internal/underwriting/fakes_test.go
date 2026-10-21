@@ -118,6 +118,43 @@ func (f fakeProducts) Product(_ context.Context, code string) (*shared.ProductVi
 	return f[code], nil
 }
 
+type fakePrelims map[string]*shared.PrelimView
+
+func (f fakePrelims) Prelim(_ context.Context, appID string) (*shared.PrelimView, error) {
+	return f[appID], nil
+}
+
+// fakeChecks — снимки проверок по заявке; Run запоминает запрос и отмечает перезапрошенные источники.
+type fakeChecks struct {
+	mu      sync.Mutex
+	reports map[string]*shared.CheckReport
+	last    *shared.CheckRequest
+}
+
+func (f *fakeChecks) Run(_ context.Context, req shared.CheckRequest) (*shared.CheckReport, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.last = &req
+	rep := f.reports[req.AppID]
+	if rep == nil {
+		rep = &shared.CheckReport{}
+		f.reports[req.AppID] = rep
+	}
+	for _, s := range req.Sources {
+		rep.Results = append(rep.Results, shared.CheckResult{Source: s, Status: shared.CheckOK, RequestedAt: today, Summary: "перезапрошено"})
+	}
+	return rep, nil
+}
+
+func (f *fakeChecks) Latest(_ context.Context, appID string) (*shared.CheckReport, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if r, ok := f.reports[appID]; ok {
+		return r, nil
+	}
+	return &shared.CheckReport{}, nil
+}
+
 type fakeScores map[string]*shared.ScoreView
 
 func (f fakeScores) Score(_ context.Context, appID string) (*shared.ScoreView, error) {
@@ -141,11 +178,13 @@ func submittedApp(id, company, product string, amount int64, at time.Time) *shar
 
 // env — модуль с фейками других зон. С БД — если задан TEST_DATABASE_URL.
 type env struct {
-	m      *Module
-	bus    *events.Bus
-	apps   *fakeApps
-	scores fakeScores
-	router *gin.Engine
+	m       *Module
+	bus     *events.Bus
+	apps    *fakeApps
+	scores  fakeScores
+	prelims fakePrelims
+	checks  *fakeChecks
+	router  *gin.Engine
 }
 
 func newEnv(t *testing.T, withDB bool) *env {
@@ -163,7 +202,8 @@ func newEnv(t *testing.T, withDB bool) *env {
 		t.Cleanup(func() { _ = conn.Close() })
 		deps.DB = conn
 	}
-	e := &env{bus: deps.Bus, apps: newFakeApps(deps.Bus), scores: fakeScores{}}
+	e := &env{bus: deps.Bus, apps: newFakeApps(deps.Bus), scores: fakeScores{}, prelims: fakePrelims{},
+		checks: &fakeChecks{reports: map[string]*shared.CheckReport{}}}
 	e.m = New(deps)
 	e.m.now = func() time.Time { return today }
 	if withDB {
@@ -175,7 +215,7 @@ func newEnv(t *testing.T, withDB bool) *env {
 		}
 	}
 	e.m.Wire(Ports{
-		Applications: e.apps, Scores: e.scores,
+		Applications: e.apps, Scores: e.scores, Prelims: e.prelims, Checks: e.checks,
 		Companies: fakeCompanies{"c-1": bakery, "c-8": trade},
 		Products:  fakeProducts{"WORKING": working, "EXPRESS": express},
 	})

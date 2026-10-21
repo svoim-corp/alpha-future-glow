@@ -23,6 +23,8 @@ type Ports struct {
 	Products     shared.Products     // название продукта в очереди
 	Notifier     shared.Notifier     // уведомление о запросе информации и решении
 	Scores       shared.Scores       // балл, риск и режим решения в очереди
+	Prelims      shared.Prelims      // предварительный результат в анкете
+	Checks       shared.Checks       // внешние проверки и их перезапрос
 }
 
 type Module struct {
@@ -49,6 +51,10 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Bank.GET("/applications/stats", m.bankStats)
 	r.Bank.GET("/applications", m.bankQueue)
 	r.Bank.POST("/applications/:id/assign", m.bankAssign)
+	r.Bank.GET("/applications/:id", m.bankApplication)
+	r.Bank.GET("/applications/:id/completeness", m.bankCompleteness)
+	r.Bank.GET("/applications/:id/checks", m.bankChecks)
+	r.Bank.POST("/applications/:id/checks/refresh", m.bankRefreshChecks)
 }
 
 // ResetDemo очищает очередь: она строится из заявок демо.

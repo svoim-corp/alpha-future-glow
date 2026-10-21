@@ -415,6 +415,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/bank/applications/{id}": {
+            "get": {
+                "description": "Отличие от клиентской версии — цифры ГИР БО, предварительный результат и заявитель.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Анкета заявки для сотрудника",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.reviewResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/bank/applications/{id}/assign": {
             "post": {
                 "produces": [
@@ -460,6 +513,169 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/checks": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Результаты внешних проверок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.checkDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/checks/refresh": {
+            "post": {
+                "description": "Тело необязательно: без sources перезапрашиваются все источники.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Перезапросить проверки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Источники",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.refreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.checkDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/completeness": {
+            "get": {
+                "description": "severity: INFO, WARN, BLOCKER. complete = нет блокеров.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Полнота и корректность заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.completenessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrorBody"
                         }
@@ -1005,6 +1221,19 @@ const docTemplate = `{
                 }
             }
         },
+        "shared.AuthorityType": {
+            "type": "string",
+            "enum": [
+                "HEAD",
+                "MCHD",
+                "NONE"
+            ],
+            "x-enum-varnames": [
+                "AuthorityHead",
+                "AuthorityMCHD",
+                "AuthorityNone"
+            ]
+        },
         "shared.CheckSource": {
             "type": "string",
             "enum": [
@@ -1055,6 +1284,17 @@ const docTemplate = `{
                 "CheckWarn",
                 "CheckFail",
                 "CheckUnavailable"
+            ]
+        },
+        "shared.CompanyType": {
+            "type": "string",
+            "enum": [
+                "LLC",
+                "IE"
+            ],
+            "x-enum-varnames": [
+                "CompanyLLC",
+                "CompanyIE"
             ]
         },
         "shared.DecisionMode": {
@@ -1158,6 +1398,31 @@ const docTemplate = `{
                 "StatusClosed"
             ]
         },
+        "underwriting.applicantDTO": {
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.AuthorityType"
+                        }
+                    ],
+                    "example": "MCHD"
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Петрова Анна Сергеевна"
+                },
+                "mchdNumber": {
+                    "type": "string",
+                    "example": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+                },
+                "mchdValidUntil": {
+                    "type": "string",
+                    "example": "2027-03-01"
+                }
+            }
+        },
         "underwriting.assignResponse": {
             "type": "object",
             "properties": {
@@ -1179,6 +1444,39 @@ const docTemplate = `{
                 }
             }
         },
+        "underwriting.checkDTO": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "requestedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T10:26:00Z"
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BKI"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckStatus"
+                        }
+                    ],
+                    "example": "OK"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "2 кредита, просрочек нет"
+                }
+            }
+        },
         "underwriting.companyRefDTO": {
             "type": "object",
             "properties": {
@@ -1189,6 +1487,63 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "ООО «Северная пекарня»"
+                }
+            }
+        },
+        "underwriting.completenessResponse": {
+            "type": "object",
+            "properties": {
+                "complete": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "issues": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.issue"
+                    }
+                }
+            }
+        },
+        "underwriting.guarantorDTO": {
+            "type": "object",
+            "properties": {
+                "bkiConsent": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Смирнов Олег Викторович"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "771234567890"
+                },
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                }
+            }
+        },
+        "underwriting.issue": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "TURNOVER_MISMATCH"
+                },
+                "severity": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/underwriting.severity"
+                        }
+                    ],
+                    "example": "WARN"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Обороты по счетам в банке выше выручки в ГИР БО на 7%"
                 }
             }
         },
@@ -1289,6 +1644,200 @@ const docTemplate = `{
                     "example": 5
                 }
             }
+        },
+        "underwriting.refreshRequest": {
+            "type": "object",
+            "properties": {
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/shared.CheckSource"
+                    },
+                    "example": [
+                        "BKI",
+                        "COURTS"
+                    ]
+                }
+            }
+        },
+        "underwriting.requestDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "purposeText": {
+                    "type": "string",
+                    "example": "Закупка муки и упаковки к сезону"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "underwriting.reviewCompanyDTO": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string",
+                    "example": "г. Москва, ул. Складская, 3"
+                },
+                "clientSince": {
+                    "type": "string",
+                    "example": "2016-02-01"
+                },
+                "inn": {
+                    "type": "string",
+                    "example": "7712345678"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ООО «Северная пекарня»"
+                },
+                "okved": {
+                    "type": "string",
+                    "example": "10.71"
+                },
+                "regDate": {
+                    "type": "string",
+                    "example": "2015-03-12"
+                },
+                "taxRegime": {
+                    "type": "string",
+                    "example": "USN_INCOME_MINUS_EXPENSES"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CompanyType"
+                        }
+                    ],
+                    "example": "LLC"
+                }
+            }
+        },
+        "underwriting.reviewGIRBODTO": {
+            "type": "object",
+            "properties": {
+                "netProfit": {
+                    "type": "integer",
+                    "example": 2100000
+                },
+                "revenue": {
+                    "type": "integer",
+                    "example": 21400000
+                },
+                "year": {
+                    "type": "integer",
+                    "example": 2025
+                }
+            }
+        },
+        "underwriting.reviewPrelimDTO": {
+            "type": "object",
+            "properties": {
+                "amountFits": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "choice": {
+                    "$ref": "#/definitions/shared.PrelimChoice"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 3000000
+                },
+                "prelimRate": {
+                    "type": "number",
+                    "example": 22
+                }
+            }
+        },
+        "underwriting.reviewResponse": {
+            "type": "object",
+            "properties": {
+                "applicant": {
+                    "$ref": "#/definitions/underwriting.applicantDTO"
+                },
+                "company": {
+                    "$ref": "#/definitions/underwriting.reviewCompanyDTO"
+                },
+                "girbo": {
+                    "$ref": "#/definitions/underwriting.reviewGIRBODTO"
+                },
+                "guarantor": {
+                    "$ref": "#/definitions/underwriting.guarantorDTO"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a-1024"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КЗ-2026-001024"
+                },
+                "prelim": {
+                    "$ref": "#/definitions/underwriting.reviewPrelimDTO"
+                },
+                "request": {
+                    "$ref": "#/definitions/underwriting.requestDTO"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "ON_DECISION"
+                },
+                "turnover": {
+                    "$ref": "#/definitions/underwriting.reviewTurnoverDTO"
+                }
+            }
+        },
+        "underwriting.reviewTurnoverDTO": {
+            "type": "object",
+            "properties": {
+                "avgMonthlyIncome": {
+                    "type": "integer",
+                    "example": 1840000
+                },
+                "periodMonths": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "source": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.CheckSource"
+                        }
+                    ],
+                    "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
+        "underwriting.severity": {
+            "type": "string",
+            "enum": [
+                "INFO",
+                "WARN",
+                "BLOCKER"
+            ],
+            "x-enum-varnames": [
+                "sevInfo",
+                "sevWarn",
+                "sevBlocker"
+            ]
         },
         "underwriting.statsResponse": {
             "type": "object",

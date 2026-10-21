@@ -324,6 +324,16 @@ definitions:
         example: 21.5
         type: number
     type: object
+  shared.AuthorityType:
+    enum:
+    - HEAD
+    - MCHD
+    - NONE
+    type: string
+    x-enum-varnames:
+    - AuthorityHead
+    - AuthorityMCHD
+    - AuthorityNone
   shared.CheckSource:
     enum:
     - BANK
@@ -368,6 +378,14 @@ definitions:
     - CheckWarn
     - CheckFail
     - CheckUnavailable
+  shared.CompanyType:
+    enum:
+    - LLC
+    - IE
+    type: string
+    x-enum-varnames:
+    - CompanyLLC
+    - CompanyIE
   shared.DecisionMode:
     enum:
     - AUTO
@@ -448,6 +466,22 @@ definitions:
     - StatusSigning
     - StatusIssued
     - StatusClosed
+  underwriting.applicantDTO:
+    properties:
+      authority:
+        allOf:
+        - $ref: '#/definitions/shared.AuthorityType'
+        example: MCHD
+      fullName:
+        example: Петрова Анна Сергеевна
+        type: string
+      mchdNumber:
+        example: a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+        type: string
+      mchdValidUntil:
+        example: "2027-03-01"
+        type: string
+    type: object
   underwriting.assignResponse:
     properties:
       assignee:
@@ -462,6 +496,26 @@ definitions:
         example: u-9
         type: string
     type: object
+  underwriting.checkDTO:
+    properties:
+      details:
+        additionalProperties: {}
+        type: object
+      requestedAt:
+        example: "2026-10-20T10:26:00Z"
+        type: string
+      source:
+        allOf:
+        - $ref: '#/definitions/shared.CheckSource'
+        example: BKI
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.CheckStatus'
+        example: OK
+      summary:
+        example: 2 кредита, просрочек нет
+        type: string
+    type: object
   underwriting.companyRefDTO:
     properties:
       inn:
@@ -469,6 +523,44 @@ definitions:
         type: string
       name:
         example: ООО «Северная пекарня»
+        type: string
+    type: object
+  underwriting.completenessResponse:
+    properties:
+      complete:
+        example: true
+        type: boolean
+      issues:
+        items:
+          $ref: '#/definitions/underwriting.issue'
+        type: array
+    type: object
+  underwriting.guarantorDTO:
+    properties:
+      bkiConsent:
+        example: true
+        type: boolean
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      inn:
+        example: "771234567890"
+        type: string
+      personId:
+        example: p-1
+        type: string
+    type: object
+  underwriting.issue:
+    properties:
+      code:
+        example: TURNOVER_MISMATCH
+        type: string
+      severity:
+        allOf:
+        - $ref: '#/definitions/underwriting.severity'
+        example: WARN
+      text:
+        example: Обороты по счетам в банке выше выручки в ГИР БО на 7%
         type: string
     type: object
   underwriting.productRefDTO:
@@ -535,6 +627,138 @@ definitions:
         example: 5
         type: integer
     type: object
+  underwriting.refreshRequest:
+    properties:
+      sources:
+        example:
+        - BKI
+        - COURTS
+        items:
+          $ref: '#/definitions/shared.CheckSource'
+        type: array
+    type: object
+  underwriting.requestDTO:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      productCode:
+        example: WORKING
+        type: string
+      purposeText:
+        example: Закупка муки и упаковки к сезону
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  underwriting.reviewCompanyDTO:
+    properties:
+      actualAddress:
+        example: г. Москва, ул. Складская, 3
+        type: string
+      clientSince:
+        example: "2016-02-01"
+        type: string
+      inn:
+        example: "7712345678"
+        type: string
+      name:
+        example: ООО «Северная пекарня»
+        type: string
+      okved:
+        example: "10.71"
+        type: string
+      regDate:
+        example: "2015-03-12"
+        type: string
+      taxRegime:
+        example: USN_INCOME_MINUS_EXPENSES
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.CompanyType'
+        example: LLC
+    type: object
+  underwriting.reviewGIRBODTO:
+    properties:
+      netProfit:
+        example: 2100000
+        type: integer
+      revenue:
+        example: 21400000
+        type: integer
+      year:
+        example: 2025
+        type: integer
+    type: object
+  underwriting.reviewPrelimDTO:
+    properties:
+      amountFits:
+        example: true
+        type: boolean
+      choice:
+        $ref: '#/definitions/shared.PrelimChoice'
+      limit:
+        example: 3000000
+        type: integer
+      prelimRate:
+        example: 22
+        type: number
+    type: object
+  underwriting.reviewResponse:
+    properties:
+      applicant:
+        $ref: '#/definitions/underwriting.applicantDTO'
+      company:
+        $ref: '#/definitions/underwriting.reviewCompanyDTO'
+      girbo:
+        $ref: '#/definitions/underwriting.reviewGIRBODTO'
+      guarantor:
+        $ref: '#/definitions/underwriting.guarantorDTO'
+      id:
+        example: a-1024
+        type: string
+      number:
+        example: КЗ-2026-001024
+        type: string
+      prelim:
+        $ref: '#/definitions/underwriting.reviewPrelimDTO'
+      request:
+        $ref: '#/definitions/underwriting.requestDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: ON_DECISION
+      turnover:
+        $ref: '#/definitions/underwriting.reviewTurnoverDTO'
+    type: object
+  underwriting.reviewTurnoverDTO:
+    properties:
+      avgMonthlyIncome:
+        example: 1840000
+        type: integer
+      periodMonths:
+        example: 12
+        type: integer
+      source:
+        allOf:
+        - $ref: '#/definitions/shared.CheckSource'
+        example: BANK_ACCOUNTS
+    type: object
+  underwriting.severity:
+    enum:
+    - INFO
+    - WARN
+    - BLOCKER
+    type: string
+    x-enum-varnames:
+    - sevInfo
+    - sevWarn
+    - sevBlocker
   underwriting.statsResponse:
     properties:
       DATA_CHECK:
@@ -809,6 +1033,42 @@ paths:
       summary: Очередь заявок
       tags:
       - bank
+  /bank/applications/{id}:
+    get:
+      description: Отличие от клиентской версии — цифры ГИР БО, предварительный результат
+        и заявитель.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.reviewResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Анкета заявки для сотрудника
+      tags:
+      - bank
   /bank/applications/{id}/assign:
     post:
       parameters:
@@ -841,6 +1101,113 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Взять заявку в работу
+      tags:
+      - bank
+  /bank/applications/{id}/checks:
+    get:
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/underwriting.checkDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Результаты внешних проверок
+      tags:
+      - bank
+  /bank/applications/{id}/checks/refresh:
+    post:
+      consumes:
+      - application/json
+      description: 'Тело необязательно: без sources перезапрашиваются все источники.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Источники
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/underwriting.refreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/underwriting.checkDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Перезапросить проверки
+      tags:
+      - bank
+  /bank/applications/{id}/completeness:
+    get:
+      description: 'severity: INFO, WARN, BLOCKER. complete = нет блокеров.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.completenessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Полнота и корректность заявки
       tags:
       - bank
   /bank/applications/{id}/score:

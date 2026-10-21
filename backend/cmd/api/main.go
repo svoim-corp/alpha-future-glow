@@ -114,6 +114,8 @@ func run(log *slog.Logger) error {
 		Products:     catalogMod.Products(),
 		Notifier:     notificationsMod.Notifier(),
 		Scores:       scoringMod.Scores(),
+		Prelims:      scoringMod.Prelims(),
+		Checks:       integrationsMod.Checks(),
 	})
 	offerMod.Wire(offer.Ports{
 		Applications: originationMod.Applications(),
