@@ -1,0 +1,12 @@
+.content {
+	width: 100%;
+	max-width: 1440px;
+	padding: var(--space-8);
+	margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+	.content {
+		padding: var(--space-4);
+	}
+}

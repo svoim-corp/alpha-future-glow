@@ -4,16 +4,19 @@ import styles from './Page.module.scss';
 
 export interface PageProps {
 	title: string;
+	/** Строка над заголовком, например «КРЕДИТНЫЙ КАБИНЕТ · СЕВЕРНАЯ ПЕКАРНЯ» */
+	eyebrow?: string;
 	subtitle?: string;
 	actions?: ReactNode;
 	children: ReactNode;
 }
 
-/** Каркас страницы: заголовок h1, пояснение, главные действия и содержимое */
-export const Page = ({ title, subtitle, actions, children }: PageProps) => (
+/** Каркас страницы по макетам: eyebrow, заголовок h1, пояснение, главные действия и содержимое */
+export const Page = ({ title, eyebrow, subtitle, actions, children }: PageProps) => (
 	<main className={styles.page}>
 		<div className={styles.header}>
 			<div>
+				{eyebrow && <div className={styles.eyebrow}>{eyebrow}</div>}
 				<h1 className={styles.title}>{title}</h1>
 				{subtitle && <p className={styles.subtitle}>{subtitle}</p>}
 			</div>
