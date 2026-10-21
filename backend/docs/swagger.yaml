@@ -1,5 +1,193 @@
 basePath: /api/v1
 definitions:
+  catalog.calculatorRequest:
+    properties:
+      amount:
+        example: 6000000
+        type: integer
+      graceMonths:
+        description: 0 или null — без отсрочки
+        example: 6
+        minimum: 0
+        type: integer
+      productCode:
+        example: INVEST
+        type: string
+      term:
+        example: 60
+        type: integer
+    required:
+    - amount
+    - productCode
+    - term
+    type: object
+  catalog.calculatorResponse:
+    properties:
+      gracePayment:
+        allOf:
+        - $ref: '#/definitions/catalog.gracePaymentDTO'
+        description: null — без отсрочки
+      payment:
+        $ref: '#/definitions/catalog.moneyRangeDTO'
+      rate:
+        $ref: '#/definitions/catalog.rateRangeDTO'
+      withinProductLimits:
+        example: true
+        type: boolean
+    type: object
+  catalog.goalDTO:
+    properties:
+      code:
+        example: WORKING_CAPITAL
+        type: string
+      name:
+        example: Пополнить оборотные средства
+        type: string
+    type: object
+  catalog.gracePaymentDTO:
+    properties:
+      max:
+        example: 130000
+        type: integer
+      min:
+        example: 90000
+        type: integer
+      months:
+        example: 6
+        type: integer
+    type: object
+  catalog.matchDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      fits:
+        example: true
+        type: boolean
+      reason:
+        example: Подходит по цели, сумме и сроку
+        type: string
+    type: object
+  catalog.matchRequest:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      term:
+        description: 0 или нет поля — срок не проверяется
+        example: 24
+        minimum: 0
+        type: integer
+    required:
+    - amount
+    - goal
+    type: object
+  catalog.moneyRangeDTO:
+    properties:
+      max:
+        example: 10000000
+        type: integer
+      min:
+        example: 300000
+        type: integer
+    type: object
+  catalog.productDetailsDTO:
+    properties:
+      amount:
+        $ref: '#/definitions/catalog.moneyRangeDTO'
+      code:
+        example: WORKING
+        type: string
+      description:
+        example: Оборудование, помещение, расширение бизнеса
+        type: string
+      goals:
+        example:
+        - WORKING_CAPITAL
+        items:
+          type: string
+        type: array
+      graceMaxMonths:
+        description: null — отсрочки нет
+        example: 6
+        type: integer
+      limitRule:
+        example: До 15% годового оборота по счетам в банке
+        type: string
+      name:
+        example: Оборотный кредит
+        type: string
+      rate:
+        $ref: '#/definitions/catalog.rateRangeDTO'
+      requirements:
+        $ref: '#/definitions/catalog.requirementsDTO'
+      shortText:
+        example: Закупки, зарплата, налоги, аренда
+        type: string
+      term:
+        $ref: '#/definitions/catalog.termRangeDTO'
+      whatYouNeed:
+        example:
+        - Согласие на запрос в БКИ
+        items:
+          type: string
+        type: array
+    type: object
+  catalog.productSummaryDTO:
+    properties:
+      amount:
+        $ref: '#/definitions/catalog.moneyRangeDTO'
+      code:
+        example: WORKING
+        type: string
+      goals:
+        example:
+        - WORKING_CAPITAL
+        items:
+          type: string
+        type: array
+      name:
+        example: Оборотный кредит
+        type: string
+      rate:
+        $ref: '#/definitions/catalog.rateRangeDTO'
+      shortText:
+        example: Закупки, зарплата, налоги, аренда
+        type: string
+      term:
+        $ref: '#/definitions/catalog.termRangeDTO'
+    type: object
+  catalog.rateRangeDTO:
+    properties:
+      max:
+        example: 28
+        type: number
+      min:
+        example: 20
+        type: number
+    type: object
+  catalog.requirementsDTO:
+    properties:
+      guarantorForLlc:
+        example: true
+        type: boolean
+      minBusinessAgeMonths:
+        description: null — требования к возрасту бизнеса нет
+        example: 12
+        type: integer
+    type: object
+  catalog.termRangeDTO:
+    properties:
+      max:
+        example: 36
+        type: integer
+      min:
+        example: 3
+        type: integer
+    type: object
   company.candidateDTO:
     properties:
       fullName:
@@ -187,6 +375,714 @@ definitions:
         allOf:
         - $ref: '#/definitions/shared.Role'
         example: CLIENT
+    type: object
+  notifications.listResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/notifications.notificationDTO'
+        type: array
+      unreadCount:
+        example: 2
+        type: integer
+    type: object
+  notifications.notificationDTO:
+    properties:
+      createdAt:
+        example: "2026-10-20T12:40:00Z"
+        type: string
+      id:
+        example: n-15
+        type: string
+      link:
+        example: /applications/a-1024
+        type: string
+      read:
+        example: false
+        type: boolean
+      text:
+        example: Уточните фактический адрес склада
+        type: string
+      title:
+        example: Банку нужны пояснения по заявке
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.NotificationType'
+        example: INFO_REQUESTED
+    type: object
+  offer.alternativeDTO:
+    properties:
+      maxAmount:
+        example: 500000
+        type: integer
+      productCode:
+        example: EXPRESS
+        type: string
+    type: object
+  offer.contractResponse:
+    properties:
+      disbursed:
+        example: false
+        type: boolean
+      documents:
+        items:
+          $ref: '#/definitions/offer.documentDTO'
+        type: array
+      number:
+        example: КД-2026-0001
+        type: string
+      signed:
+        example: false
+        type: boolean
+      terms:
+        $ref: '#/definitions/offer.contractTermsDTO'
+    type: object
+  offer.contractTermsDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      firstPaymentDate:
+        example: "2026-11-20"
+        type: string
+      monthlyPayment:
+        example: 61958
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      rate:
+        example: 21.5
+        type: number
+      term:
+        example: 24
+        type: integer
+    type: object
+  offer.declineRequest:
+    properties:
+      reason:
+        example: Нашли финансирование в другом месте
+        maxLength: 1000
+        type: string
+    required:
+    - reason
+    type: object
+  offer.disburseResponse:
+    properties:
+      accountMasked:
+        example: •••• 5678
+        type: string
+      disbursedAt:
+        example: "2026-10-20T14:01:00Z"
+        type: string
+      loanId:
+        example: l-55
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: ISSUED
+    type: object
+  offer.documentDTO:
+    properties:
+      id:
+        example: d-1
+        type: string
+      title:
+        example: Кредитный договор
+        type: string
+      url:
+        example: /api/v1/applications/a-1031/contract/documents/d-1
+        type: string
+    type: object
+  offer.offerResponse:
+    properties:
+      alternatives:
+        items:
+          $ref: '#/definitions/offer.alternativeDTO'
+        type: array
+      decision:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: COUNTER_OFFER
+      explanation:
+        example: Сумма снижена по уровню долговой нагрузки
+        type: string
+      offered:
+        $ref: '#/definitions/offer.offeredDTO'
+      reason:
+        example: Высокая долговая нагрузка по данным БКИ
+        type: string
+      requested:
+        $ref: '#/definitions/offer.requestedDTO'
+      validUntil:
+        example: "2026-10-27"
+        type: string
+    type: object
+  offer.offeredDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      monthlyPayment:
+        example: 61958
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      rate:
+        example: 21.5
+        type: number
+      term:
+        example: 24
+        type: integer
+    type: object
+  offer.requestedDTO:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      productCode:
+        example: WORKING
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  offer.signRequest:
+    properties:
+      confirm:
+        example: true
+        type: boolean
+    required:
+    - confirm
+    type: object
+  offer.signResponse:
+    properties:
+      signatureId:
+        example: SIM-8F2A
+        type: string
+      signed:
+        example: true
+        type: boolean
+      signedAt:
+        example: "2026-10-20T14:00:00Z"
+        type: string
+    type: object
+  offer.statusResponse:
+    properties:
+      redirect:
+        example: /applications/a-1031/sign
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: SIGNING
+    type: object
+  origination.applicationDTO:
+    properties:
+      authority:
+        $ref: '#/definitions/origination.authorityDTO'
+      company:
+        allOf:
+        - $ref: '#/definitions/origination.companyDTO'
+        description: null — данные банка сейчас недоступны
+      consents:
+        $ref: '#/definitions/origination.consentsDTO'
+      id:
+        example: a-1031
+        type: string
+      locks:
+        $ref: '#/definitions/origination.locksDTO'
+      number:
+        example: КЗ-2026-001031
+        type: string
+      params:
+        $ref: '#/definitions/origination.paramsDTO'
+      prelim:
+        allOf:
+        - $ref: '#/definitions/origination.prelimDTO'
+        description: null — этап 1 не пройден или результат устарел
+      prelimInvalidated:
+        description: 'этап 1 нужно пройти заново: изменились сумма, срок или продукт'
+        type: boolean
+      product:
+        $ref: '#/definitions/origination.productRefDTO'
+      savedAt:
+        example: "2026-10-20T10:12:00Z"
+        type: string
+      stage:
+        example: 2
+        type: integer
+      stage2:
+        $ref: '#/definitions/origination.stage2DTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: DRAFT
+      statusLabel:
+        example: Черновик
+        type: string
+      version:
+        example: 7
+        type: integer
+    type: object
+  origination.applicationShortDTO:
+    properties:
+      actionRequired:
+        example: true
+        type: boolean
+      amount:
+        example: 1500000
+        type: integer
+      id:
+        example: a-1024
+        type: string
+      number:
+        description: null у черновика
+        example: КЗ-2026-001024
+        type: string
+      product:
+        $ref: '#/definitions/origination.productRefDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: INFO_REQUESTED
+      statusLabel:
+        example: Нужна доп. информация
+        type: string
+      term:
+        example: 24
+        type: integer
+      updatedAt:
+        example: "2026-10-20T12:40:00Z"
+        type: string
+    type: object
+  origination.applicationsPage:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/origination.applicationShortDTO'
+        type: array
+      page:
+        example: 1
+        type: integer
+      size:
+        example: 20
+        type: integer
+      total:
+        example: 2
+        type: integer
+    type: object
+  origination.authorityDTO:
+    properties:
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.AuthorityType'
+        example: MCHD
+      validUntil:
+        example: "2027-03-01"
+        type: string
+      verified:
+        description: снимок проверен по данным банка и реестру МЧД
+        example: true
+        type: boolean
+    type: object
+  origination.companyDTO:
+    properties:
+      inn:
+        example: "7712345678"
+        type: string
+      name:
+        example: ООО «Северная пекарня»
+        type: string
+      ogrn:
+        example: "1157746000000"
+        type: string
+      regDate:
+        example: "2015-03-12"
+        type: string
+      state:
+        example: ACTIVE
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.CompanyType'
+        example: LLC
+    type: object
+  origination.consentDTO:
+    properties:
+      at:
+        example: "2026-10-20T10:05:00Z"
+        type: string
+      given:
+        example: true
+        type: boolean
+    type: object
+  origination.consentRequest:
+    properties:
+      given:
+        example: true
+        type: boolean
+      text:
+        example: Согласен на запрос моей кредитной истории в бюро кредитных историй
+        maxLength: 1000
+        type: string
+    required:
+    - given
+    - text
+    type: object
+  origination.consentResponse:
+    properties:
+      at:
+        example: "2026-10-20T10:05:00Z"
+        type: string
+      by:
+        example: u-1
+        type: string
+      given:
+        example: true
+        type: boolean
+    type: object
+  origination.consentsDTO:
+    properties:
+      bki:
+        $ref: '#/definitions/origination.consentDTO'
+    type: object
+  origination.createRequest:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        description: null — цель продукта, если она одна
+        example: WORKING_CAPITAL
+        type: string
+      productCode:
+        example: WORKING
+        type: string
+      term:
+        description: null — только у продукта с единственным сроком
+        example: 24
+        type: integer
+    required:
+    - amount
+    - productCode
+    type: object
+  origination.createResponse:
+    properties:
+      id:
+        example: a-1031
+        type: string
+      redirect:
+        example: /applications/a-1031/edit
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: DRAFT
+      version:
+        example: 1
+        type: integer
+    type: object
+  origination.guarantorConsentRequest:
+    properties:
+      given:
+        example: true
+        type: boolean
+    required:
+    - given
+    type: object
+  origination.guarantorConsentResponse:
+    properties:
+      at:
+        example: "2026-10-20T10:20:00Z"
+        type: string
+      given:
+        example: true
+        type: boolean
+    type: object
+  origination.guarantorDTO:
+    properties:
+      bkiConsent:
+        example: true
+        type: boolean
+      fullName:
+        example: Смирнов Олег Викторович
+        type: string
+      personId:
+        example: p-1
+        type: string
+    type: object
+  origination.historyActorDTO:
+    properties:
+      name:
+        description: у системы нет
+        example: Иванова Е. П.
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.ActorType'
+        example: OFFICER
+    type: object
+  origination.historyEntryDTO:
+    properties:
+      action:
+        example: DECISION
+        type: string
+      actor:
+        $ref: '#/definitions/origination.historyActorDTO'
+      at:
+        example: "2026-10-20T13:10:00Z"
+        type: string
+      comment:
+        example: Сумма снижена по уровню долговой нагрузки
+        type: string
+      from:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: ON_DECISION
+      to:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: COUNTER_OFFER
+    type: object
+  origination.locksDTO:
+    properties:
+      paramsLocked:
+        example: false
+        type: boolean
+      stage2Available:
+        example: true
+        type: boolean
+    type: object
+  origination.missingDTO:
+    properties:
+      field:
+        example: stage2.guarantor.personId
+        type: string
+      message:
+        example: Выберите поручителя
+        type: string
+    type: object
+  origination.paramsDTO:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      graceMonths:
+        example: 6
+        type: integer
+      overdraftLimit:
+        example: 500000
+        type: integer
+      purposeText:
+        example: Закупка муки и упаковки к сезону
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  origination.patchGuarantorDTO:
+    properties:
+      personId:
+        example: p-1
+        type: string
+    required:
+    - personId
+    type: object
+  origination.patchParamsDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      graceMonths:
+        description: 0 — без отсрочки
+        example: 6
+        minimum: 0
+        type: integer
+      overdraftLimit:
+        description: 0 — убрать
+        example: 500000
+        minimum: 0
+        type: integer
+      purposeText:
+        description: '"" — убрать'
+        example: Закупка муки
+        maxLength: 1000
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  origination.patchRequest:
+    properties:
+      params:
+        $ref: '#/definitions/origination.patchParamsDTO'
+      stage2:
+        $ref: '#/definitions/origination.patchStage2DTO'
+    type: object
+  origination.patchResponse:
+    properties:
+      prelimInvalidated:
+        example: true
+        type: boolean
+      savedAt:
+        example: "2026-10-20T10:13:00Z"
+        type: string
+      version:
+        example: 8
+        type: integer
+    type: object
+  origination.patchStage2DTO:
+    properties:
+      guarantor:
+        $ref: '#/definitions/origination.patchGuarantorDTO'
+    type: object
+  origination.prelimDTO:
+    properties:
+      amountFits:
+        example: true
+        type: boolean
+      choice:
+        allOf:
+        - $ref: '#/definitions/shared.PrelimChoice'
+        example: KEEP_AMOUNT
+      limit:
+        example: 3300000
+        type: integer
+      outcome:
+        allOf:
+        - $ref: '#/definitions/shared.PrelimOutcome'
+        example: LIMIT
+      prelimRate:
+        example: 22
+        type: number
+      stopReason:
+        example: BUSINESS_TOO_YOUNG
+        type: string
+    type: object
+  origination.productRefDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      name:
+        example: Оборотный кредит
+        type: string
+    type: object
+  origination.stage2DTO:
+    properties:
+      actualAddress:
+        example: г. Москва, ул. Складская, 3
+        type: string
+      guarantor:
+        $ref: '#/definitions/origination.guarantorDTO'
+      truthConfirmed:
+        example: false
+        type: boolean
+      turnover:
+        $ref: '#/definitions/origination.turnoverDTO'
+    type: object
+  origination.submitRequest:
+    properties:
+      truthConfirmed:
+        example: true
+        type: boolean
+    required:
+    - truthConfirmed
+    type: object
+  origination.submitResponse:
+    properties:
+      id:
+        example: a-1031
+        type: string
+      number:
+        example: КЗ-2026-001031
+        type: string
+      redirect:
+        example: /applications/a-1031
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: SUBMITTED
+    type: object
+  origination.timelineCurrentDTO:
+    properties:
+      actor:
+        description: 'чей ход: CLIENT или BANK'
+        example: CLIENT
+        type: string
+      label:
+        example: Нужна доп. информация
+        type: string
+      nextStep:
+        example: Ответьте на запрос банка ниже
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: INFO_REQUESTED
+      whatsHappening:
+        example: Банк проверил заявку и просит уточнить данные
+        type: string
+    type: object
+  origination.timelineResponse:
+    properties:
+      current:
+        $ref: '#/definitions/origination.timelineCurrentDTO'
+      steps:
+        items:
+          $ref: '#/definitions/origination.timelineStepDTO'
+        type: array
+    type: object
+  origination.timelineStepDTO:
+    properties:
+      at:
+        example: "2026-10-20T10:25:00Z"
+        type: string
+      label:
+        example: Подана
+        type: string
+      state:
+        description: DONE, CURRENT, PENDING
+        example: DONE
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: SUBMITTED
+    type: object
+  origination.turnoverDTO:
+    properties:
+      avgMonthlyIncome:
+        example: 1840000
+        type: integer
+      periodMonths:
+        example: 12
+        type: integer
+      source:
+        allOf:
+        - $ref: '#/definitions/shared.CheckSource'
+        example: BANK_ACCOUNTS
+    type: object
+  origination.validateResponse:
+    properties:
+      missing:
+        items:
+          $ref: '#/definitions/origination.missingDTO'
+        type: array
+      valid:
+        example: false
+        type: boolean
     type: object
   planner.createPlanRequest:
     properties:
@@ -521,6 +1417,159 @@ definitions:
         example: 21.5
         type: number
     type: object
+  servicing.loanDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      balance:
+        example: 1200000
+        type: integer
+      id:
+        example: l-55
+        type: string
+      issuedAt:
+        example: "2026-10-20"
+        type: string
+      nextPayment:
+        allOf:
+        - $ref: '#/definitions/servicing.paymentRefDTO'
+        description: null — платежей впереди нет
+      product:
+        $ref: '#/definitions/servicing.productRefDTO'
+      rate:
+        example: 21.5
+        type: number
+      status:
+        example: ACTIVE
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  servicing.loanDetailsDTO:
+    properties:
+      applicationId:
+        example: a-1031
+        type: string
+      balance:
+        example: 1200000
+        type: integer
+      contractNumber:
+        example: КД-2026-0055
+        type: string
+      id:
+        example: l-55
+        type: string
+      issuedAt:
+        example: "2026-10-20"
+        type: string
+      payments:
+        items:
+          $ref: '#/definitions/servicing.paymentDTO'
+        type: array
+      product:
+        $ref: '#/definitions/servicing.productRefDTO'
+      status:
+        example: ACTIVE
+        type: string
+      terms:
+        $ref: '#/definitions/servicing.loanTermsDTO'
+    type: object
+  servicing.loanTermsDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      graceMonths:
+        example: 0
+        type: integer
+      monthlyPayment:
+        example: 61958
+        type: integer
+      rate:
+        example: 21.5
+        type: number
+      term:
+        example: 24
+        type: integer
+    type: object
+  servicing.paymentDTO:
+    properties:
+      date:
+        example: "2026-11-20"
+        type: string
+      interest:
+        example: 21500
+        type: integer
+      principal:
+        example: 40458
+        type: integer
+      status:
+        description: PLANNED, PAID, OVERDUE
+        example: PLANNED
+        type: string
+      total:
+        example: 61958
+        type: integer
+    type: object
+  servicing.paymentRefDTO:
+    properties:
+      amount:
+        example: 61958
+        type: integer
+      date:
+        example: "2026-11-20"
+        type: string
+    type: object
+  servicing.productRefDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      name:
+        example: Оборотный кредит
+        type: string
+    type: object
+  servicing.scheduleItemDTO:
+    properties:
+      amount:
+        example: 61958
+        type: integer
+      date:
+        example: "2026-11-20"
+        type: string
+      loanId:
+        example: l-55
+        type: string
+      productName:
+        example: Оборотный кредит
+        type: string
+      status:
+        description: PLANNED, PAID, OVERDUE
+        example: PLANNED
+        type: string
+    type: object
+  servicing.summaryResponse:
+    properties:
+      activeLoans:
+        example: 1
+        type: integer
+      nextPayment:
+        allOf:
+        - $ref: '#/definitions/servicing.paymentRefDTO'
+        description: null — платежей впереди нет
+    type: object
+  shared.ActorType:
+    enum:
+    - CLIENT
+    - OFFICER
+    - SYSTEM
+    type: string
+    x-enum-varnames:
+    - ActorClient
+    - ActorOfficer
+    - ActorSystem
   shared.AuthorityType:
     enum:
     - HEAD
@@ -591,6 +1640,28 @@ definitions:
     x-enum-varnames:
     - DecisionAuto
     - DecisionManual
+  shared.NotificationType:
+    enum:
+    - INFO_REQUESTED
+    - DECISION
+    - PAYMENT_DUE
+    - TICKET_REPLY
+    - PLAN_MATCH
+    type: string
+    x-enum-comments:
+      NotifyPlanMatch: API_SPEC_ADDITIONAL.md, Планер
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - ""
+    - API_SPEC_ADDITIONAL.md, Планер
+    x-enum-varnames:
+    - NotifyInfoRequested
+    - NotifyDecision
+    - NotifyPaymentDue
+    - NotifyTicketReply
+    - NotifyPlanMatch
   shared.PersonRole:
     enum:
     - HEAD
@@ -663,6 +1734,76 @@ definitions:
     - StatusSigning
     - StatusIssued
     - StatusClosed
+  support.faqDTO:
+    properties:
+      answer:
+        example: Нет. Данные о компании и оборотах банк берёт из ваших счетов и реестров.
+        type: string
+      id:
+        example: f-4
+        type: string
+      question:
+        example: Нужно ли загружать документы или выписки?
+        type: string
+      step:
+        example: APPLICATION
+        type: string
+    type: object
+  support.ticketCreatedDTO:
+    properties:
+      createdAt:
+        example: "2026-10-20T11:00:00Z"
+        type: string
+      id:
+        example: t-12
+        type: string
+      status:
+        example: OPEN
+        type: string
+    type: object
+  support.ticketDTO:
+    properties:
+      applicationId:
+        example: a-1031
+        type: string
+      id:
+        example: t-12
+        type: string
+      reply:
+        example: Обновили адрес в данных банка
+        type: string
+      status:
+        description: OPEN, ANSWERED, CLOSED
+        example: OPEN
+        type: string
+      subject:
+        example: Устаревший фактический адрес
+        type: string
+      text:
+        example: В заявке старый адрес склада, мы переехали
+        type: string
+      updatedAt:
+        example: "2026-10-20T11:30:00Z"
+        type: string
+    type: object
+  support.ticketRequest:
+    properties:
+      applicationId:
+        description: со страницы заявки подставляется сам
+        example: a-1031
+        type: string
+      subject:
+        example: Устаревший фактический адрес
+        maxLength: 200
+        type: string
+      text:
+        example: В заявке старый адрес склада, мы переехали
+        maxLength: 4000
+        type: string
+    required:
+    - subject
+    - text
+    type: object
   underwriting.answerBody:
     properties:
       answers:
@@ -1142,6 +2283,200 @@ info:
   title: Умный кредитный кабинет API
   version: "1.0"
 paths:
+  /applications:
+    get:
+      description: 'Блок «Мои заявки»: черновики и поданные заявки компании, недавно
+        изменённые первыми.'
+      parameters:
+      - description: Заявки своей компании (клиент видит только их)
+        in: query
+        name: mine
+        type: boolean
+      - default: 1
+        description: Страница
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Размер страницы (до 100)
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.applicationsPage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Заявки компании
+      tags:
+      - applications
+    post:
+      consumes:
+      - application/json
+      description: Кнопка «Оформить». Компания берётся из пользователя, полномочия
+        заявителя — из данных банка.
+      parameters:
+      - description: Параметры из подбора
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.createRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/origination.createResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: 'Нет полномочий: не руководитель и нет действующей МЧД'
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Создать черновик заявки
+      tags:
+      - applications
+  /applications/{id}:
+    delete:
+      description: Только черновик. Заявка закрывается (DRAFT → CLOSED) и пропадает
+        из списка клиента.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Удалить черновик
+      tags:
+      - applications
+    get:
+      description: 'Полное состояние заявки: этап, параметры, данные банка (только
+        чтение), результат этапа 1, блокировки.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.applicationDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Заявка для мастера и карточки
+      tags:
+      - applications
+    patch:
+      consumes:
+      - application/json
+      description: 'Передаются только изменённые поля: params и stage2.guarantor.personId.
+        Данные банка не меняются — 400.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия заявки
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Изменённые поля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.patchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.patchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Автосохранение черновика
+      tags:
+      - applications
   /applications/{id}/company-profile:
     get:
       description: Профиль из клиентской базы банка, сверенный с реестрами. Только
@@ -1176,6 +2511,242 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Данные о компании для заявки
+      tags:
+      - applications
+  /applications/{id}/consents/bki:
+    post:
+      consumes:
+      - application/json
+      description: 'Фиксирует согласие заявителя: кто, когда, по какой заявке. Нужно
+        для этапа 1. Повтор возвращает уже данное.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Согласие
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.consentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/origination.consentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Нет полномочия BKI_CONSENT по доверенности
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Согласие на запрос в БКИ
+      tags:
+      - applications
+  /applications/{id}/contract:
+    get:
+      description: Итоговые условия и документы. Есть после принятия предложения;
+        договор поручительства — только у ООО с поручителем.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.contractResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Предложение ещё не принято
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Договор к подписанию
+      tags:
+      - offer
+  /applications/{id}/contract/disburse:
+    post:
+      description: 'Имитация выдачи по подписанному договору: кредит и график платежей,
+        заявка — ISSUED. Тела нет.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.disburseResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Договор не подписан или кредит уже выдан
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Выдать кредит
+      tags:
+      - offer
+  /applications/{id}/contract/documents/{docId}:
+    get:
+      description: HTML для открытия в новой вкладке. Формирует банк по условиям принятого
+        предложения; это не загрузка файлов клиента.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID документа
+        enum:
+        - d-1
+        - d-2
+        in: path
+        name: docId
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Печатная форма
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Документа нет или предложение не принято
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Печатная форма документа договора
+      tags:
+      - offer
+  /applications/{id}/contract/sign:
+    post:
+      consumes:
+      - application/json
+      description: Имитация подписи без SMS (модалка «Подтверждение подписи»). Только
+        в статусе SIGNING.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Подтверждение
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/offer.signRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.signResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Не статус подписания или уже подписан
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Подписать договор
+      tags:
+      - offer
+  /applications/{id}/guarantor/consent-bki:
+    post:
+      consumes:
+      - application/json
+      description: Для выбранного поручителя, на этапе 2. При смене поручителя согласие
+        нужно дать заново.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Согласие
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.guarantorConsentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/origination.guarantorConsentResponse'
+        "400":
+          description: Поручитель не выбран
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Не черновик или этап 1 не пройден
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Согласие поручителя на запрос в БКИ
       tags:
       - applications
   /applications/{id}/info-requests:
@@ -1262,6 +2833,114 @@ paths:
       summary: Ответить на запрос банка
       tags:
       - applications
+  /applications/{id}/offer:
+    get:
+      description: Появляется после решения. Одобрение и иные условия — запрошенные
+        и предложенные условия; отказ — причина и альтернативы.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.offerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Заявки нет или решения ещё нет
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Решение банка и предложение
+      tags:
+      - offer
+  /applications/{id}/offer/accept:
+    post:
+      description: Одобрение или иные условия. Договор получает номер, заявка — статус
+        SIGNING. Тела нет.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.statusResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Отказ, уже принято или заявка не в статусе решения
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Срок действия предложения истёк
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Принять предложение банка
+      tags:
+      - offer
+  /applications/{id}/offer/decline:
+    post:
+      consumes:
+      - application/json
+      description: Заявка закрывается (CLOSED), причина попадает в историю заявки
+        для банка.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Причина
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/offer.declineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Отказаться от предложения банка
+      tags:
+      - offer
   /applications/{id}/prelim:
     post:
       description: Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам
@@ -1356,6 +3035,131 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Выбор при сумме выше лимита
+      tags:
+      - applications
+  /applications/{id}/submit:
+    post:
+      consumes:
+      - application/json
+      description: Проверка полноты, номер заявки, статус SUBMITTED и запуск банковского
+        конвейера в фоне.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия заявки
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Подтверждение достоверности
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.submitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.submitResponse'
+        "400":
+          description: Заявка заполнена не полностью — поля как в validate
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Отправить заявку в банк
+      tags:
+      - applications
+  /applications/{id}/timeline:
+    get:
+      description: 'Что сейчас происходит, что делать дальше, чей ход, и шаги: пройденные,
+        текущий и ожидаемые.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.timelineResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Таймлайн заявки для клиента
+      tags:
+      - applications
+  /applications/{id}/validate:
+    post:
+      description: Что ещё нужно для отправки. Подтверждение достоверности приходит
+        при отправке, здесь оно всегда в списке.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.validateResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Проверка полноты перед отправкой
       tags:
       - applications
   /auth/login:
@@ -1706,6 +3510,40 @@ paths:
       summary: Решение сотрудника
       tags:
       - bank
+  /bank/applications/{id}/history:
+    get:
+      description: Кто, когда и каким действием менял статус заявки, по порядку. Только
+        для сотрудника банка.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/origination.historyEntryDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: История статусов и действий по заявке
+      tags:
+      - bank
   /bank/applications/{id}/info-requests:
     post:
       consumes:
@@ -1806,6 +3644,223 @@ paths:
       summary: Счётчики очереди
       tags:
       - bank
+  /calculator/payment:
+    post:
+      consumes:
+      - application/json
+      description: Ставку до проверки банк не знает, поэтому платёж — диапазон по
+        ставкам продукта. Округление — до 100 ₽.
+      parameters:
+      - description: Параметры кредита
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/catalog.calculatorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/catalog.calculatorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Калькулятор платежа
+      tags:
+      - catalog
+  /loans:
+    get:
+      description: 'Выданные кредиты компании, новые первыми: остаток долга и ближайший
+        платёж.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.loanDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Мои кредиты
+      tags:
+      - loans
+  /loans/{id}:
+    get:
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.loanDetailsDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: 'Кредит: условия и график платежей'
+      tags:
+      - loans
+  /loans/schedule:
+    get:
+      description: Платежи всех кредитов компании за период, по датам. Период — не
+        больше года.
+      parameters:
+      - description: С даты
+        example: "2026-11-01"
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: По дату включительно
+        example: "2026-12-31"
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.scheduleItemDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Платёжный календарь
+      tags:
+      - loans
+  /loans/schedule/upcoming:
+    get:
+      description: Неоплаченные платежи всех кредитов компании сегодня и позже, ближайшие
+        первыми.
+      parameters:
+      - default: 3
+        description: Сколько платежей (1–12)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.scheduleItemDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Ближайшие платежи
+      tags:
+      - loans
+  /loans/summary:
+    get:
+      description: 'Сколько действующих кредитов и ближайший платёж: сумма всех платежей
+        компании в ближайшую дату.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.summaryResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Кредиты на главной
+      tags:
+      - loans
+  /notifications:
+    get:
+      description: Последние 50 уведомлений пользователя, новые первыми. unread=true
+        — только непрочитанные.
+      parameters:
+      - description: Только непрочитанные
+        in: query
+        name: unread
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/notifications.listResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Уведомления в шапке
+      tags:
+      - notifications
+  /notifications/{id}/read:
+    post:
+      description: Повторная отметка — не ошибка. Чужое уведомление — 404, чтобы не
+        раскрывать его существование.
+      parameters:
+      - description: ID уведомления
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Отметить уведомление прочитанным
+      tags:
+      - notifications
   /plans:
     get:
       description: По умолчанию — все, кроме ARCHIVED. recommendation — подбор на
@@ -1961,4 +4016,168 @@ paths:
       summary: Планы с подходящим продуктом
       tags:
       - planner
+  /products:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/catalog.productSummaryDTO'
+            type: array
+      summary: Линейка продуктов для каталога
+      tags:
+      - catalog
+  /products/{code}:
+    get:
+      description: 'Все условия для панели «Условия». whatYouNeed — только действия
+        клиента: данные компании банк берёт сам.'
+      parameters:
+      - description: Код продукта
+        example: INVEST
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/catalog.productDetailsDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Условия продукта
+      tags:
+      - catalog
+  /products/goals:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/catalog.goalDTO'
+            type: array
+      summary: Цели кредита для подбора по задаче
+      tags:
+      - catalog
+  /products/match:
+    post:
+      consumes:
+      - application/json
+      description: Для каждого продукта — подходит ли он под цель, сумму и срок и
+        почему. Подходящие — первыми.
+      parameters:
+      - description: Задача клиента
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/catalog.matchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/catalog.matchDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Подбор продукта по задаче
+      tags:
+      - catalog
+  /support/faq:
+    get:
+      description: Вопросы по шагу пути клиента. Без step — по всем шагам.
+      parameters:
+      - description: Шаг пути
+        enum:
+        - PRODUCT
+        - APPLICATION
+        - DOCUMENTS
+        - STATUS
+        - DECISION
+        in: query
+        name: step
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/support.faqDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Частые вопросы
+      tags:
+      - support
+  /support/tickets:
+    get:
+      description: Последние 100 обращений пользователя, недавно изменённые первыми.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/support.ticketDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Мои обращения
+      tags:
+      - support
+    post:
+      consumes:
+      - application/json
+      description: applicationId — необязательно, только заявка своей компании.
+      parameters:
+      - description: Обращение
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/support.ticketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/support.ticketCreatedDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Новое обращение в поддержку
+      tags:
+      - support
 swagger: "2.0"

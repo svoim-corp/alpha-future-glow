@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -27,7 +28,26 @@ func init() {
 // Bind разбирает JSON-тело и валидирует его по тегам binding.
 // Возвращает *Error, пригодный для Fail.
 func Bind(c *gin.Context, req any) error {
-	err := c.ShouldBindJSON(req)
+	return bindError(c.ShouldBindJSON(req))
+}
+
+// BindStrict — как Bind, но поле, которого нет в структуре запроса, — ошибка, а не тишина. Для запросов, где
+// клиент не должен пытаться менять лишнее: так он узнаёт, что поле не меняется, вместо молчаливого игнора.
+func BindStrict(c *gin.Context, req any) error {
+	dec := json.NewDecoder(c.Request.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(req); err != nil {
+		if name, ok := strings.CutPrefix(err.Error(), "json: unknown field "); ok {
+			return Validation("Эти данные нельзя изменить в заявке",
+				FieldError{Field: strings.Trim(name, `"`), Code: "INVALID", Message: "Поле не меняется через заявку"})
+		}
+		return Validation("Некорректный JSON")
+	}
+	return bindError(binding.Validator.ValidateStruct(req))
+}
+
+// bindError превращает ошибку разбора или валидации в *Error, пригодный для Fail.
+func bindError(err error) error {
 	if err == nil {
 		return nil
 	}

@@ -122,8 +122,10 @@ func run(log *slog.Logger) error {
 		Applications: originationMod.Applications(),
 		Decisions:    scoringMod.Decisions(),
 		Companies:    companyMod.Companies(),
+		Loans:        servicingMod.Loans(),
 	})
-	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier()})
+	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier(), Products: catalogMod.Products()})
+	supportMod.Wire(support.Ports{Applications: originationMod.Applications()})
 	plannerMod.Wire(planner.Ports{
 		Matcher:  catalogMod.ProductMatcher(),
 		Notifier: notificationsMod.Notifier(),
@@ -149,6 +151,18 @@ func run(log *slog.Logger) error {
 	defer func() {
 		stopPipeline()
 		<-pipelineDone
+	}()
+
+	// Напоминания Servicing о платежах: так же останавливаются вместе с сервером.
+	remindersCtx, stopReminders := context.WithCancel(ctx)
+	remindersDone := make(chan struct{})
+	go func() {
+		defer close(remindersDone)
+		servicingMod.Run(remindersCtx)
+	}()
+	defer func() {
+		stopReminders()
+		<-remindersDone
 	}()
 
 	r := gin.New()

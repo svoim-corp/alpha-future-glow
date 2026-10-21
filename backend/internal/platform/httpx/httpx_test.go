@@ -147,3 +147,42 @@ func TestNoRouteAndRecovery(t *testing.T) {
 		}
 	}
 }
+
+func TestBindStrict(t *testing.T) {
+	type nested struct {
+		PersonID string `json:"personId" binding:"required"`
+	}
+	type req struct {
+		Amount *int64  `json:"amount" binding:"omitempty,gt=0"`
+		Nested *nested `json:"nested"`
+	}
+	r := gin.New()
+	r.Use(TraceID())
+	r.PATCH("/x", func(c *gin.Context) {
+		var q req
+		if err := BindStrict(c, &q); err != nil {
+			Fail(c, err)
+			return
+		}
+		c.Status(204)
+	})
+	for _, tc := range []struct {
+		body, field string
+		status      int
+	}{
+		{`{"amount":5}`, "", 204},
+		{`{"nested":{"personId":"p-1"}}`, "", 204},
+		{`{"company":{"inn":"1"}}`, "company", 400},
+		{`{"nested":{"personId":"p-1","fullName":"x"}}`, "fullName", 400},
+		{`{"amount":-1}`, "amount", 400},
+		{`{"nested":{}}`, "nested.personId", 400},
+		{`{bad`, "", 400},
+	} {
+		w := do(r, "PATCH", "/x", tc.body, nil)
+		var b ErrorBody
+		_ = json.Unmarshal(w.Body.Bytes(), &b)
+		if w.Code != tc.status || tc.field != "" && (len(b.Fields) != 1 || b.Fields[0].Field != tc.field) {
+			t.Errorf("%s: %d %s", tc.body, w.Code, w.Body.String())
+		}
+	}
+}

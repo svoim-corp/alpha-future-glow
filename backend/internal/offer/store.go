@@ -1,0 +1,154 @@
+package offer
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
+)
+
+type Store struct{ db *sqlx.DB }
+
+type offerRow struct {
+	AppID                string                        `db:"app_id"`
+	DecisionID           string                        `db:"decision_id"`
+	Decision             string                        `db:"decision"`
+	ProductCode          string                        `db:"product_code"`
+	Amount               int64                         `db:"amount"`
+	Term                 int                           `db:"term"`
+	Rate                 float64                       `db:"rate"`
+	GraceMonths          *int                          `db:"grace_months"`
+	MonthlyPayment       int64                         `db:"monthly_payment"`
+	RequestedProductCode string                        `db:"requested_product_code"`
+	RequestedAmount      int64                         `db:"requested_amount"`
+	RequestedTerm        int                           `db:"requested_term"`
+	Explanation          *string                       `db:"explanation"`
+	Alternatives         db.JSON[[]shared.Alternative] `db:"alternatives"`
+	ValidUntil           time.Time                     `db:"valid_until"`
+	CreatedAt            time.Time                     `db:"created_at"`
+	AcceptedAt           *time.Time                    `db:"accepted_at"`
+	ContractNumber       *string                       `db:"contract_number"`
+	DeclinedAt           *time.Time                    `db:"declined_at"`
+	SignedAt             *time.Time                    `db:"signed_at"`
+	SignatureID          *string                       `db:"signature_id"`
+	DisbursedAt          *time.Time                    `db:"disbursed_at"`
+	LoanID               *string                       `db:"loan_id"`
+}
+
+const offerCols = `app_id, decision_id, decision, product_code, amount, term, rate, grace_months, monthly_payment,
+	requested_product_code, requested_amount, requested_term, explanation, alternatives, valid_until, created_at`
+
+// contractCols — состояние ответа клиента и договора; меняется только командами клиента, не новым решением.
+const contractCols = `accepted_at, contract_number, declined_at, signed_at, signature_id, disbursed_at, loan_id`
+
+// SaveOffer записывает предложение по заявке; новое решение заменяет прежнее предложение.
+func (s *Store) SaveOffer(ctx context.Context, o *offerRow) error {
+	_, err := s.db.NamedExecContext(ctx, `
+		INSERT INTO offer.offers (`+offerCols+`)
+		VALUES (:app_id, :decision_id, :decision, :product_code, :amount, :term, :rate, :grace_months, :monthly_payment,
+			:requested_product_code, :requested_amount, :requested_term, :explanation, :alternatives, :valid_until, :created_at)
+		ON CONFLICT (app_id) DO UPDATE SET decision_id = EXCLUDED.decision_id, decision = EXCLUDED.decision,
+			product_code = EXCLUDED.product_code, amount = EXCLUDED.amount, term = EXCLUDED.term, rate = EXCLUDED.rate,
+			grace_months = EXCLUDED.grace_months, monthly_payment = EXCLUDED.monthly_payment,
+			requested_product_code = EXCLUDED.requested_product_code, requested_amount = EXCLUDED.requested_amount,
+			requested_term = EXCLUDED.requested_term, explanation = EXCLUDED.explanation,
+			alternatives = EXCLUDED.alternatives, valid_until = EXCLUDED.valid_until, created_at = EXCLUDED.created_at`, o)
+	return err
+}
+
+// Offer — предложение по заявке; (nil, nil) — решения ещё нет.
+func (s *Store) Offer(ctx context.Context, appID string) (*offerRow, error) {
+	var o offerRow
+	err := s.db.GetContext(ctx, &o, `SELECT `+offerCols+`, `+contractCols+` FROM offer.offers WHERE app_id = $1`, appID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &o, nil
+}
+
+// NextContractNumber — порядковый номер договора. Пропуски допустимы: номер берётся до принятия.
+func (s *Store) NextContractNumber(ctx context.Context) (int64, error) {
+	var n int64
+	err := s.db.GetContext(ctx, &n, `SELECT nextval('offer.contract_seq')`)
+	return n, err
+}
+
+// Accept отмечает предложение принятым и присваивает номер договора; false — его уже приняли.
+func (s *Store) Accept(ctx context.Context, appID, contractNumber string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET accepted_at = $2, contract_number = $3
+		WHERE app_id = $1 AND accepted_at IS NULL AND declined_at IS NULL`,
+		appID, at, contractNumber)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Unaccept откатывает принятие, если перевести заявку в подписание не удалось.
+func (s *Store) Unaccept(ctx context.Context, appID string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET accepted_at = NULL, contract_number = NULL WHERE app_id = $1`, appID)
+	return err
+}
+
+// Decline отмечает отказ клиента от предложения; false — на предложение уже ответили.
+func (s *Store) Decline(ctx context.Context, appID, reason string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET declined_at = $2, decline_reason = $3
+		WHERE app_id = $1 AND accepted_at IS NULL AND declined_at IS NULL`, appID, at, reason)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Undecline откатывает отказ, если закрыть заявку не удалось.
+func (s *Store) Undecline(ctx context.Context, appID string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET declined_at = NULL, decline_reason = NULL WHERE app_id = $1`, appID)
+	return err
+}
+
+// Sign отмечает договор подписанным; false — договор не принят или уже подписан.
+func (s *Store) Sign(ctx context.Context, appID, signatureID string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET signed_at = $2, signature_id = $3
+		WHERE app_id = $1 AND accepted_at IS NOT NULL AND signed_at IS NULL`, appID, at, signatureID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Disburse отмечает выдачу; false — договор не подписан или кредит уже выдан.
+func (s *Store) Disburse(ctx context.Context, appID, loanID string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET disbursed_at = $2, loan_id = $3
+		WHERE app_id = $1 AND signed_at IS NOT NULL AND disbursed_at IS NULL`, appID, at, loanID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Undisburse откатывает отметку о выдаче, если перевести заявку в «Выдано» не удалось.
+func (s *Store) Undisburse(ctx context.Context, appID string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET disbursed_at = NULL, loan_id = NULL WHERE app_id = $1`, appID)
+	return err
+}
+
+func (s *Store) Reset(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, `TRUNCATE offer.offers`)
+	return err
+}
