@@ -67,3 +67,15 @@ func (m *Module) giveGuarantorConsent(ctx context.Context, id string, who applic
 	}
 	return c, nil
 }
+
+// checkDraft — полнота черновика для validate и submit. Без данных банка поручителя не проверить: 502.
+func (m *Module) checkDraft(ctx context.Context, a *appRow, truthConfirmed bool) ([]missingField, error) {
+	d, err := m.dossier(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+	if d.profile == nil {
+		return nil, httpx.Upstream("Данные банка о компании сейчас недоступны, повторите проверку позже")
+	}
+	return completeness(d, truthConfirmed), nil
+}

@@ -416,3 +416,50 @@ func (m *Module) consentGuarantor(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusCreated, guarantorConsentResponse{Given: true, At: cs.GivenAt})
 }
+
+type missingDTO struct {
+	Field   string `json:"field" example:"stage2.guarantor.personId"`
+	Message string `json:"message" example:"Выберите поручителя"`
+}
+
+type validateResponse struct {
+	Valid   bool         `json:"valid" example:"false"`
+	Missing []missingDTO `json:"missing"`
+}
+
+// validate godoc
+//
+//	@Summary		Проверка полноты перед отправкой
+//	@Description	Что ещё нужно для отправки. Подтверждение достоверности приходит при отправке, здесь оно всегда в списке.
+//	@Tags			applications
+//	@Produce		json
+//	@Param			id	path		string	true	"ID заявки"
+//	@Success		200	{object}	validateResponse
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Failure		409	{object}	httpx.ErrorBody
+//	@Failure		502	{object}	httpx.ErrorBody
+//	@Router			/applications/{id}/validate [post]
+func (m *Module) validate(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	a, err := m.draftOf(ctx, c.Param("id"), who.companyID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	missing, err := m.checkDraft(ctx, a, a.TruthConfirmed)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	resp := validateResponse{Valid: len(missing) == 0, Missing: make([]missingDTO, len(missing))}
+	for i, f := range missing {
+		resp.Missing[i] = missingDTO{Field: f.Field, Message: f.Message}
+	}
+	httpx.JSON(c, http.StatusOK, resp)
+}

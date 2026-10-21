@@ -744,6 +744,59 @@
                 }
             }
         },
+        "/applications/{id}/validate": {
+            "post": {
+                "description": "Что ещё нужно для отправки. Подтверждение достоверности приходит при отправке, здесь оно всегда в списке.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Проверка полноты перед отправкой",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/origination.validateResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -2854,6 +2907,19 @@
                 }
             }
         },
+        "origination.missingDTO": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string",
+                    "example": "stage2.guarantor.personId"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Выберите поручителя"
+                }
+            }
+        },
         "origination.paramsDTO": {
             "type": "object",
             "properties": {
@@ -3053,6 +3119,21 @@
                         }
                     ],
                     "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
+        "origination.validateResponse": {
+            "type": "object",
+            "properties": {
+                "missing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/origination.missingDTO"
+                    }
+                },
+                "valid": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },
