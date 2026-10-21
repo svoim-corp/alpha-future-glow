@@ -101,6 +101,9 @@ const productDetails = (code: string) => [workingDetails, investDetails, overdra
 	.find((item) => item.code === code);
 
 export const handlers = [
+	http.get(url('/support/conversations'), () => HttpResponse.json([])),
+	http.post(url('/support/conversations'), () => fail(503, 'UPSTREAM_UNAVAILABLE',
+		'Для ассистента запустите сервер с локальной моделью. Частые вопросы и обращения доступны в демо.')),
 	// ── сессия ─────────────────────────────────────────────
 	http.get(url('/auth/me'), () => {
 		const user = session.get();

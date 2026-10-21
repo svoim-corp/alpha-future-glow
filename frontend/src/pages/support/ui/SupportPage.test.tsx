@@ -19,6 +19,7 @@ describe('SupportPage', () => {
 			http.get(apiUrl('/support/tickets'), () => HttpResponse.json(ticketsFixture)),
 		);
 		const { user } = renderWithProviders(<SupportPage />);
+		await user.click(screen.getByRole('tab', { name: 'Частые вопросы' }));
 
 		expect(await screen.findByText('Зачем выписка из 1С?')).toBeInTheDocument();
 		await chooseOption(user, 'Шаг', 'Документы');
@@ -31,7 +32,7 @@ describe('SupportPage', () => {
 			http.get(apiUrl('/support/faq'), () => HttpResponse.json([])),
 			http.get(apiUrl('/support/tickets'), () => HttpResponse.json([])),
 		);
-		renderWithProviders(<SupportPage />, { route: '/support?applicationId=a-1031' });
+		renderWithProviders(<SupportPage />, { route: '/support?tab=tickets&applicationId=a-1031' });
 
 		expect(await screen.findByText('Обращение будет привязано к заявке a-1031.')).toBeInTheDocument();
 	});
@@ -42,6 +43,7 @@ describe('SupportPage', () => {
 			http.get(apiUrl('/support/tickets'), () => HttpResponse.json(ticketsFixture)),
 		);
 		const { user } = renderWithProviders(<SupportPage />);
+		await user.click(screen.getByRole('tab', { name: 'Частые вопросы' }));
 
 		await screen.findByText('Зачем выписка из 1С?');
 		await user.type(screen.getByRole('searchbox', { name: 'Поиск по вопросам' }), 'такого нет');

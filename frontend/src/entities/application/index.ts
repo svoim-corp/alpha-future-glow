@@ -73,6 +73,7 @@ export type {
 	TurnoverInfo,
 } from './model/types';
 export { isVersionConflict, useDraftPatch } from './model/useDraftPatch';
+export { AssistantApplicationCard } from './ui/AssistantApplicationCard';
 export {
 	ApplicantView,
 	ChecksView,

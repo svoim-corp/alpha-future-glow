@@ -14,6 +14,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
@@ -75,6 +76,9 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = conn.Close() })
+	if err := idempotency.Migrate(ctx, conn); err != nil {
+		t.Fatal(err)
+	}
 	m := New(module.Deps{DB: conn})
 	m.Wire(Ports{Applications: fakeApps{"a-1": "c-1", "a-2": "c-3"}})
 	if err := m.Migrate(ctx); err != nil {

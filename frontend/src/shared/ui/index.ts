@@ -8,6 +8,7 @@ export type { ButtonLinkProps, ButtonProps, ButtonVariant } from './Button';
 export { Button, ButtonLink } from './Button';
 export type { CardProps } from './Card';
 export { Card } from './Card';
+export { ChatBubble } from './ChatBubble';
 export type { DataTableColumn, DataTableProps } from './DataTable';
 export { DataTable } from './DataTable';
 export type {

@@ -2710,6 +2710,207 @@ const docTemplate = `{
                 }
             }
         },
+        "/support/conversations": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Диалоги пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/support.conversation"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Новый диалог с ассистентом",
+                "parameters": [
+                    {
+                        "description": "Контекст",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/support.conversationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/support.conversation"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/support/conversations/{id}/actions/{actionId}/confirm": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Подтвердить предложение ассистента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Диалог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Предложение",
+                        "name": "actionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ запроса",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/support.block"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/support/conversations/{id}/messages": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Сообщения диалога",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Диалог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/support.messageDTO"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Задать вопрос ассистенту",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Диалог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ запроса",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Вопрос",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/support.messageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/support.messageDTO"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/support/faq": {
             "get": {
                 "description": "Вопросы по шагу пути клиента. Без step — по всем шагам.",
@@ -5132,6 +5333,33 @@ const docTemplate = `{
                 "ActorSystem"
             ]
         },
+        "shared.AssistantDraft": {
+            "type": "object",
+            "required": [
+                "amount",
+                "goal",
+                "productCode",
+                "term"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "maximum": 1000000000000
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "productCode": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "term": {
+                    "type": "integer",
+                    "maximum": 1200
+                }
+            }
+        },
         "shared.AuthorityType": {
             "type": "string",
             "enum": [
@@ -5246,6 +5474,29 @@ const docTemplate = `{
                 "NotifyPlanMatch"
             ]
         },
+        "shared.PaymentEstimate": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "max": {
+                    "type": "integer"
+                },
+                "min": {
+                    "type": "integer"
+                },
+                "rateMax": {
+                    "type": "number"
+                },
+                "rateMin": {
+                    "type": "number"
+                },
+                "term": {
+                    "type": "integer"
+                }
+            }
+        },
         "shared.PersonRole": {
             "type": "string",
             "enum": [
@@ -5336,6 +5587,130 @@ const docTemplate = `{
                 "StatusClosed"
             ]
         },
+        "shared.UpcomingPayment": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "loanId": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.actionParams": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "draft": {
+                    "$ref": "#/definitions/shared.AssistantDraft"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "ticket"
+                    ]
+                },
+                "subject": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "text": {
+                    "type": "string",
+                    "maxLength": 4000
+                }
+            }
+        },
+        "support.applicationCard": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nextStep": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "productCode": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "integer"
+                }
+            }
+        },
+        "support.block": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/support.actionParams"
+                },
+                "actionId": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/support.applicationCard"
+                },
+                "calculation": {
+                    "$ref": "#/definitions/shared.PaymentEstimate"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "payment": {
+                    "$ref": "#/definitions/shared.UpcomingPayment"
+                },
+                "product": {
+                    "$ref": "#/definitions/support.productCard"
+                },
+                "resultId": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.conversation": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.conversationRequest": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
         "support.faqDTO": {
             "type": "object",
             "properties": {
@@ -5354,6 +5729,102 @@ const docTemplate = `{
                 "step": {
                     "type": "string",
                     "example": "APPLICATION"
+                }
+            }
+        },
+        "support.messageDTO": {
+            "type": "object",
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/support.block"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/support.source"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.messageRequest": {
+            "type": "object",
+            "required": [
+                "text"
+            ],
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "maxLength": 4000
+                }
+            }
+        },
+        "support.productCard": {
+            "type": "object",
+            "properties": {
+                "amountMax": {
+                    "type": "integer"
+                },
+                "amountMin": {
+                    "type": "integer"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "goals": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rateMax": {
+                    "type": "number"
+                },
+                "rateMin": {
+                    "type": "number"
+                },
+                "termMax": {
+                    "type": "integer"
+                },
+                "termMin": {
+                    "type": "integer"
+                }
+            }
+        },
+        "support.source": {
+            "type": "object",
+            "properties": {
+                "excerpt": {
+                    "type": "string"
+                },
+                "href": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

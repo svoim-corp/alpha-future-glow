@@ -52,9 +52,10 @@ func (s *Store) Insert(ctx context.Context, a *appRow) error {
 	return s.db.GetContext(ctx, &a.ID, `
 		INSERT INTO origination.applications (id, company_id, applicant_id, product_code, goal, amount, term, authority,
 			status, version, created_at, updated_at)
-		VALUES ('a-' || nextval('origination.application_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+		VALUES (COALESCE(NULLIF($11, ''), 'a-' || nextval('origination.application_seq')), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+		ON CONFLICT (id) DO UPDATE SET id = EXCLUDED.id
 		RETURNING id`,
-		a.CompanyID, a.ApplicantID, a.ProductCode, a.Goal, a.Amount, a.Term, a.Authority, a.Status, a.Version, a.CreatedAt)
+		a.CompanyID, a.ApplicantID, a.ProductCode, a.Goal, a.Amount, a.Term, a.Authority, a.Status, a.Version, a.CreatedAt, a.ID)
 }
 
 // Application — заявка по id; (nil, nil) — заявки нет.

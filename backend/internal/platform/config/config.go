@@ -7,19 +7,25 @@ import (
 )
 
 type Config struct {
-	HTTPAddr     string // HTTP_ADDR, по умолчанию ":8080"
-	Profile      string // APP_PROFILE (dev | demo | prod), по умолчанию "dev"
-	DatabaseURL  string // DATABASE_URL, обязателен
-	MocksBaseURL string // MOCKS_BASE_URL, по умолчанию "http://localhost:8090"
+	HTTPAddr       string // HTTP_ADDR, по умолчанию ":8080"
+	Profile        string // APP_PROFILE (dev | demo | prod), по умолчанию "dev"
+	DatabaseURL    string // DATABASE_URL, обязателен
+	MocksBaseURL   string // MOCKS_BASE_URL, по умолчанию "http://localhost:8090"
+	OllamaURL      string
+	OllamaModel    string
+	EmbeddingModel string
 }
 
 // Load читает конфигурацию из окружения.
 func Load() (Config, error) {
 	c := Config{
-		HTTPAddr:     env("HTTP_ADDR", ":8080"),
-		Profile:      env("APP_PROFILE", "dev"),
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
-		MocksBaseURL: env("MOCKS_BASE_URL", "http://localhost:8090"),
+		HTTPAddr:       env("HTTP_ADDR", ":8080"),
+		Profile:        env("APP_PROFILE", "dev"),
+		DatabaseURL:    os.Getenv("DATABASE_URL"),
+		MocksBaseURL:   env("MOCKS_BASE_URL", "http://localhost:8090"),
+		OllamaURL:      os.Getenv("OLLAMA_BASE_URL"),
+		OllamaModel:    env("OLLAMA_MODEL", "qwen3:8b-q4_K_M"),
+		EmbeddingModel: env("OLLAMA_EMBEDDING_MODEL", "bge-m3:567m"),
 	}
 	if c.DatabaseURL == "" {
 		return c, errors.New("DATABASE_URL не задан")

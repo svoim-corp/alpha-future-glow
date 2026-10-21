@@ -19,6 +19,7 @@ export const baseApi = createApi({
 		'Loan',
 		'Notification',
 		'Ticket',
+		'SupportChat',
 		'BankApplication',
 		'Plan',
 	],

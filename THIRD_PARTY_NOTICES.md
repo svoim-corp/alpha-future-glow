@@ -45,7 +45,7 @@
 
 | Компонент | Образ | Лицензия |
 |---|---|---|
-| PostgreSQL | `postgres:17-alpine` | PostgreSQL License |
+| PostgreSQL | `postgres:17.6-alpine3.22` | PostgreSQL License |
 | Go (сборка сервера и моков) | `golang:1.25-alpine` | BSD-3-Clause |
 | Alpine Linux (образ сервера и моков) | `alpine:3.22` | MIT и лицензии пакетов Alpine |
 | Node.js (сборка клиента) | `node:22-alpine` | MIT |
@@ -54,3 +54,18 @@
 ## 4. Библиотеки клиента
 
 Зависимости клиента (`frontend/package.json`) дополняет команда фронтенда.
+
+## 5. Локальный ассистент поддержки
+
+| Компонент | Версия / источник | Лицензия | Назначение |
+|---|---|---|---|
+| Qwen3-8B | `qwen3:8b-q4_K_M`, [Qwen/Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B) | Apache-2.0 | Генерация ответов и предложение вызовов функций |
+| BGE-M3 | `bge-m3:567m`, [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) | MIT | Dense embeddings 1024 |
+| Ollama | `ollama/ollama:0.12.6`, [исходники](https://github.com/ollama/ollama) | MIT | Локальный inference, без cloud API |
+| pgvector | `v0.8.1`, [исходники](https://github.com/pgvector/pgvector/tree/v0.8.1) | PostgreSQL License | Поиск по векторам в PostgreSQL |
+| Справочный корпус | `backend/internal/support/knowledge`, версия 1, FAQ проекта | Лицензия проекта | Авторские материалы о возможностях демонстрационного кабинета |
+
+Сторонние датасеты и дообучение не используются. Данные компаний, проверок, заявок
+и выдачи синтетические; корпоративные интеграции заменены существующими локальными
+моками. Точные SHA256 моделей фиксируются manifest-файлами при подготовке; инструкция
+в `deploy/SUPPORT_AI.md`. Веса и образы нужно скачать до автономной проверки.

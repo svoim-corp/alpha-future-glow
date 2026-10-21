@@ -8,6 +8,7 @@ import { apiUrl } from './apiUrl';
  * В конкретном тесте переопределяй через server.use(...).
  */
 export const handlers: HttpHandler[] = [
+	http.get(apiUrl('/support/conversations'), () => HttpResponse.json([])),
 	// заголовок страниц берёт название компании из текущего пользователя
 	http.get(apiUrl('/auth/me'), () => HttpResponse.json(clientUser)),
 	// колокольчик в шапке запрашивает уведомления на любой клиентской странице

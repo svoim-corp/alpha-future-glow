@@ -1,0 +1,9 @@
+# Сохраняем PostgreSQL 17 и Alpine, чтобы не менять формат существующего тома.
+FROM postgres:17.6-alpine3.22 AS vector-build
+RUN apk add --no-cache build-base clang19 llvm19 git
+RUN git clone --depth 1 --branch v0.8.1 https://github.com/pgvector/pgvector.git /tmp/pgvector
+RUN cd /tmp/pgvector && make OPTFLAGS="" && make install
+
+FROM postgres:17.6-alpine3.22
+COPY --from=vector-build /usr/local/lib/postgresql/vector.so /usr/local/lib/postgresql/
+COPY --from=vector-build /usr/local/share/postgresql/extension/vector* /usr/local/share/postgresql/extension/
