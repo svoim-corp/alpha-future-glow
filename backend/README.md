@@ -57,6 +57,15 @@ Swagger UI: http://localhost:8080/api/docs, спецификация: http://loc
 
 После изменения swag-аннотаций выполните `make swagger` и закоммитьте `docs/`.
 
+Тесты со стором работают с настоящим PostgreSQL и без `TEST_DATABASE_URL` пропускаются:
+
+```bash
+TEST_DATABASE_URL='postgres://cabinet:cabinet@localhost:5432/cabinet?sslmode=disable' make test
+```
+
+Коллекция запросов сквозного сценария — [`../docs/requests/end-to-end.http`](../docs/requests/end-to-end.http),
+диаграмма состояний заявки — [`../docs/application-states.md`](../docs/application-states.md).
+
 ## Зависимости
 
 | Пакет | Зачем |
@@ -85,11 +94,16 @@ internal/
     events/             синхронная шина доменных событий
     module/             Deps — общая инфраструктура зоны (БД, шина, идемпотентность)
   shared/               контракты между зонами: файл на зону-поставщика (catalog.go, company.go,
-                        origination.go, scoring.go, notifications.go), доменные типы, события
-  identity/             вход, сессии, роли (реализована)
+                        origination.go, scoring.go, notifications.go, servicing.go), доменные типы, события
+  identity/             вход, сессии, роли
+  catalog/              линейка продуктов, подбор, калькулятор (../docs/catalog.md)
+  origination/          заявка, этапы, отправка, машина состояний, история (../docs/origination.md)
+  offer/                предложение банка, договор, подпись, выдача (../docs/offer.md)
+  servicing/            кредиты, график, календарь, напоминания (../docs/servicing.md)
+  support/              частые вопросы и обращения (../docs/support.md)
+  notifications/        уведомления в кабинете (../docs/notifications.md)
   company/              таблица компаний (id ↔ ИНН) и заглушки Profile/Authorities
-  catalog, origination, integrations, scoring, underwriting,
-  offer, servicing, support, notifications, planner        заготовки
+  integrations, scoring, underwriting, planner             зоны разработчика B
 ```
 
 ## Правила зон
