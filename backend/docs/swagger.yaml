@@ -368,6 +368,14 @@ definitions:
     - CheckWarn
     - CheckFail
     - CheckUnavailable
+  shared.DecisionMode:
+    enum:
+    - AUTO
+    - MANUAL
+    type: string
+    x-enum-varnames:
+    - DecisionAuto
+    - DecisionManual
   shared.PersonRole:
     enum:
     - HEAD
@@ -440,6 +448,114 @@ definitions:
     - StatusSigning
     - StatusIssued
     - StatusClosed
+  underwriting.assignResponse:
+    properties:
+      assignee:
+        $ref: '#/definitions/underwriting.assigneeDTO'
+    type: object
+  underwriting.assigneeDTO:
+    properties:
+      fullName:
+        example: Иванова Е. П.
+        type: string
+      id:
+        example: u-9
+        type: string
+    type: object
+  underwriting.companyRefDTO:
+    properties:
+      inn:
+        example: "7712345678"
+        type: string
+      name:
+        example: ООО «Северная пекарня»
+        type: string
+    type: object
+  underwriting.productRefDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      name:
+        example: Оборотный кредит
+        type: string
+    type: object
+  underwriting.queueItemDTO:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      assignee:
+        $ref: '#/definitions/underwriting.assigneeDTO'
+      company:
+        $ref: '#/definitions/underwriting.companyRefDTO'
+      decisionMode:
+        allOf:
+        - $ref: '#/definitions/shared.DecisionMode'
+        example: MANUAL
+      id:
+        example: a-1024
+        type: string
+      number:
+        example: КЗ-2026-001024
+        type: string
+      product:
+        $ref: '#/definitions/underwriting.productRefDTO'
+      riskBand:
+        allOf:
+        - $ref: '#/definitions/shared.RiskBand'
+        example: MEDIUM
+      score:
+        example: 640
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: ON_DECISION
+      submittedAt:
+        example: "2026-10-20T10:25:00Z"
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  underwriting.queuePage:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/underwriting.queueItemDTO'
+        type: array
+      page:
+        example: 1
+        type: integer
+      size:
+        example: 20
+        type: integer
+      total:
+        example: 5
+        type: integer
+    type: object
+  underwriting.statsResponse:
+    properties:
+      DATA_CHECK:
+        example: 2
+        type: integer
+      INFO_REQUESTED:
+        example: 4
+        type: integer
+      ON_DECISION:
+        example: 5
+        type: integer
+      SCORING:
+        example: 1
+        type: integer
+      SUBMITTED:
+        example: 3
+        type: integer
+      decidedToday:
+        example: 7
+        type: integer
+    type: object
 info:
   contact: {}
   description: REST API кредитного кабинета для юрлиц и ИП и рабочего места банка.
@@ -635,6 +751,98 @@ paths:
       summary: Текущий пользователь
       tags:
       - auth
+  /bank/applications:
+    get:
+      description: 'Таблица заявок с фильтрами. sort: submittedAt, updatedAt, amount,
+        score; «-» в начале — по убыванию.'
+      parameters:
+      - description: Статус
+        in: query
+        name: status
+        type: string
+      - description: Код продукта
+        in: query
+        name: product
+        type: string
+      - description: LOW, MEDIUM, HIGH
+        in: query
+        name: risk
+        type: string
+      - description: AUTO, MANUAL
+        in: query
+        name: decisionMode
+        type: string
+      - default: -submittedAt
+        description: Сортировка
+        in: query
+        name: sort
+        type: string
+      - default: 1
+        description: Страница
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Размер страницы
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.queuePage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Очередь заявок
+      tags:
+      - bank
+  /bank/applications/{id}/assign:
+    post:
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.assignResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Взять заявку в работу
+      tags:
+      - bank
   /bank/applications/{id}/score:
     get:
       description: Итоговый балл, вклад каждого фактора и рекомендация решения. Только
@@ -665,6 +873,26 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Скоринг заявки
+      tags:
+      - bank
+  /bank/applications/stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/underwriting.statsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Счётчики очереди
       tags:
       - bank
 swagger: "2.0"

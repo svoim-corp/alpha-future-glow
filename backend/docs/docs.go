@@ -299,6 +299,174 @@ const docTemplate = `{
                 }
             }
         },
+        "/bank/applications": {
+            "get": {
+                "description": "Таблица заявок с фильтрами. sort: submittedAt, updatedAt, amount, score; «-» в начале — по убыванию.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Очередь заявок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Статус",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Код продукта",
+                        "name": "product",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "LOW, MEDIUM, HIGH",
+                        "name": "risk",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "AUTO, MANUAL",
+                        "name": "decisionMode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "-submittedAt",
+                        "description": "Сортировка",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Страница",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Размер страницы",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.queuePage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Счётчики очереди",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.statsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/bank/applications/{id}/assign": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Взять заявку в работу",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/underwriting.assignResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/bank/applications/{id}/score": {
             "get": {
                 "description": "Итоговый балл, вклад каждого фактора и рекомендация решения. Только для сотрудника банка.",
@@ -889,6 +1057,17 @@ const docTemplate = `{
                 "CheckUnavailable"
             ]
         },
+        "shared.DecisionMode": {
+            "type": "string",
+            "enum": [
+                "AUTO",
+                "MANUAL"
+            ],
+            "x-enum-varnames": [
+                "DecisionAuto",
+                "DecisionManual"
+            ]
+        },
         "shared.PersonRole": {
             "type": "string",
             "enum": [
@@ -978,6 +1157,167 @@ const docTemplate = `{
                 "StatusIssued",
                 "StatusClosed"
             ]
+        },
+        "underwriting.assignResponse": {
+            "type": "object",
+            "properties": {
+                "assignee": {
+                    "$ref": "#/definitions/underwriting.assigneeDTO"
+                }
+            }
+        },
+        "underwriting.assigneeDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Иванова Е. П."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "u-9"
+                }
+            }
+        },
+        "underwriting.companyRefDTO": {
+            "type": "object",
+            "properties": {
+                "inn": {
+                    "type": "string",
+                    "example": "7712345678"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ООО «Северная пекарня»"
+                }
+            }
+        },
+        "underwriting.productRefDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
+                }
+            }
+        },
+        "underwriting.queueItemDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "assignee": {
+                    "$ref": "#/definitions/underwriting.assigneeDTO"
+                },
+                "company": {
+                    "$ref": "#/definitions/underwriting.companyRefDTO"
+                },
+                "decisionMode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.DecisionMode"
+                        }
+                    ],
+                    "example": "MANUAL"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a-1024"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КЗ-2026-001024"
+                },
+                "product": {
+                    "$ref": "#/definitions/underwriting.productRefDTO"
+                },
+                "riskBand": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.RiskBand"
+                        }
+                    ],
+                    "example": "MEDIUM"
+                },
+                "score": {
+                    "type": "integer",
+                    "example": 640
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "ON_DECISION"
+                },
+                "submittedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T10:25:00Z"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "underwriting.queuePage": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/underwriting.queueItemDTO"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "underwriting.statsResponse": {
+            "type": "object",
+            "properties": {
+                "DATA_CHECK": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "INFO_REQUESTED": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "ON_DECISION": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "SCORING": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "SUBMITTED": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "decidedToday": {
+                    "type": "integer",
+                    "example": 7
+                }
+            }
         }
     }
 }`

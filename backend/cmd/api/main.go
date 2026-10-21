@@ -113,6 +113,7 @@ func run(log *slog.Logger) error {
 		Companies:    companyMod.Companies(),
 		Products:     catalogMod.Products(),
 		Notifier:     notificationsMod.Notifier(),
+		Scores:       scoringMod.Scores(),
 	})
 	offerMod.Wire(offer.Ports{
 		Applications: originationMod.Applications(),
