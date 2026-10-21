@@ -135,6 +135,18 @@ func run(log *slog.Logger) error {
 		}
 	}
 
+	// Фоновый конвейер Scoring: останавливается вместе с сервером и дожидается текущего шага.
+	pipelineCtx, stopPipeline := context.WithCancel(ctx)
+	pipelineDone := make(chan struct{})
+	go func() {
+		defer close(pipelineDone)
+		scoringMod.Run(pipelineCtx)
+	}()
+	defer func() {
+		stopPipeline()
+		<-pipelineDone
+	}()
+
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
 	r.Use(httpx.TraceID(), httpx.Logger(log), httpx.Recovery(log), auth.Middleware(identityMod))

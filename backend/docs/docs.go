@@ -298,6 +298,53 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/bank/applications/{id}/score": {
+            "get": {
+                "description": "Итоговый балл, вклад каждого фактора и рекомендация решения. Только для сотрудника банка.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Скоринг заявки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/scoring.scoreResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -636,6 +683,23 @@ const docTemplate = `{
                 }
             }
         },
+        "scoring.factorDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "DEBT_LOAD"
+                },
+                "impact": {
+                    "type": "integer",
+                    "example": -70
+                },
+                "label": {
+                    "type": "string",
+                    "example": "Долговая нагрузка 47% от оборота"
+                }
+            }
+        },
         "scoring.prelimCheck": {
             "type": "object",
             "properties": {
@@ -711,6 +775,65 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "scoring.scoreResponse": {
+            "type": "object",
+            "properties": {
+                "autoDecisionEligible": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "autoDecisionReason": {
+                    "type": "string",
+                    "example": "Пограничный балл"
+                },
+                "factors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/scoring.factorDTO"
+                    }
+                },
+                "modelVersion": {
+                    "type": "string",
+                    "example": "rules-v1"
+                },
+                "riskBand": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.RiskBand"
+                        }
+                    ],
+                    "example": "MEDIUM"
+                },
+                "score": {
+                    "type": "integer",
+                    "example": 640
+                },
+                "suggested": {
+                    "$ref": "#/definitions/scoring.suggestedDTO"
+                }
+            }
+        },
+        "scoring.suggestedDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "decision": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "COUNTER_OFFER"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 21.5
                 }
             }
         },
@@ -801,6 +924,19 @@ const docTemplate = `{
                 "PrelimStop"
             ]
         },
+        "shared.RiskBand": {
+            "type": "string",
+            "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+            ],
+            "x-enum-varnames": [
+                "RiskLow",
+                "RiskMedium",
+                "RiskHigh"
+            ]
+        },
         "shared.Role": {
             "type": "string",
             "enum": [
@@ -810,6 +946,37 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "RoleClient",
                 "RoleBankOfficer"
+            ]
+        },
+        "shared.Status": {
+            "type": "string",
+            "enum": [
+                "DRAFT",
+                "SUBMITTED",
+                "DATA_CHECK",
+                "INFO_REQUESTED",
+                "SCORING",
+                "ON_DECISION",
+                "APPROVED",
+                "COUNTER_OFFER",
+                "REJECTED",
+                "SIGNING",
+                "ISSUED",
+                "CLOSED"
+            ],
+            "x-enum-varnames": [
+                "StatusDraft",
+                "StatusSubmitted",
+                "StatusDataCheck",
+                "StatusInfoRequested",
+                "StatusScoring",
+                "StatusOnDecision",
+                "StatusApproved",
+                "StatusCounterOffer",
+                "StatusRejected",
+                "StatusSigning",
+                "StatusIssued",
+                "StatusClosed"
             ]
         }
     }

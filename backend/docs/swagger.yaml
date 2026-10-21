@@ -224,6 +224,18 @@ definitions:
         example: 9
         type: integer
     type: object
+  scoring.factorDTO:
+    properties:
+      code:
+        example: DEBT_LOAD
+        type: string
+      impact:
+        example: -70
+        type: integer
+      label:
+        example: Долговая нагрузка 47% от оборота
+        type: string
+    type: object
   scoring.prelimCheck:
     properties:
       label:
@@ -273,6 +285,44 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  scoring.scoreResponse:
+    properties:
+      autoDecisionEligible:
+        example: false
+        type: boolean
+      autoDecisionReason:
+        example: Пограничный балл
+        type: string
+      factors:
+        items:
+          $ref: '#/definitions/scoring.factorDTO'
+        type: array
+      modelVersion:
+        example: rules-v1
+        type: string
+      riskBand:
+        allOf:
+        - $ref: '#/definitions/shared.RiskBand'
+        example: MEDIUM
+      score:
+        example: 640
+        type: integer
+      suggested:
+        $ref: '#/definitions/scoring.suggestedDTO'
+    type: object
+  scoring.suggestedDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      decision:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: COUNTER_OFFER
+      rate:
+        example: 21.5
+        type: number
     type: object
   shared.CheckSource:
     enum:
@@ -344,6 +394,16 @@ definitions:
     x-enum-varnames:
     - PrelimLimit
     - PrelimStop
+  shared.RiskBand:
+    enum:
+    - LOW
+    - MEDIUM
+    - HIGH
+    type: string
+    x-enum-varnames:
+    - RiskLow
+    - RiskMedium
+    - RiskHigh
   shared.Role:
     enum:
     - CLIENT
@@ -352,6 +412,34 @@ definitions:
     x-enum-varnames:
     - RoleClient
     - RoleBankOfficer
+  shared.Status:
+    enum:
+    - DRAFT
+    - SUBMITTED
+    - DATA_CHECK
+    - INFO_REQUESTED
+    - SCORING
+    - ON_DECISION
+    - APPROVED
+    - COUNTER_OFFER
+    - REJECTED
+    - SIGNING
+    - ISSUED
+    - CLOSED
+    type: string
+    x-enum-varnames:
+    - StatusDraft
+    - StatusSubmitted
+    - StatusDataCheck
+    - StatusInfoRequested
+    - StatusScoring
+    - StatusOnDecision
+    - StatusApproved
+    - StatusCounterOffer
+    - StatusRejected
+    - StatusSigning
+    - StatusIssued
+    - StatusClosed
 info:
   contact: {}
   description: REST API кредитного кабинета для юрлиц и ИП и рабочего места банка.
@@ -547,4 +635,36 @@ paths:
       summary: Текущий пользователь
       tags:
       - auth
+  /bank/applications/{id}/score:
+    get:
+      description: Итоговый балл, вклад каждого фактора и рекомендация решения. Только
+        для сотрудника банка.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scoring.scoreResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Скоринг заявки
+      tags:
+      - bank
 swagger: "2.0"

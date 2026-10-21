@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/events"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
@@ -23,12 +26,17 @@ import (
 func init() { gin.SetMode(gin.TestMode) }
 
 type fakeApps struct {
+	mu       sync.Mutex
 	apps     map[string]*shared.ApplicationView
 	consents map[string]*shared.ConsentView
 	setCalls int
+	history  map[string][]shared.Status // переходы по заявке
+	failTo   shared.Status              // переход в этот статус падает
 }
 
 func (f *fakeApps) Application(_ context.Context, id string) (*shared.ApplicationView, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if a, ok := f.apps[id]; ok {
 		cp := *a
 		return &cp, nil
@@ -36,11 +44,39 @@ func (f *fakeApps) Application(_ context.Context, id string) (*shared.Applicatio
 	return nil, nil
 }
 
-func (f *fakeApps) Transition(context.Context, string, shared.Status, shared.Actor, string, string) error {
-	return errors.New("not used")
+// transitions — переходы конвейера и решения из API_SPEC.md, раздел 2.
+var transitions = map[shared.Status][]shared.Status{
+	shared.StatusSubmitted:     {shared.StatusDataCheck},
+	shared.StatusDataCheck:     {shared.StatusScoring, shared.StatusInfoRequested},
+	shared.StatusInfoRequested: {shared.StatusDataCheck},
+	shared.StatusScoring:       {shared.StatusOnDecision},
+	shared.StatusOnDecision:    {shared.StatusApproved, shared.StatusCounterOffer, shared.StatusRejected, shared.StatusInfoRequested},
+}
+
+func (f *fakeApps) Transition(_ context.Context, id string, to shared.Status, _ shared.Actor, _, _ string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	a, ok := f.apps[id]
+	if !ok {
+		return httpx.NotFound("")
+	}
+	if to == f.failTo {
+		return errors.New("transition failed")
+	}
+	if !slices.Contains(transitions[a.Status], to) {
+		return httpx.InvalidTransition("")
+	}
+	a.Status = to
+	if f.history == nil {
+		f.history = map[string][]shared.Status{}
+	}
+	f.history[id] = append(f.history[id], to)
+	return nil
 }
 
 func (f *fakeApps) SetAmount(_ context.Context, id string, amount int64, _ shared.Actor) (int, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.setCalls++
 	a := f.apps[id]
 	a.Amount, a.Version = amount, a.Version+1
@@ -48,6 +84,8 @@ func (f *fakeApps) SetAmount(_ context.Context, id string, amount int64, _ share
 }
 
 func (f *fakeApps) BKIConsent(_ context.Context, appID string, _ shared.ConsentSubject) (*shared.ConsentView, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	return f.consents[appID], nil
 }
 
@@ -67,18 +105,33 @@ func (fakeCompanies) Profile(context.Context, string) (*shared.CompanyProfile, e
 	return nil, nil
 }
 
-// fakeChecks отдаёт отчёт по ИНН и запоминает последний запрос.
+// fakeChecks отдаёт отчёт по ИНН и запоминает последний запрос и последний отчёт по заявке.
 type fakeChecks struct {
+	mu      sync.Mutex
 	reports map[string]*shared.CheckReport
 	last    shared.CheckRequest
+	latest  map[string]*shared.CheckReport
 }
 
 func (f *fakeChecks) Run(_ context.Context, req shared.CheckRequest) (*shared.CheckReport, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.last = req
+	if f.latest == nil {
+		f.latest = map[string]*shared.CheckReport{}
+	}
+	f.latest[req.AppID] = f.reports[req.INN]
 	return f.reports[req.INN], nil
 }
 
-func (f *fakeChecks) Latest(context.Context, string) (*shared.CheckReport, error) { return nil, nil }
+func (f *fakeChecks) Latest(_ context.Context, appID string) (*shared.CheckReport, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if r, ok := f.latest[appID]; ok {
+		return r, nil
+	}
+	return &shared.CheckReport{}, nil
+}
 
 var allPowers = shared.AuthorityView{Type: shared.AuthorityHead, Powers: []string{shared.PowerCreditApplication, shared.PowerBKIConsent}}
 
@@ -124,7 +177,7 @@ func newTestModule(conn *module.Deps) (*Module, *fakeApps, *fakeChecks) {
 		"inn-c-7": facts(func(f *shared.CheckFacts) { f.Turnover.AvgMonthlyIncome = 520_000 }),
 		"inn-c-9": unavailable,
 	}}
-	deps := module.Deps{}
+	deps := module.Deps{Bus: events.New()}
 	if conn != nil {
 		deps = *conn
 	}
@@ -172,7 +225,7 @@ func TestPrelimChoiceValidation(t *testing.T) {
 	m, _, _ := newTestModule(nil)
 	r := gin.New()
 	r.Use(httpx.TraceID(), auth.Middleware(resolver{}))
-	m.Register(httpx.Routes{Client: r.Group("", auth.RequireAuth())})
+	m.Register(httpx.Routes{Client: r.Group("", auth.RequireAuth()), Bank: r.Group("/bank")})
 
 	tests := []struct {
 		body  string
@@ -222,11 +275,12 @@ func testDeps(t *testing.T) *module.Deps {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = conn.Close() })
-	deps := module.Deps{DB: conn}
-	if err := New(deps).Migrate(ctx); err != nil {
+	deps := module.Deps{DB: conn, Bus: events.New()}
+	m := New(deps)
+	if err := m.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := conn.ExecContext(ctx, `TRUNCATE scoring.prelims`); err != nil {
+	if err := m.ResetDemo(ctx); err != nil {
 		t.Fatal(err)
 	}
 	return &deps

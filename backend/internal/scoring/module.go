@@ -1,4 +1,5 @@
 // Package scoring — зона Scoring & Decision: предварительный лимит, полный скоринг, авторешение. Владелец: разработчик B.
+// Конвейер после отправки заявки работает в фоне: Run запускается из cmd/api.
 package scoring
 
 import (
@@ -28,22 +29,27 @@ type Module struct {
 	store *Store
 	ports Ports
 	now   func() time.Time
+	wake  chan struct{} // сигнал воркеру конвейера: появилась задача
 }
 
 func New(deps module.Deps) *Module {
-	return &Module{deps: deps, store: &Store{db: deps.DB}, now: time.Now}
+	return &Module{deps: deps, store: &Store{db: deps.DB}, now: time.Now, wake: make(chan struct{}, 1)}
 }
 
 func (m *Module) Migrate(ctx context.Context) error {
 	return db.Migrate(ctx, m.deps.DB, "scoring", migrations)
 }
 
-func (m *Module) Wire(p Ports) { m.ports = p }
+func (m *Module) Wire(p Ports) {
+	m.ports = p
+	m.subscribe(m.deps.Bus)
+}
 
 func (m *Module) Register(r httpx.Routes) {
 	r.Client.POST("/applications/:id/prelim", m.prelim)
 	r.Client.POST("/applications/:id/prelim/choice", m.prelimChoice)
+	r.Bank.GET("/applications/:id/score", m.bankScore)
 }
 
-// ResetDemo удаляет результаты этапа 1: они относятся к заявкам демо.
+// ResetDemo удаляет результаты этапа 1, скоринг, решения и задачи конвейера: всё это относится к заявкам демо.
 func (m *Module) ResetDemo(ctx context.Context) error { return m.store.Reset(ctx) }
