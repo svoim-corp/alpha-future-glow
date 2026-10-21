@@ -1003,6 +1003,239 @@
                     }
                 }
             }
+        },
+        "/plans": {
+            "get": {
+                "description": "По умолчанию — все, кроме ARCHIVED. recommendation — подбор на сегодня или null.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Планы компании",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ACTIVE, PAUSED, DONE, ARCHIVED",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/planner.plansResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Создать план",
+                "parameters": [
+                    {
+                        "description": "План",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/planner.createPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/planner.planDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/recommendations": {
+            "get": {
+                "description": "Виджет главной. Пустой массив — виджет не показывается.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Планы с подходящим продуктом",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/planner.planRecommendationDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}": {
+            "delete": {
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Удалить план",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID плана",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Только переданные поля. Пустая строка в note очищает описание; даты сбрасываются переходом на UNSCHEDULED.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "Изменить план",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID плана",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Изменения",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/planner.patchPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/planner.planDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1284,6 +1517,275 @@
                         }
                     ],
                     "example": "CLIENT"
+                }
+            }
+        },
+        "planner.createPlanRequest": {
+            "type": "object",
+            "required": [
+                "budgetRub",
+                "dateMode",
+                "goal",
+                "title"
+            ],
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "dateMode": {
+                    "type": "string",
+                    "enum": [
+                        "DAY",
+                        "PERIOD",
+                        "UNSCHEDULED"
+                    ],
+                    "example": "UNSCHEDULED"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2027-08-31"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "EQUIPMENT"
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Увеличить выпуск хлеба"
+                },
+                "notifications": {
+                    "$ref": "#/definitions/planner.notificationsInput"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "example": "Новая печь для пекарни"
+                }
+            }
+        },
+        "planner.notificationsDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "inApp": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "planner.notificationsInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "inApp": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "planner.patchPlanRequest": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "dateMode": {
+                    "type": "string",
+                    "enum": [
+                        "DAY",
+                        "PERIOD",
+                        "UNSCHEDULED"
+                    ],
+                    "example": "DAY"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "example": "EQUIPMENT"
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": ""
+                },
+                "notifications": {
+                    "$ref": "#/definitions/planner.notificationsInput"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "PAUSED",
+                        "DONE",
+                        "ARCHIVED"
+                    ],
+                    "example": "PAUSED"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "example": "Новая печь для пекарни"
+                }
+            }
+        },
+        "planner.planDTO": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 2400000
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-20T09:00:00Z"
+                },
+                "dateMode": {
+                    "type": "string",
+                    "example": "PERIOD"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2027-08-31"
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "REAL_ESTATE"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "p-1"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "Обновить торговый зал и зону выпечки"
+                },
+                "notifications": {
+                    "$ref": "#/definitions/planner.notificationsDTO"
+                },
+                "recommendation": {
+                    "$ref": "#/definitions/planner.recommendationDTO"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2027-06-01"
+                },
+                "state": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Ремонт помещения"
+                }
+            }
+        },
+        "planner.planRecommendationDTO": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "planId": {
+                    "type": "string",
+                    "example": "p-3"
+                },
+                "planTitle": {
+                    "type": "string",
+                    "example": "Новая печь для пекарни"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "INVEST"
+                },
+                "productName": {
+                    "type": "string",
+                    "example": "Инвестиционный кредит"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Сумма и цель укладываются в рамки продукта"
+                }
+            }
+        },
+        "planner.plansResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/planner.planDTO"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/planner.summaryDTO"
+                }
+            }
+        },
+        "planner.recommendationDTO": {
+            "type": "object",
+            "properties": {
+                "availableFrom": {
+                    "type": "string",
+                    "example": "2026-10-20"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "INVEST"
+                },
+                "productName": {
+                    "type": "string",
+                    "example": "Инвестиционный кредит"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Цель и сумма укладываются в рамки продукта"
+                }
+            }
+        },
+        "planner.summaryDTO": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "description": "сумма ориентиров, а не кредитных обязательств",
+                    "type": "integer",
+                    "example": 4250000
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "unscheduled": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "withPeriod": {
+                    "type": "integer",
+                    "example": 2
                 }
             }
         },

@@ -188,6 +188,203 @@ definitions:
         - $ref: '#/definitions/shared.Role'
         example: CLIENT
     type: object
+  planner.createPlanRequest:
+    properties:
+      budgetRub:
+        example: 1200000
+        type: integer
+      dateMode:
+        enum:
+        - DAY
+        - PERIOD
+        - UNSCHEDULED
+        example: UNSCHEDULED
+        type: string
+      endDate:
+        example: "2027-08-31"
+        type: string
+      goal:
+        example: EQUIPMENT
+        maxLength: 64
+        type: string
+      note:
+        example: Увеличить выпуск хлеба
+        maxLength: 2000
+        type: string
+      notifications:
+        $ref: '#/definitions/planner.notificationsInput'
+      startDate:
+        example: "2027-06-01"
+        type: string
+      title:
+        example: Новая печь для пекарни
+        maxLength: 200
+        type: string
+    required:
+    - budgetRub
+    - dateMode
+    - goal
+    - title
+    type: object
+  planner.notificationsDTO:
+    properties:
+      email:
+        example: false
+        type: boolean
+      inApp:
+        example: true
+        type: boolean
+    type: object
+  planner.notificationsInput:
+    properties:
+      email:
+        example: false
+        type: boolean
+      inApp:
+        example: true
+        type: boolean
+    type: object
+  planner.patchPlanRequest:
+    properties:
+      budgetRub:
+        example: 1500000
+        type: integer
+      dateMode:
+        enum:
+        - DAY
+        - PERIOD
+        - UNSCHEDULED
+        example: DAY
+        type: string
+      endDate:
+        example: "2027-06-01"
+        type: string
+      goal:
+        example: EQUIPMENT
+        maxLength: 64
+        minLength: 1
+        type: string
+      note:
+        example: ""
+        maxLength: 2000
+        type: string
+      notifications:
+        $ref: '#/definitions/planner.notificationsInput'
+      startDate:
+        example: "2027-06-01"
+        type: string
+      state:
+        enum:
+        - ACTIVE
+        - PAUSED
+        - DONE
+        - ARCHIVED
+        example: PAUSED
+        type: string
+      title:
+        example: Новая печь для пекарни
+        maxLength: 200
+        minLength: 1
+        type: string
+    type: object
+  planner.planDTO:
+    properties:
+      budgetRub:
+        example: 2400000
+        type: integer
+      createdAt:
+        example: "2026-10-20T09:00:00Z"
+        type: string
+      dateMode:
+        example: PERIOD
+        type: string
+      endDate:
+        example: "2027-08-31"
+        type: string
+      goal:
+        example: REAL_ESTATE
+        type: string
+      id:
+        example: p-1
+        type: string
+      note:
+        example: Обновить торговый зал и зону выпечки
+        type: string
+      notifications:
+        $ref: '#/definitions/planner.notificationsDTO'
+      recommendation:
+        $ref: '#/definitions/planner.recommendationDTO'
+      startDate:
+        example: "2027-06-01"
+        type: string
+      state:
+        example: ACTIVE
+        type: string
+      title:
+        example: Ремонт помещения
+        type: string
+    type: object
+  planner.planRecommendationDTO:
+    properties:
+      budgetRub:
+        example: 1200000
+        type: integer
+      planId:
+        example: p-3
+        type: string
+      planTitle:
+        example: Новая печь для пекарни
+        type: string
+      productCode:
+        example: INVEST
+        type: string
+      productName:
+        example: Инвестиционный кредит
+        type: string
+      reason:
+        example: Сумма и цель укладываются в рамки продукта
+        type: string
+    type: object
+  planner.plansResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/planner.planDTO'
+        type: array
+      summary:
+        $ref: '#/definitions/planner.summaryDTO'
+    type: object
+  planner.recommendationDTO:
+    properties:
+      availableFrom:
+        example: "2026-10-20"
+        type: string
+      productCode:
+        example: INVEST
+        type: string
+      productName:
+        example: Инвестиционный кредит
+        type: string
+      reason:
+        example: Цель и сумма укладываются в рамки продукта
+        type: string
+    type: object
+  planner.summaryDTO:
+    properties:
+      budgetRub:
+        description: сумма ориентиров, а не кредитных обязательств
+        example: 4250000
+        type: integer
+      total:
+        example: 3
+        type: integer
+      unscheduled:
+        example: 1
+        type: integer
+      withPeriod:
+        example: 2
+        type: integer
+    type: object
   scoring.choiceParams:
     properties:
       amount:
@@ -1609,4 +1806,159 @@ paths:
       summary: Счётчики очереди
       tags:
       - bank
+  /plans:
+    get:
+      description: По умолчанию — все, кроме ARCHIVED. recommendation — подбор на
+        сегодня или null.
+      parameters:
+      - description: ACTIVE, PAUSED, DONE, ARCHIVED
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/planner.plansResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Планы компании
+      tags:
+      - planner
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: План
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/planner.createPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/planner.planDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Создать план
+      tags:
+      - planner
+  /plans/{id}:
+    delete:
+      parameters:
+      - description: ID плана
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Удалить план
+      tags:
+      - planner
+    patch:
+      consumes:
+      - application/json
+      description: Только переданные поля. Пустая строка в note очищает описание;
+        даты сбрасываются переходом на UNSCHEDULED.
+      parameters:
+      - description: ID плана
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Изменения
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/planner.patchPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/planner.planDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Изменить план
+      tags:
+      - planner
+  /plans/recommendations:
+    get:
+      description: Виджет главной. Пустой массив — виджет не показывается.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/planner.planRecommendationDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Планы с подходящим продуктом
+      tags:
+      - planner
 swagger: "2.0"
