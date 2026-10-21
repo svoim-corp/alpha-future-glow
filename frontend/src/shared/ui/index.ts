@@ -22,6 +22,8 @@ export type {
 export { CheckboxField, Field, RadioGroup, SelectField, TextAreaField } from './Field';
 export type { FileUploadProps } from './FileUpload';
 export { FileUpload } from './FileUpload';
+export type { IconName, IconProps } from './Icon';
+export { Icon } from './Icon';
 export type { KeyValueItem, KeyValueListProps } from './KeyValueList';
 export { KeyValueList } from './KeyValueList';
 export type { ModalProps } from './Modal';

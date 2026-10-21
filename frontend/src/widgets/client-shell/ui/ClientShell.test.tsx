@@ -36,26 +36,43 @@ describe('ClientShell', () => {
 		expect(screen.getByRole('link', { name: 'Главная' })).not.toHaveAttribute('aria-current');
 	});
 
-	it('профиль раскрывается и показывает должность', async () => {
+	it('профиль раскрывается и показывает компанию', async () => {
 		const { user } = shell();
 
-		await user.click(await screen.findByRole('button', { name: /Смирнов Олег Викторович/ }));
+		await user.click(await screen.findByRole('button', { name: /Олег Смирнов/ }));
 
-		expect(screen.getByText(clientUser.position)).toBeInTheDocument();
+		expect(screen.getByText('ПРОФИЛЬ')).toBeInTheDocument();
+		expect(screen.getAllByText(/ИНН 7712345678/).length).toBeGreaterThan(0);
+	});
+
+	it('поиск находит раздел и переходит в него по Enter', async () => {
+		const { user } = shell();
+
+		await user.type(screen.getByRole('searchbox'), 'план{Enter}');
+
+		expect(screen.queryByText('РАЗДЕЛЫ КАБИНЕТА')).not.toBeInTheDocument();
+	});
+
+	it('язык: русский выбран, английский — позже', async () => {
+		const { user } = shell();
+
+		await user.click(screen.getByRole('button', { name: /RU/ }));
+
+		expect(screen.getByText('Позже')).toBeInTheDocument();
 	});
 
 	it('тема переключается и запоминается', async () => {
 		const { user } = shell();
 
-		await user.click(screen.getByRole('button', { name: /тема/ }));
+		await user.click(screen.getByRole('button', { name: 'Тёмная тема' }));
 
 		expect(document.documentElement.dataset.theme).toMatch(/light|dark/);
-		expect(screen.getByRole('button', { name: /тема/ })).toHaveAttribute('aria-pressed');
+		expect(screen.getByRole('button', { name: 'Тёмная тема' })).toHaveAttribute('aria-pressed');
 	});
 
 	it('мобильное меню открывается и закрывается по Escape', async () => {
 		const { user } = shell();
-		const menu = screen.getByRole('button', { name: 'Меню' });
+		const menu = screen.getByRole('button', { name: 'Открыть навигацию' });
 
 		await user.click(menu);
 

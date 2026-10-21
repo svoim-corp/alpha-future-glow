@@ -1,5 +1,5 @@
 import { getErrorMessage } from '@shared/api';
-import { Alert } from '@shared/ui';
+import { Alert, Icon } from '@shared/ui';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -61,7 +61,7 @@ export const NotificationBell = () => {
 				aria-label={unread > 0 ? `Уведомления, непрочитанных: ${unread}` : 'Уведомления'}
 				onClick={() => setOpen((prev) => !prev)}
 			>
-				<span aria-hidden="true">🔔</span>
+				<Icon name="bell" />
 				{unread > 0 && <span className={styles.count} aria-hidden="true">{unread}</span>}
 			</button>
 			{open && (
