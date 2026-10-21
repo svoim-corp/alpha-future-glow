@@ -420,6 +420,15 @@ definitions:
         example: EXPRESS
         type: string
     type: object
+  offer.declineRequest:
+    properties:
+      reason:
+        example: Нашли финансирование в другом месте
+        maxLength: 1000
+        type: string
+    required:
+    - reason
+    type: object
   offer.offerResponse:
     properties:
       alternatives:
@@ -2508,6 +2517,50 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Принять предложение банка
+      tags:
+      - offer
+  /applications/{id}/offer/decline:
+    post:
+      consumes:
+      - application/json
+      description: Заявка закрывается (CLOSED), причина попадает в историю заявки
+        для банка.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Причина
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/offer.declineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/offer.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Отказаться от предложения банка
       tags:
       - offer
   /applications/{id}/prelim:

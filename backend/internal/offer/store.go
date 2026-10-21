@@ -33,10 +33,14 @@ type offerRow struct {
 	CreatedAt            time.Time                     `db:"created_at"`
 	AcceptedAt           *time.Time                    `db:"accepted_at"`
 	ContractNumber       *string                       `db:"contract_number"`
+	DeclinedAt           *time.Time                    `db:"declined_at"`
 }
 
 const offerCols = `app_id, decision_id, decision, product_code, amount, term, rate, grace_months, monthly_payment,
 	requested_product_code, requested_amount, requested_term, explanation, alternatives, valid_until, created_at`
+
+// contractCols — состояние ответа клиента и договора; меняется только командами клиента, не новым решением.
+const contractCols = `accepted_at, contract_number, declined_at`
 
 // SaveOffer записывает предложение по заявке; новое решение заменяет прежнее предложение.
 func (s *Store) SaveOffer(ctx context.Context, o *offerRow) error {
@@ -56,7 +60,7 @@ func (s *Store) SaveOffer(ctx context.Context, o *offerRow) error {
 // Offer — предложение по заявке; (nil, nil) — решения ещё нет.
 func (s *Store) Offer(ctx context.Context, appID string) (*offerRow, error) {
 	var o offerRow
-	err := s.db.GetContext(ctx, &o, `SELECT `+offerCols+`, accepted_at, contract_number FROM offer.offers WHERE app_id = $1`, appID)
+	err := s.db.GetContext(ctx, &o, `SELECT `+offerCols+`, `+contractCols+` FROM offer.offers WHERE app_id = $1`, appID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -76,7 +80,8 @@ func (s *Store) NextContractNumber(ctx context.Context) (int64, error) {
 // Accept отмечает предложение принятым и присваивает номер договора; false — его уже приняли.
 func (s *Store) Accept(ctx context.Context, appID, contractNumber string, at time.Time) (bool, error) {
 	res, err := s.db.ExecContext(ctx, `
-		UPDATE offer.offers SET accepted_at = $2, contract_number = $3 WHERE app_id = $1 AND accepted_at IS NULL`,
+		UPDATE offer.offers SET accepted_at = $2, contract_number = $3
+		WHERE app_id = $1 AND accepted_at IS NULL AND declined_at IS NULL`,
 		appID, at, contractNumber)
 	if err != nil {
 		return false, err
@@ -88,6 +93,24 @@ func (s *Store) Accept(ctx context.Context, appID, contractNumber string, at tim
 // Unaccept откатывает принятие, если перевести заявку в подписание не удалось.
 func (s *Store) Unaccept(ctx context.Context, appID string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET accepted_at = NULL, contract_number = NULL WHERE app_id = $1`, appID)
+	return err
+}
+
+// Decline отмечает отказ клиента от предложения; false — на предложение уже ответили.
+func (s *Store) Decline(ctx context.Context, appID, reason string, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE offer.offers SET declined_at = $2, decline_reason = $3
+		WHERE app_id = $1 AND accepted_at IS NULL AND declined_at IS NULL`, appID, at, reason)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// Undecline откатывает отказ, если закрыть заявку не удалось.
+func (s *Store) Undecline(ctx context.Context, appID string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE offer.offers SET declined_at = NULL, decline_reason = NULL WHERE app_id = $1`, appID)
 	return err
 }
 

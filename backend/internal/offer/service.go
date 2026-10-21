@@ -143,6 +143,8 @@ func (m *Module) accept(ctx context.Context, appID, companyID string, actor shar
 		return httpx.InvalidTransition("Банк отказал — принимать нечего")
 	case o.AcceptedAt != nil:
 		return httpx.InvalidTransition("Предложение уже принято")
+	case o.DeclinedAt != nil:
+		return httpx.InvalidTransition("От предложения уже отказались")
 	case !now.Before(o.ValidUntil.AddDate(0, 0, 1)): // действует по дату validUntil включительно
 		return httpx.BusinessRule("Срок действия предложения истёк. Оформите новую заявку")
 	}
@@ -160,6 +162,36 @@ func (m *Module) accept(ctx context.Context, appID, companyID string, actor shar
 	if err := m.ports.Applications.Transition(ctx, appID, shared.StatusSigning, actor, actionOfferAccept, ""); err != nil {
 		if uerr := m.store.Unaccept(ctx, appID); uerr != nil {
 			slog.Error("rollback offer acceptance", "appId", appID, "err", uerr)
+		}
+		return err
+	}
+	return nil
+}
+
+const actionOfferDecline = "OFFER_DECLINE"
+
+// decline — клиент отказывается от предложения: заявка закрывается, причина попадает в историю для банка.
+func (m *Module) decline(ctx context.Context, appID, companyID, reason string, actor shared.Actor) error {
+	_, o, err := m.offerOf(ctx, appID, companyID)
+	if err != nil {
+		return err
+	}
+	switch {
+	case o.Decision == string(shared.StatusRejected):
+		return httpx.InvalidTransition("Банк отказал — отказываться не от чего")
+	case o.AcceptedAt != nil:
+		return httpx.InvalidTransition("Предложение уже принято")
+	}
+	ok, err := m.store.Decline(ctx, appID, reason, m.now().UTC())
+	if err != nil {
+		return fmt.Errorf("decline offer %s: %w", appID, err)
+	}
+	if !ok {
+		return httpx.InvalidTransition("На предложение уже ответили")
+	}
+	if err := m.ports.Applications.Transition(ctx, appID, shared.StatusClosed, actor, actionOfferDecline, reason); err != nil {
+		if uerr := m.store.Undecline(ctx, appID); uerr != nil {
+			slog.Error("rollback offer decline", "appId", appID, "err", uerr)
 		}
 		return err
 	}

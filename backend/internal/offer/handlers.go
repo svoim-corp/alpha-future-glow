@@ -130,3 +130,40 @@ func (m *Module) acceptOffer(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, statusResponse{Status: shared.StatusSigning, Redirect: "/applications/" + id + "/sign"})
 }
+
+type declineRequest struct {
+	Reason string `json:"reason" binding:"required,max=1000" example:"Нашли финансирование в другом месте"`
+}
+
+// declineOffer godoc
+//
+//	@Summary		Отказаться от предложения банка
+//	@Description	Заявка закрывается (CLOSED), причина попадает в историю заявки для банка.
+//	@Tags			offer
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string			true	"ID заявки"
+//	@Param			body	body		declineRequest	true	"Причина"
+//	@Success		200		{object}	statusResponse
+//	@Failure		400		{object}	httpx.ErrorBody
+//	@Failure		403		{object}	httpx.ErrorBody
+//	@Failure		404		{object}	httpx.ErrorBody
+//	@Failure		409		{object}	httpx.ErrorBody
+//	@Router			/applications/{id}/offer/decline [post]
+func (m *Module) declineOffer(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	var req declineRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if err := m.decline(c.Request.Context(), c.Param("id"), company, req.Reason, clientActor(c)); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, statusResponse{Status: shared.StatusClosed})
+}

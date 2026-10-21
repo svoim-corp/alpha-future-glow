@@ -696,6 +696,71 @@
                 }
             }
         },
+        "/applications/{id}/offer/decline": {
+            "post": {
+                "description": "Заявка закрывается (CLOSED), причина попадает в историю заявки для банка.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Отказаться от предложения банка",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Причина",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/offer.declineRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/offer.statusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/prelim": {
             "post": {
                 "description": "Проверки ЕГРЮЛ/ЕГРИП, БКИ, ФНС, суды, ГИР БО, обороты по счетам в банке. Лимит или стоп-отказ. Требует согласие на БКИ.",
@@ -2954,6 +3019,19 @@
                 "productCode": {
                     "type": "string",
                     "example": "EXPRESS"
+                }
+            }
+        },
+        "offer.declineRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Нашли финансирование в другом месте"
                 }
             }
         },

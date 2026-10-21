@@ -93,3 +93,27 @@ func TestAcceptOfferErrors(t *testing.T) {
 		t.Fatalf("принятие не откатилось: %+v", o)
 	}
 }
+
+func TestDeclineOffer(t *testing.T) {
+	e := newEnv(t)
+	e.decide(t, "a-1", "c-1", approved)
+	if w := e.do("POST", "/api/v1/applications/a-1/offer/decline", "smirnov", `{}`); w.Code != http.StatusBadRequest {
+		t.Fatalf("без причины: %d", w.Code)
+	}
+	w := e.do("POST", "/api/v1/applications/a-1/offer/decline", "smirnov", `{"reason":"Нашли финансирование в другом месте"}`)
+	if got := decode[statusResponse](t, w); w.Code != http.StatusOK || got.Status != shared.StatusClosed || strings.Contains(w.Body.String(), "redirect") {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	if e.apps.history[0] != "a-1:CLOSED:OFFER_DECLINE:Нашли финансирование в другом месте" {
+		t.Fatalf("история: %v", e.apps.history)
+	}
+	if w := e.do("POST", "/api/v1/applications/a-1/offer/accept", "smirnov", ""); w.Code != http.StatusConflict {
+		t.Fatalf("принять после отказа: %d", w.Code)
+	}
+
+	e.decide(t, "a-2", "c-1", approved)
+	e.do("POST", "/api/v1/applications/a-2/offer/accept", "smirnov", "")
+	if w := e.do("POST", "/api/v1/applications/a-2/offer/decline", "smirnov", `{"reason":"передумали"}`); w.Code != http.StatusConflict {
+		t.Fatalf("отказ после принятия: %d", w.Code)
+	}
+}
