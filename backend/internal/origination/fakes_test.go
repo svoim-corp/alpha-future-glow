@@ -123,6 +123,7 @@ func (e *env) passPrelim(t *testing.T, appID string) {
 var users = map[string]*auth.User{
 	"smirnov": {ID: "u-1", Role: shared.RoleClient, CompanyID: ptr("c-1"), PersonINN: ptr("771234567890"), FullName: "Смирнов Олег Викторович"},
 	"petrova": {ID: "u-2", Role: shared.RoleClient, CompanyID: ptr("c-1"), PersonINN: ptr("771298765432"), FullName: "Петрова Анна Сергеевна"},
+	"lebedev": {ID: "u-90", Role: shared.RoleClient, CompanyID: ptr("c-1"), PersonINN: ptr("770000000001"), FullName: "Лебедев Пётр Ильич"}, // МЧД без BKI_CONSENT
 	"volkov":  {ID: "u-3", Role: shared.RoleClient, CompanyID: ptr("c-2"), PersonINN: ptr("770411223344"), FullName: "Волков Игорь Николаевич"},
 	"orlova":  {ID: "u-4", Role: shared.RoleClient, CompanyID: ptr("c-3"), PersonINN: ptr("772512345601"), FullName: "Орлова Мария Игоревна"},
 	"ivanova": {ID: "u-9", Role: shared.RoleBankOfficer, FullName: "Иванова Елена Петровна"},
@@ -171,6 +172,8 @@ func newEnv(t *testing.T) *env {
 		Authorities: fakeAuthorities{
 			"771234567890": {Type: shared.AuthorityHead, Powers: []string{shared.PowerCreditApplication, shared.PowerBKIConsent}},
 			"771298765432": {Type: shared.AuthorityMCHD, MCHDNumber: ptr("a1b2"), ValidUntil: ptr(time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)),
+				Powers: []string{shared.PowerCreditApplication, shared.PowerBKIConsent}},
+			"770000000001": {Type: shared.AuthorityMCHD, MCHDNumber: ptr("c3d4"), ValidUntil: ptr(time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)),
 				Powers: []string{shared.PowerCreditApplication}},
 			"772512345601": {Type: shared.AuthorityHead, Powers: []string{shared.PowerCreditApplication, shared.PowerBKIConsent}},
 		},

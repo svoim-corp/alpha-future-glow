@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -578,4 +579,72 @@ func (m *Module) timeline(c *gin.Context) {
 		resp.Steps = []timelineStepDTO{}
 	}
 	httpx.JSON(c, http.StatusOK, resp)
+}
+
+type historyActorDTO struct {
+	Type shared.ActorType `json:"type" example:"OFFICER"`
+	Name *string          `json:"name,omitempty" example:"Иванова Е. П."` // у системы нет
+}
+
+type historyEntryDTO struct {
+	At      time.Time       `json:"at" example:"2026-10-20T13:10:00Z"`
+	Actor   historyActorDTO `json:"actor"`
+	Action  string          `json:"action" example:"DECISION"`
+	From    shared.Status   `json:"from" example:"ON_DECISION"`
+	To      shared.Status   `json:"to" example:"COUNTER_OFFER"`
+	Comment *string         `json:"comment,omitempty" example:"Сумма снижена по уровню долговой нагрузки"`
+}
+
+// shortName — «Иванова Елена Петровна» → «Иванова Е. П.»: так подписывают действия в истории.
+func shortName(full string) string {
+	parts := strings.Fields(full)
+	if len(parts) == 0 {
+		return ""
+	}
+	out := parts[0]
+	for _, p := range parts[1:] {
+		out += " " + string([]rune(p)[0]) + "."
+	}
+	return out
+}
+
+// bankHistory godoc
+//
+//	@Summary		История статусов и действий по заявке
+//	@Description	Кто, когда и каким действием менял статус заявки, по порядку. Только для сотрудника банка.
+//	@Tags			bank
+//	@Produce		json
+//	@Param			id	path		string	true	"ID заявки"
+//	@Success		200	{array}		historyEntryDTO
+//	@Failure		401	{object}	httpx.ErrorBody
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Router			/bank/applications/{id}/history [get]
+func (m *Module) bankHistory(c *gin.Context) {
+	ctx := c.Request.Context()
+	a, err := m.store.Application(ctx, c.Param("id"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if a == nil {
+		httpx.Fail(c, httpx.NotFound("Заявка не найдена"))
+		return
+	}
+	events, err := m.store.Events(ctx, a.ID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	out := make([]historyEntryDTO, len(events))
+	for i, ev := range events {
+		out[i] = historyEntryDTO{
+			At: ev.At, Actor: historyActorDTO{Type: shared.ActorType(ev.ActorType)}, Action: ev.Action,
+			From: shared.Status(ev.From), To: shared.Status(ev.To), Comment: ev.Comment,
+		}
+		if ev.ActorName != nil {
+			out[i].Actor.Name = optional(shortName(*ev.ActorName))
+		}
+	}
+	httpx.JSON(c, http.StatusOK, out)
 }

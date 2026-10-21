@@ -1491,6 +1491,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/bank/applications/{id}/history": {
+            "get": {
+                "description": "Кто, когда и каким действием менял статус заявки, по порядку. Только для сотрудника банка.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "История статусов и действий по заявке",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/origination.historyEntryDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/bank/applications/{id}/info-requests": {
             "post": {
                 "description": "Только пояснения: данные, которые есть у банка, и документы не запрашиваются. Заявка → INFO_REQUESTED.",
@@ -3032,6 +3082,60 @@ const docTemplate = `{
                 }
             }
         },
+        "origination.historyActorDTO": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "у системы нет",
+                    "type": "string",
+                    "example": "Иванова Е. П."
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.ActorType"
+                        }
+                    ],
+                    "example": "OFFICER"
+                }
+            }
+        },
+        "origination.historyEntryDTO": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "DECISION"
+                },
+                "actor": {
+                    "$ref": "#/definitions/origination.historyActorDTO"
+                },
+                "at": {
+                    "type": "string",
+                    "example": "2026-10-20T13:10:00Z"
+                },
+                "comment": {
+                    "type": "string",
+                    "example": "Сумма снижена по уровню долговой нагрузки"
+                },
+                "from": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "ON_DECISION"
+                },
+                "to": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "COUNTER_OFFER"
+                }
+            }
+        },
         "origination.locksDTO": {
             "type": "object",
             "properties": {
@@ -3858,6 +3962,19 @@ const docTemplate = `{
                     "example": 21.5
                 }
             }
+        },
+        "shared.ActorType": {
+            "type": "string",
+            "enum": [
+                "CLIENT",
+                "OFFICER",
+                "SYSTEM"
+            ],
+            "x-enum-varnames": [
+                "ActorClient",
+                "ActorOfficer",
+                "ActorSystem"
+            ]
         },
         "shared.AuthorityType": {
             "type": "string",

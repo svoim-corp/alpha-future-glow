@@ -30,13 +30,13 @@ func TestConsentBKI(t *testing.T) {
 
 func TestConsentBKIErrors(t *testing.T) {
 	e := newEnv(t)
-	byMCHD := e.draft(t, "petrova").ID // МЧД без полномочия BKI_CONSENT
+	byMCHD := e.draft(t, "lebedev").ID // МЧД без полномочия BKI_CONSENT
 	own := e.draft(t, "smirnov").ID
 	tests := []struct {
 		name, id, user, body string
 		status               int
 	}{
-		{"нет полномочия по МЧД", byMCHD, "petrova", consentBody, http.StatusForbidden},
+		{"нет полномочия по МЧД", byMCHD, "lebedev", consentBody, http.StatusForbidden},
 		{"отказ от согласия", own, "smirnov", `{"given":false,"text":"нет"}`, http.StatusBadRequest},
 		{"без текста", own, "smirnov", `{"given":true}`, http.StatusBadRequest},
 		{"чужая заявка", own, "orlova", consentBody, http.StatusForbidden},
