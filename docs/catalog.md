@@ -123,3 +123,10 @@
   "withinProductLimits": true
 }
 ```
+
+## Для других зон
+
+### `shared.Products`
+
+Реализовано. `Product(code)` — рамки продукта из линейки; неизвестный код — `(nil, nil)`. Используют Origination
+(рамки при создании и изменении черновика), Offer, Scoring, Underwriting, Planner.

@@ -154,3 +154,18 @@ func TestCalculatePayment(t *testing.T) {
 		t.Fatalf("без срока: %d", w.Code)
 	}
 }
+
+func TestProductsPort(t *testing.T) {
+	m, _ := newTestModule(t)
+	p, err := m.Products().Product(context.Background(), "INVEST")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p == nil || p.Name != "Инвестиционный кредит" || p.AmountMin != 1_000_000 || p.TermMax != 84 || p.RateMax != 26 ||
+		p.GraceMaxMonths != 6 || p.MinBusinessAgeMonths != 12 || !p.GuarantorForLLC || len(p.Goals) != 3 {
+		t.Fatalf("INVEST: %+v", p)
+	}
+	if p, err := m.Products().Product(context.Background(), "NOPE"); err != nil || p != nil {
+		t.Fatalf("неизвестный продукт — (nil, nil): %+v %v", p, err)
+	}
+}
