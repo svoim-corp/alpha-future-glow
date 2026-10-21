@@ -1,0 +1,32 @@
+.row {
+	display: contents;
+}
+
+.list {
+	display: grid;
+	grid-template-columns: minmax(120px, 220px) minmax(0, 1fr);
+	gap: var(--space-3) var(--space-4);
+	margin: 0;
+	font-size: 14px;
+
+	dt {
+		color: var(--color-text-muted);
+	}
+
+	dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+		white-space: pre-line;
+	}
+}
+
+@media (max-width: 640px) {
+	.list {
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-1) 0;
+
+		dd {
+			margin-bottom: var(--space-3);
+		}
+	}
+}

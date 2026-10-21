@@ -1,0 +1,21 @@
+.wizard {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.card {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+}

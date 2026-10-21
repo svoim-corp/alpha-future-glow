@@ -1,0 +1,38 @@
+.page {
+	display: grid;
+	place-items: center;
+	min-height: 100vh;
+	padding: var(--space-4);
+}
+
+.panel {
+	display: grid;
+	gap: var(--space-6);
+	width: min(440px, 100%);
+}
+
+.title {
+	font-size: 32px;
+	line-height: 40px;
+	font-weight: 600;
+}
+
+.lead {
+	margin: var(--space-2) 0 0;
+	color: var(--color-text-muted);
+}
+
+.demo {
+	display: grid;
+	gap: var(--space-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: 14px;
+}
+
+.demoTitle {
+	margin: 0 0 var(--space-2);
+	font-size: 14px;
+	font-weight: 600;
+}

@@ -1,0 +1,115 @@
+.board {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.metrics {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: var(--space-3);
+	margin: 0;
+}
+
+.metric {
+	margin: 0;
+	padding: var(--space-3) var(--space-4);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+.metric dt {
+	font-size: 13px;
+	color: var(--color-text-muted);
+}
+
+.metric dd {
+	margin: 4px 0 0;
+	font-size: 22px;
+	font-weight: 700;
+}
+
+.tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+.tab {
+	padding: var(--space-2) var(--space-4);
+	color: var(--color-text);
+	cursor: pointer;
+	background: transparent;
+	border: 0;
+	border-bottom: 2px solid transparent;
+}
+
+.tab[aria-selected='true'] {
+	font-weight: 600;
+	color: var(--color-primary-text);
+	border-bottom-color: var(--color-primary);
+}
+
+.workspace {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+	gap: var(--space-4);
+}
+
+.nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+
+.month {
+	margin: 0;
+	text-transform: capitalize;
+}
+
+.table {
+	width: 100%;
+	table-layout: fixed;
+	border-collapse: collapse;
+}
+
+.table th {
+	padding: var(--space-2);
+	font-size: 13px;
+	color: var(--color-text-muted);
+	text-align: left;
+}
+
+.day {
+	height: 56px;
+	padding: var(--space-2);
+	vertical-align: top;
+	border: 1px solid var(--color-border);
+}
+
+.covered {
+	background: var(--color-primary-soft);
+}
+
+.dayLabel {
+	font-size: 13px;
+}
+
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: var(--space-4);
+}
+
+.shortcuts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+	.workspace {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

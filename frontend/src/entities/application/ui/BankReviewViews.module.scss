@@ -1,0 +1,33 @@
+.list {
+	display: grid;
+	gap: var(--space-2);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+
+.plus {
+	color: var(--color-success);
+}
+
+.minus {
+	color: var(--color-danger);
+}
+
+.muted {
+	margin: 0;
+	color: var(--color-text-muted);
+}
+
+.big {
+	margin: 0;
+	font-size: 32px;
+	font-weight: 700;
+}

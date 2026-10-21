@@ -1,0 +1,23 @@
+.block {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: var(--space-3);
+	align-items: end;
+}
+
+.title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+@media (max-width: 640px) {
+	.row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
