@@ -31,3 +31,19 @@ func (s *Store) Reset(ctx context.Context) error {
 	_, err := s.db.ExecContext(ctx, `TRUNCATE notifications.notifications`)
 	return err
 }
+
+// List — уведомления пользователя, новые первыми; onlyUnread — только непрочитанные.
+func (s *Store) List(ctx context.Context, userID string, onlyUnread bool, limit int) ([]notificationRow, error) {
+	var out []notificationRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT id, user_id, type, title, text, link, read, created_at FROM notifications.notifications
+		WHERE user_id = $1 AND (NOT $2 OR NOT read)
+		ORDER BY created_at DESC, id DESC LIMIT $3`, userID, onlyUnread, limit)
+	return out, err
+}
+
+func (s *Store) UnreadCount(ctx context.Context, userID string) (int, error) {
+	var n int
+	err := s.db.GetContext(ctx, &n, `SELECT count(*) FROM notifications.notifications WHERE user_id = $1 AND NOT read`, userID)
+	return n, err
+}

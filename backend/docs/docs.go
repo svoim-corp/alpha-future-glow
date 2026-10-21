@@ -1057,6 +1057,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/notifications": {
+            "get": {
+                "description": "Последние 50 уведомлений пользователя, новые первыми. unread=true — только непрочитанные.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Уведомления в шапке",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Только непрочитанные",
+                        "name": "unread",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/notifications.listResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/plans": {
             "get": {
                 "description": "По умолчанию — все, кроме ARCHIVED. recommendation — подбор на сегодня или null.",
@@ -1965,6 +1999,58 @@ const docTemplate = `{
                 }
             }
         },
+        "notifications.listResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/notifications.notificationDTO"
+                    }
+                },
+                "unreadCount": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "notifications.notificationDTO": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2026-10-20T12:40:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "n-15"
+                },
+                "link": {
+                    "type": "string",
+                    "example": "/applications/a-1024"
+                },
+                "read": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Уточните фактический адрес склада"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Банку нужны пояснения по заявке"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.NotificationType"
+                        }
+                    ],
+                    "example": "INFO_REQUESTED"
+                }
+            }
+        },
         "planner.createPlanRequest": {
             "type": "object",
             "required": [
@@ -2527,6 +2613,33 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "DecisionAuto",
                 "DecisionManual"
+            ]
+        },
+        "shared.NotificationType": {
+            "type": "string",
+            "enum": [
+                "INFO_REQUESTED",
+                "DECISION",
+                "PAYMENT_DUE",
+                "TICKET_REPLY",
+                "PLAN_MATCH"
+            ],
+            "x-enum-comments": {
+                "NotifyPlanMatch": "API_SPEC_ADDITIONAL.md, Планер"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "",
+                "API_SPEC_ADDITIONAL.md, Планер"
+            ],
+            "x-enum-varnames": [
+                "NotifyInfoRequested",
+                "NotifyDecision",
+                "NotifyPaymentDue",
+                "NotifyTicketReply",
+                "NotifyPlanMatch"
             ]
         },
         "shared.PersonRole": {

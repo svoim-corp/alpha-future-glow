@@ -376,6 +376,41 @@ definitions:
         - $ref: '#/definitions/shared.Role'
         example: CLIENT
     type: object
+  notifications.listResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/notifications.notificationDTO'
+        type: array
+      unreadCount:
+        example: 2
+        type: integer
+    type: object
+  notifications.notificationDTO:
+    properties:
+      createdAt:
+        example: "2026-10-20T12:40:00Z"
+        type: string
+      id:
+        example: n-15
+        type: string
+      link:
+        example: /applications/a-1024
+        type: string
+      read:
+        example: false
+        type: boolean
+      text:
+        example: Уточните фактический адрес склада
+        type: string
+      title:
+        example: Банку нужны пояснения по заявке
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/shared.NotificationType'
+        example: INFO_REQUESTED
+    type: object
   planner.createPlanRequest:
     properties:
       budgetRub:
@@ -779,6 +814,28 @@ definitions:
     x-enum-varnames:
     - DecisionAuto
     - DecisionManual
+  shared.NotificationType:
+    enum:
+    - INFO_REQUESTED
+    - DECISION
+    - PAYMENT_DUE
+    - TICKET_REPLY
+    - PLAN_MATCH
+    type: string
+    x-enum-comments:
+      NotifyPlanMatch: API_SPEC_ADDITIONAL.md, Планер
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - ""
+    - API_SPEC_ADDITIONAL.md, Планер
+    x-enum-varnames:
+    - NotifyInfoRequested
+    - NotifyDecision
+    - NotifyPaymentDue
+    - NotifyTicketReply
+    - NotifyPlanMatch
   shared.PersonRole:
     enum:
     - HEAD
@@ -2025,6 +2082,29 @@ paths:
       summary: Калькулятор платежа
       tags:
       - catalog
+  /notifications:
+    get:
+      description: Последние 50 уведомлений пользователя, новые первыми. unread=true
+        — только непрочитанные.
+      parameters:
+      - description: Только непрочитанные
+        in: query
+        name: unread
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/notifications.listResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Уведомления в шапке
+      tags:
+      - notifications
   /plans:
     get:
       description: По умолчанию — все, кроме ARCHIVED. recommendation — подбор на

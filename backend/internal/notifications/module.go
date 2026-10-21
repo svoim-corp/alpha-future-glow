@@ -28,7 +28,9 @@ func (m *Module) Migrate(ctx context.Context) error {
 	return db.Migrate(ctx, m.deps.DB, "notifications", migrations)
 }
 
-func (m *Module) Register(r httpx.Routes) {}
+func (m *Module) Register(r httpx.Routes) {
+	r.Client.GET("/notifications", m.list)
+}
 
 // ResetDemo удаляет уведомления: они относятся к заявкам и кредитам демо.
 func (m *Module) ResetDemo(ctx context.Context) error { return m.store.Reset(ctx) }
