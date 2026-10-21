@@ -78,6 +78,26 @@ func (s *Store) UpcomingPayments(ctx context.Context, companyID string, from tim
 	return out, err
 }
 
+// maxLoans — у компании единицы кредитов; ограничение — защита списка, а не пагинация.
+const maxLoans = 100
+
+// CompanyLoans — кредиты компании, новые первыми.
+func (s *Store) CompanyLoans(ctx context.Context, companyID string) ([]loanRow, error) {
+	var out []loanRow
+	err := s.db.SelectContext(ctx, &out, `SELECT `+loanCols+` FROM servicing.loans
+		WHERE company_id = $1 ORDER BY issued_at DESC, id DESC LIMIT $2`, companyID, maxLoans)
+	return out, err
+}
+
+// CompanyPayments — все строки графиков кредитов компании по порядку: одним запросом для всего списка кредитов.
+func (s *Store) CompanyPayments(ctx context.Context, companyID string) ([]paymentRow, error) {
+	var out []paymentRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT `+paymentCols+` FROM servicing.payments p JOIN servicing.loans l ON l.id = p.loan_id
+		WHERE l.company_id = $1 ORDER BY p.loan_id, p.n`, companyID)
+	return out, err
+}
+
 // ActiveLoans — число действующих кредитов компании.
 func (s *Store) ActiveLoans(ctx context.Context, companyID string) (int, error) {
 	var n int

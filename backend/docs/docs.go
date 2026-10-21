@@ -2081,6 +2081,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/loans": {
+            "get": {
+                "description": "Выданные кредиты компании, новые первыми: остаток долга и ближайший платёж.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Мои кредиты",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/servicing.loanDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/loans/summary": {
             "get": {
                 "description": "Сколько действующих кредитов и ближайший платёж: сумма всех платежей компании в ближайшую дату.",
@@ -4742,6 +4777,50 @@ const docTemplate = `{
                 }
             }
         },
+        "servicing.loanDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "balance": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "id": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "issuedAt": {
+                    "type": "string",
+                    "example": "2026-10-20"
+                },
+                "nextPayment": {
+                    "description": "null — платежей впереди нет",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/servicing.paymentRefDTO"
+                        }
+                    ]
+                },
+                "product": {
+                    "$ref": "#/definitions/servicing.productRefDTO"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 21.5
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
         "servicing.paymentRefDTO": {
             "type": "object",
             "properties": {
@@ -4752,6 +4831,19 @@ const docTemplate = `{
                 "date": {
                     "type": "string",
                     "example": "2026-11-20"
+                }
+            }
+        },
+        "servicing.productRefDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
                 }
             }
         },

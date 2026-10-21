@@ -76,3 +76,71 @@ func (m *Module) summary(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, resp)
 }
+
+type productRefDTO struct {
+	Code string `json:"code" example:"WORKING"`
+	Name string `json:"name" example:"Оборотный кредит"`
+}
+
+type loanDTO struct {
+	ID          string         `json:"id" example:"l-55"`
+	Product     productRefDTO  `json:"product"`
+	Amount      int64          `json:"amount" example:"1200000"`
+	Balance     int64          `json:"balance" example:"1200000"`
+	Rate        float64        `json:"rate" example:"21.5"`
+	Term        int            `json:"term" example:"24"`
+	IssuedAt    string         `json:"issuedAt" example:"2026-10-20"`
+	NextPayment *paymentRefDTO `json:"nextPayment"` // null — платежей впереди нет
+	Status      string         `json:"status" example:"ACTIVE"`
+}
+
+// byLoan — строки графиков по id кредита.
+func byLoan(rows []paymentRow) map[string][]paymentRow {
+	out := map[string][]paymentRow{}
+	for _, p := range rows {
+		out[p.LoanID] = append(out[p.LoanID], p)
+	}
+	return out
+}
+
+// list godoc
+//
+//	@Summary		Мои кредиты
+//	@Description	Выданные кредиты компании, новые первыми: остаток долга и ближайший платёж.
+//	@Tags			loans
+//	@Produce		json
+//	@Success		200	{array}		loanDTO
+//	@Failure		401	{object}	httpx.ErrorBody
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Router			/loans [get]
+func (m *Module) list(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	loans, err := m.store.CompanyLoans(ctx, company)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	payments, err := m.store.CompanyPayments(ctx, company)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	schedules, today := byLoan(payments), m.today()
+	out := make([]loanDTO, len(loans))
+	for i, l := range loans {
+		st := stateOf(l.Amount, schedules[l.ID], today)
+		out[i] = loanDTO{
+			ID: l.ID, Product: productRefDTO{Code: l.ProductCode, Name: l.ProductName}, Amount: l.Amount, Balance: st.balance,
+			Rate: l.Rate, Term: l.Term, IssuedAt: l.IssuedAt.UTC().Format(dateLayout), Status: l.Status,
+		}
+		if st.next != nil {
+			out[i].NextPayment = &paymentRefDTO{Date: st.next.DueDate.Format(dateLayout), Amount: st.next.Total}
+		}
+	}
+	httpx.JSON(c, http.StatusOK, out)
+}

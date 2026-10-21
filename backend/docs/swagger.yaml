@@ -1417,6 +1417,36 @@ definitions:
         example: 21.5
         type: number
     type: object
+  servicing.loanDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      balance:
+        example: 1200000
+        type: integer
+      id:
+        example: l-55
+        type: string
+      issuedAt:
+        example: "2026-10-20"
+        type: string
+      nextPayment:
+        allOf:
+        - $ref: '#/definitions/servicing.paymentRefDTO'
+        description: null — платежей впереди нет
+      product:
+        $ref: '#/definitions/servicing.productRefDTO'
+      rate:
+        example: 21.5
+        type: number
+      status:
+        example: ACTIVE
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
   servicing.paymentRefDTO:
     properties:
       amount:
@@ -1424,6 +1454,15 @@ definitions:
         type: integer
       date:
         example: "2026-11-20"
+        type: string
+    type: object
+  servicing.productRefDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      name:
+        example: Оборотный кредит
         type: string
     type: object
   servicing.summaryResponse:
@@ -3551,6 +3590,30 @@ paths:
       summary: Калькулятор платежа
       tags:
       - catalog
+  /loans:
+    get:
+      description: 'Выданные кредиты компании, новые первыми: остаток долга и ближайший
+        платёж.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.loanDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Мои кредиты
+      tags:
+      - loans
   /loans/summary:
     get:
       description: 'Сколько действующих кредитов и ближайший платёж: сумма всех платежей
