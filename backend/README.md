@@ -35,13 +35,15 @@ Swagger UI: http://localhost:8080/api/docs, спецификация: http://loc
 
 ### Тестовые учётки
 
-Пароль у всех — `demo123`.
+Пароль у всех — `demo123`. Основные:
 
 | Логин | Роль | Кто |
 |---|---|---|
-| `smirnov` | CLIENT | Смирнов О. В., генеральный директор, компания `c-1` |
-| `petrova` | CLIENT | Петрова А. С., главный бухгалтер, компания `c-1` |
+| `smirnov` | CLIENT | Смирнов О. В., руководитель компании `c-1` |
+| `petrova` | CLIENT | Петрова А. С., представитель `c-1` по МЧД |
 | `ivanova` | BANK_OFFICER | Иванова Е. П., кредитный инспектор |
+
+Логин под каждую ветку «Схемы решения» и что должно быть в моках — [`SCENARIOS.md`](SCENARIOS.md).
 
 ## Makefile
 
@@ -81,20 +83,29 @@ internal/
     auth/               middleware сессии, RequireAuth, RequireRole
     idempotency/        middleware для заголовка Idempotency-Key
     events/             синхронная шина доменных событий
-  shared/               общие типы, интерфейсы между зонами (ports.go), события
+    module/             Deps — общая инфраструктура зоны (БД, шина, идемпотентность)
+  shared/               контракты между зонами: файл на зону-поставщика (catalog.go, company.go,
+                        origination.go, scoring.go, notifications.go), доменные типы, события
   identity/             вход, сессии, роли (реализована)
-  company/              минимальная таблица компаний (дальше расширяет зона)
-  catalog, origination, integrations, scoring,
-  underwriting, offer, servicing, support, notifications   заготовки
+  company/              таблица компаний (id ↔ ИНН) и заглушки Profile/Authorities
+  catalog, origination, integrations, scoring, underwriting,
+  offer, servicing, support, notifications, planner        заготовки
 ```
 
 ## Правила зон
 
 - Пакеты зон **не импортируют друг друга**. Связь — через интерфейсы и типы из `internal/shared`;
   реализации подставляются в `cmd/api/main.go`. Зоны могут импортировать `platform/*` и `shared`.
-- У зоны своя схема БД и миграции в `internal/<zone>/migrations/*.sql` (goose, `-- +goose Up`),
-  встраиваются через `//go:embed migrations/*.sql` и применяются в `New` вызовом `db.Migrate(ctx, db, "<zone>", migrations)`.
-  Образец — `internal/company`.
+- Модуль зоны устроен одинаково (образец — `internal/identity`):
+  - `New(deps module.Deps) *Module` — только сборка, без ввода-вывода;
+  - `Migrate(ctx)` — `db.Migrate(ctx, m.deps.DB, "<zone>", migrations)`; миграции в `internal/<zone>/migrations/*.sql`
+    (goose, `-- +goose Up`), встраиваются через `//go:embed migrations/*.sql`;
+  - `Wire(Ports)` — если зоне нужны другие зоны: `Ports` перечисляет нужные `shared`-интерфейсы;
+  - `Register(r httpx.Routes)`;
+  - аксессоры реализаций для других зон (`Products()`, `Applications()`…) — в `ports.go` зоны.
+- Пока у зоны-поставщика нет реализации, её аксессор отдаёт заглушку из `ports.go`. Реализовали — замените
+  заглушку, `cmd/api/main.go` менять не нужно.
+- Зона хранит то, что меняется в демо, — реализуйте `ResetDemo(ctx) error`: его вызовет `POST /admin/seed/reset`.
 - Роуты регистрируются в `Register(r httpx.Routes)`: `r.Public` — без сессии, `r.Client` — с сессией,
   `r.Bank` — только `BANK_OFFICER` (префикс `/bank`).
 - Ошибки в хендлерах — только через `httpx.Fail(c, err)`; прикладные ошибки создаются конструкторами
@@ -104,8 +115,7 @@ internal/
 - Идемпотентность вешается на конкретный роут:
 
   ```go
-  idem := idempotency.New(db)
-  r.Client.POST("/applications/:id/submit", idem.Middleware(), h.submit)
+  r.Client.POST("/applications/:id/submit", m.deps.Idem.Middleware(), m.submit)
   ```
 - Публикуйте доменные события (`events.Bus.Publish`) только после коммита транзакции.
 - Каждому хендлеру добавляйте swag-аннотации.
@@ -115,4 +125,8 @@ internal/
 | Разработчик | Зоны |
 |---|---|
 | A | identity, catalog, origination, offer, servicing, support, notifications |
-| B | company, integrations, scoring, underwriting, бинарь моков (`cmd/mocks`) |
+| B | company, integrations, scoring, underwriting, planner, бинарь моков (`cmd/mocks`) |
+
+Контракты между A и B — `internal/shared/*.go`: в комментарии к каждому интерфейсу указано, кто реализует и кто
+использует. Меняете общий контракт — договоритесь со вторым разработчиком и поменяйте все реализации и заглушки
+в том же коммите. Демо-данные согласуются через [`SCENARIOS.md`](SCENARIOS.md).

@@ -1,8 +1,7 @@
 // Package idempotency — middleware для команд с заголовком Idempotency-Key
 // (submit, sign, disburse, decision). Вешается на конкретные роуты, а не глобально:
 //
-//	idem := idempotency.New(db)
-//	r.Client.POST("/applications/:id/submit", idem.Middleware(), h.submit)
+//	r.Client.POST("/applications/:id/submit", m.deps.Idem.Middleware(), m.submit)
 package idempotency
 
 import (

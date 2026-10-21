@@ -19,11 +19,12 @@ type userRow struct {
 	PasswordHash string  `db:"password_hash"`
 	Role         string  `db:"role"`
 	CompanyID    *string `db:"company_id"`
+	PersonINN    *string `db:"person_inn"`
 	FullName     string  `db:"full_name"`
 	Position     string  `db:"position"`
 }
 
-const userCols = `u.id, u.login, u.password_hash, u.role, u.company_id, u.full_name, u.position`
+const userCols = `u.id, u.login, u.password_hash, u.role, u.company_id, u.person_inn, u.full_name, u.position`
 
 // FindByLogin возвращает пользователя или (nil, nil).
 func (s *Store) FindByLogin(ctx context.Context, login string) (*userRow, error) {

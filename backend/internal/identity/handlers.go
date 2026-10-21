@@ -33,10 +33,9 @@ type loginResponse struct {
 }
 
 type companyDTO struct {
-	ID           string `json:"id" example:"c-1"`
-	INN          string `json:"inn" example:"7712345678"`
-	Name         string `json:"name" example:"ООО «Северная пекарня»"`
-	IsBankClient bool   `json:"isBankClient" example:"true"`
+	ID   string `json:"id" example:"c-1"`
+	INN  string `json:"inn" example:"7712345678"`
+	Name string `json:"name" example:"ООО «Северная пекарня»"`
 }
 
 type meResponse struct {
@@ -129,13 +128,13 @@ func (m *Module) me(c *gin.Context) {
 	u := auth.UserFrom(c)
 	resp := meResponse{ID: u.ID, FullName: u.FullName, Position: u.Position, Role: u.Role}
 	if u.CompanyID != nil {
-		cv, err := m.companies.GetByID(c.Request.Context(), *u.CompanyID)
+		cv, err := m.ports.Companies.GetByID(c.Request.Context(), *u.CompanyID)
 		if err != nil {
 			httpx.Fail(c, err)
 			return
 		}
 		if cv != nil {
-			resp.Company = &companyDTO{ID: cv.ID, INN: cv.INN, Name: cv.Name, IsBankClient: cv.IsBankClient}
+			resp.Company = &companyDTO{ID: cv.ID, INN: cv.INN, Name: cv.Name}
 		}
 	}
 	httpx.JSON(c, http.StatusOK, resp)

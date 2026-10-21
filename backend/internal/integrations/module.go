@@ -1,17 +1,24 @@
-// Package integrations — зона Integrations: адаптеры к мокам внешних источников (ЕГРЮЛ, БКИ, ФНС и др.), снимки ответов. Владелец: разработчик B.
+// Package integrations — зона Integrations: адаптеры к мокам внешних источников (АБС банка, ЕГРЮЛ, БКИ, ФНС и др.), снимки ответов. Владелец: разработчик B.
+// Единственная зона, которая ходит в MOCKS_BASE_URL. Свои адаптеры отдаёт Company и Scoring через интерфейсы в shared.
 package integrations
 
 import (
 	"context"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 )
 
-type Module struct{ db *sqlx.DB }
+type Module struct {
+	deps         module.Deps
+	mocksBaseURL string
+}
 
-// New — заготовка. Когда появятся таблицы, добавьте migrations/ и вызов db.Migrate.
-func New(ctx context.Context, db *sqlx.DB) (*Module, error) { return &Module{db: db}, nil }
+func New(deps module.Deps, mocksBaseURL string) *Module {
+	return &Module{deps: deps, mocksBaseURL: mocksBaseURL}
+}
+
+// Migrate — миграций пока нет. Когда появятся таблицы, добавьте migrations/ и db.Migrate (образец — identity).
+func (m *Module) Migrate(ctx context.Context) error { return nil }
 
 func (m *Module) Register(r httpx.Routes) {}

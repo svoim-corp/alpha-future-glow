@@ -30,9 +30,6 @@ definitions:
       inn:
         example: "7712345678"
         type: string
-      isBankClient:
-        example: true
-        type: boolean
       name:
         example: ООО «Северная пекарня»
         type: string

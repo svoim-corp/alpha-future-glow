@@ -21,6 +21,7 @@ type User struct {
 	ID        string
 	Role      shared.Role
 	CompanyID *string
+	PersonINN *string // ИНН человека в данных банка; по нему определяются полномочия. У сотрудника банка — nil.
 	FullName  string
 	Position  string
 }

@@ -14,7 +14,6 @@ const (
 	CodeVersionConflict   = "VERSION_CONFLICT"
 	CodeBusinessRule      = "BUSINESS_RULE"
 	CodeUpstreamUnavail   = "UPSTREAM_UNAVAILABLE"
-	CodeStatementFormat   = "STATEMENT_FORMAT"
 	CodeInternal          = "INTERNAL"
 )
 

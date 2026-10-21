@@ -5,29 +5,36 @@ import (
 	"context"
 	"embed"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-type Module struct {
-	store     *Store
-	companies shared.Companies
+// Ports — данные других зон, нужные Identity.
+type Ports struct {
+	Companies shared.Companies // /auth/me
 }
 
-// New применяет миграции зоны. Данные компании читаются через shared.Companies.
-func New(ctx context.Context, d *sqlx.DB, companies shared.Companies) (*Module, error) {
-	if err := db.Migrate(ctx, d, "identity", migrations); err != nil {
-		return nil, err
-	}
-	return &Module{store: &Store{db: d}, companies: companies}, nil
+type Module struct {
+	deps  module.Deps
+	store *Store
+	ports Ports
 }
+
+func New(deps module.Deps) *Module {
+	return &Module{deps: deps, store: &Store{db: deps.DB}}
+}
+
+func (m *Module) Migrate(ctx context.Context) error {
+	return db.Migrate(ctx, m.deps.DB, "identity", migrations)
+}
+
+func (m *Module) Wire(p Ports) { m.ports = p }
 
 func (m *Module) Register(r httpx.Routes) {
 	r.Public.POST("/auth/login", m.login)
@@ -41,5 +48,5 @@ func (m *Module) Resolve(ctx context.Context, token string) (*auth.User, error) 
 	if err != nil || u == nil {
 		return nil, err
 	}
-	return &auth.User{ID: u.ID, Role: shared.Role(u.Role), CompanyID: u.CompanyID, FullName: u.FullName, Position: u.Position}, nil
+	return &auth.User{ID: u.ID, Role: shared.Role(u.Role), CompanyID: u.CompanyID, PersonINN: u.PersonINN, FullName: u.FullName, Position: u.Position}, nil
 }

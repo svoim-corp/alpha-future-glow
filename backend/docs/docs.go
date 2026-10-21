@@ -151,10 +151,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "7712345678"
                 },
-                "isBankClient": {
-                    "type": "boolean",
-                    "example": true
-                },
                 "name": {
                     "type": "string",
                     "example": "ООО «Северная пекарня»"

@@ -24,12 +24,14 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/notifications"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/offer"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/origination"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/planner"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/config"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/events"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/scoring"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/servicing"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
@@ -68,46 +70,61 @@ func run(log *slog.Logger) error {
 	}
 	defer conn.Close()
 
-	// Шина событий: зоны подписываются на события друг друга через неё.
-	// Пока подписчиков нет; передавайте bus в модули по мере надобности.
-	_ = events.New()
-
+	deps := module.Deps{DB: conn, Bus: events.New(), Idem: idempotency.New(conn)}
 	if err := idempotency.Migrate(ctx, conn); err != nil {
 		return err
 	}
-	// Экземпляр idempotency.New(conn) передавайте в модули, которым нужен .Middleware() на роутах-командах.
 
-	// Сборка модулей. Порядок важен для миграций: company -> identity -> остальные.
-	companyMod, err := company.New(ctx, conn)
-	if err != nil {
-		return err
-	}
-	identityMod, err := identity.New(ctx, conn, companyMod.Companies())
-	if err != nil {
-		return err
-	}
+	// Зоны. Владельцы — в README.md; каждая зона меняет только свои строки ниже.
+	companyMod := company.New(deps)
+	identityMod := identity.New(deps)
+	catalogMod := catalog.New(deps)
+	originationMod := origination.New(deps)
+	integrationsMod := integrations.New(deps, cfg.MocksBaseURL)
+	scoringMod := scoring.New(deps)
+	underwritingMod := underwriting.New(deps)
+	offerMod := offer.New(deps)
+	servicingMod := servicing.New(deps)
+	supportMod := support.New(deps)
+	notificationsMod := notifications.New(deps)
+	plannerMod := planner.New(deps)
 
-	// Заготовки остальных зон: подключайте зависимости (shared-интерфейсы, bus) в New по мере надобности.
-	stubs := []interface{ Register(httpx.Routes) }{}
-	add := func(m interface{ Register(httpx.Routes) }, err error) error {
-		if err != nil {
-			return err
-		}
-		stubs = append(stubs, m)
-		return nil
+	// Связи между зонами (shared-интерфейсы). Пока у поставщика нет реализации, он отдаёт заглушку из своего ports.go.
+	identityMod.Wire(identity.Ports{Companies: companyMod.Companies()})
+	originationMod.Wire(origination.Ports{
+		Products:    catalogMod.Products(),
+		Companies:   companyMod.Companies(),
+		Authorities: companyMod.Authorities(),
+		Prelims:     scoringMod.Prelims(),
+	})
+	scoringMod.Wire(scoring.Ports{
+		Applications: originationMod.Applications(),
+		Products:     catalogMod.Products(),
+		Companies:    companyMod.Companies(),
+	})
+	underwritingMod.Wire(underwriting.Ports{
+		Applications: originationMod.Applications(),
+		Companies:    companyMod.Companies(),
+		Products:     catalogMod.Products(),
+		Notifier:     notificationsMod.Notifier(),
+	})
+	offerMod.Wire(offer.Ports{
+		Applications: originationMod.Applications(),
+		Decisions:    scoringMod.Decisions(),
+		Companies:    companyMod.Companies(),
+	})
+	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier()})
+	plannerMod.Wire(planner.Ports{
+		Products: catalogMod.Products(),
+		Notifier: notificationsMod.Notifier(),
+	})
+
+	zones := []zone{
+		companyMod, identityMod, catalogMod, originationMod, integrationsMod, scoringMod,
+		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod,
 	}
-	for _, f := range []func() error{
-		func() error { return add(catalog.New(ctx, conn)) },
-		func() error { return add(origination.New(ctx, conn)) },
-		func() error { return add(integrations.New(ctx, conn)) },
-		func() error { return add(scoring.New(ctx, conn)) },
-		func() error { return add(underwriting.New(ctx, conn)) },
-		func() error { return add(offer.New(ctx, conn)) },
-		func() error { return add(servicing.New(ctx, conn)) },
-		func() error { return add(support.New(ctx, conn)) },
-		func() error { return add(notifications.New(ctx, conn)) },
-	} {
-		if err := f(); err != nil {
+	for _, z := range zones {
+		if err := z.Migrate(ctx); err != nil {
 			return err
 		}
 	}
@@ -124,13 +141,11 @@ func run(log *slog.Logger) error {
 		Client: api.Group("", auth.RequireAuth()),
 		Bank:   api.Group("/bank", auth.RequireAuth(), auth.RequireRole(shared.RoleBankOfficer)),
 	}
-	identityMod.Register(routes)
-	companyMod.Register(routes)
-	for _, m := range stubs {
-		m.Register(routes)
+	for _, z := range zones {
+		z.Register(routes)
 	}
 
-	registerTech(r, cfg, conn)
+	registerTech(r, cfg, conn, zones)
 
 	srv := &http.Server{
 		Addr: cfg.HTTPAddr, Handler: r,
@@ -155,8 +170,20 @@ func run(log *slog.Logger) error {
 	return nil
 }
 
+// zone — то, что cmd/api требует от каждой доменной зоны.
+type zone interface {
+	Migrate(ctx context.Context) error
+	Register(r httpx.Routes)
+}
+
+// demoResetter — зона, у которой есть демо-данные для POST /admin/seed/reset.
+// Реализуйте ResetDemo в зоне, если она хранит то, что меняется в ходе демо (заявки, решения, кредиты…).
+type demoResetter interface {
+	ResetDemo(ctx context.Context) error
+}
+
 // registerTech — технические эндпоинты вне /api/v1 (API_SPEC.md, раздел 4.13).
-func registerTech(r *gin.Engine, cfg config.Config, conn *sqlx.DB) {
+func registerTech(r *gin.Engine, cfg config.Config, conn *sqlx.DB, zones []zone) {
 	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "UP"}) })
 
 	mocksClient := &http.Client{Timeout: 2 * time.Second}
@@ -195,7 +222,16 @@ func registerTech(r *gin.Engine, cfg config.Config, conn *sqlx.DB) {
 	})
 
 	if cfg.IsDemo() {
-		// TODO: каждая зона добавит свой сброс демо-данных.
-		r.POST("/admin/seed/reset", func(c *gin.Context) { c.Status(http.StatusNoContent) })
+		r.POST("/admin/seed/reset", func(c *gin.Context) {
+			for _, z := range zones {
+				if d, ok := z.(demoResetter); ok {
+					if err := d.ResetDemo(c.Request.Context()); err != nil {
+						httpx.Fail(c, err)
+						return
+					}
+				}
+			}
+			c.Status(http.StatusNoContent)
+		})
 	}
 }

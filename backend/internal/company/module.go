@@ -1,31 +1,30 @@
-// Package company — зона Company: профиль компании/ИП. Владелец: разработчик B.
-// Сейчас только минимальная таблица для /auth/me; зона расширит её сама.
+// Package company — зона Company: профиль клиента банка из АБС и реестров, полномочия заявителя. Владелец: разработчик B.
+// Сейчас — таблица компаний (связь id ↔ ИНН) для /auth/me и заглушки Profile и Authorities (ports.go).
 package company
 
 import (
 	"context"
 	"embed"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
-	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 )
 
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-type Module struct{ store *Store }
+type Module struct {
+	deps  module.Deps
+	store *Store
+}
 
-func New(ctx context.Context, d *sqlx.DB) (*Module, error) {
-	if err := db.Migrate(ctx, d, "company", migrations); err != nil {
-		return nil, err
-	}
-	return &Module{store: &Store{db: d}}, nil
+func New(deps module.Deps) *Module {
+	return &Module{deps: deps, store: &Store{db: deps.DB}}
+}
+
+func (m *Module) Migrate(ctx context.Context) error {
+	return db.Migrate(ctx, m.deps.DB, "company", migrations)
 }
 
 func (m *Module) Register(r httpx.Routes) {}
-
-// Companies отдаёт реализацию shared.Companies другим зонам.
-func (m *Module) Companies() shared.Companies { return m.store }
