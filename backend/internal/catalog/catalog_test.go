@@ -165,6 +165,9 @@ func TestProductsPort(t *testing.T) {
 		p.GraceMaxMonths != 6 || p.MinBusinessAgeMonths != 12 || !p.GuarantorForLLC || len(p.Goals) != 3 {
 		t.Fatalf("INVEST: %+v", p)
 	}
+	if p, _ := m.Products().Product(context.Background(), "OVERDRAFT"); p == nil || !p.Revolving || p.TermMin != 12 {
+		t.Fatalf("овердрафт — возобновляемый лимит на 12 мес.: %+v", p)
+	}
 	if p, err := m.Products().Product(context.Background(), "NOPE"); err != nil || p != nil {
 		t.Fatalf("неизвестный продукт — (nil, nil): %+v %v", p, err)
 	}

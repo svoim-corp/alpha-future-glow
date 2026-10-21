@@ -213,6 +213,13 @@ func decode[T any](t *testing.T, w *httptest.ResponseRecorder) T {
 	return v
 }
 
+// decodeBody — разбор без *testing.T для хелперов, которые сами возвращают результат проверки.
+func decodeBody[T any](b []byte) T {
+	var v T
+	_ = json.Unmarshal(b, &v)
+	return v
+}
+
 // draft создаёт черновик WORKING на 1 500 000 ₽ и 24 мес. от имени user.
 func (e *env) draft(t *testing.T, user string) createResponse {
 	t.Helper()

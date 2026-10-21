@@ -19,6 +19,7 @@ type ProductView struct {
 	GraceMaxMonths       int // 0 — отсрочки нет
 	MinBusinessAgeMonths int
 	GuarantorForLLC      bool
+	Revolving            bool // возобновляемый лимит (овердрафт): у заявки задаётся overdraftLimit
 }
 
 // ProductMatcher — подбор продуктов по задаче клиента. Реализует: разработчик A (Catalog). Использует: Planner (B).

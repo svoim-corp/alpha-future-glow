@@ -111,3 +111,36 @@
 - `stage2.guarantor` — `null`, пока поручитель не выбран; `fullName` — из кандидатов банка.
 - `locks.paramsLocked` — параметры менять нельзя (заявка не черновик); `locks.stage2Available` — открыт этап 2.
 - `consents.bki` — только если согласие дано.
+
+### `PATCH /applications/{id}`
+
+Реализовано. Автосохранение черновика: передаются только изменённые поля. Работает только в `DRAFT`.
+
+Принимаются только `params` (`amount`, `term`, `goal`, `purposeText`, `graceMonths`, `overdraftLimit`) и
+`stage2.guarantor.personId`. Любое другое поле, в том числе данные банка (`company`, `authority`,
+`stage2.actualAddress`, `stage2.turnover`), — `400 VALIDATION_ERROR` с именем поля: такие данные клиент обновляет
+в банке, а не в заявке. Продукт черновика не меняется: для другого продукта создаётся новый черновик.
+
+Заголовок: `If-Match: 7`. Запрос:
+```json
+{
+  "params": { "amount": 1200000, "purposeText": "Закупка муки" },
+  "stage2": { "guarantor": { "personId": "p-1" } }
+}
+```
+Ответ `200`:
+```json
+{ "version": 8, "savedAt": "2026-10-20T10:13:00Z", "prelimInvalidated": true }
+```
+
+- `null` или отсутствие поля — не менять. Снять необязательный параметр: `purposeText: ""`, `graceMonths: 0`,
+  `overdraftLimit: 0`.
+- Рамки продукта — как при создании. Дополнительно: отсрочка только у продукта с `graceMaxMonths > 0`, не длиннее
+  его и короче срока; `overdraftLimit` — только у овердрафта и в рамках суммы продукта. Нарушение —
+  `422 BUSINESS_RULE`.
+- Поручитель — только у ООО и только из `guarantorCandidates` данных банка; иначе — `400 VALIDATION_ERROR` по полю
+  `stage2.guarantor.personId`.
+- `prelimInvalidated: true` — результат этапа 1 посчитан для других суммы, срока или продукта: этап 1 нужно пройти
+  заново.
+- Ошибки: `400` без `If-Match`, `412 VERSION_CONFLICT` — версия устарела, `409 INVALID_TRANSITION` — заявка
+  не черновик.

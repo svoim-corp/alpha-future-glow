@@ -203,3 +203,88 @@ func (m *Module) get(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, toApplicationDTO(d))
 }
+
+type patchParamsDTO struct {
+	Amount         *int64  `json:"amount" binding:"omitempty,gt=0" example:"1200000"`
+	Term           *int    `json:"term" binding:"omitempty,gt=0" example:"24"`
+	Goal           *string `json:"goal" example:"WORKING_CAPITAL"`
+	PurposeText    *string `json:"purposeText" binding:"omitempty,max=1000" example:"Закупка муки"` // "" — убрать
+	GraceMonths    *int    `json:"graceMonths" binding:"omitempty,gte=0" example:"6"`               // 0 — без отсрочки
+	OverdraftLimit *int64  `json:"overdraftLimit" binding:"omitempty,gte=0" example:"500000"`       // 0 — убрать
+}
+
+type patchGuarantorDTO struct {
+	PersonID string `json:"personId" binding:"required" example:"p-1"`
+}
+
+type patchStage2DTO struct {
+	Guarantor *patchGuarantorDTO `json:"guarantor"`
+}
+
+// patchRequest — только то, что выбирает клиент. Данных банка здесь нет: попытка их передать — 400.
+type patchRequest struct {
+	Params *patchParamsDTO `json:"params"`
+	Stage2 *patchStage2DTO `json:"stage2"`
+}
+
+type patchResponse struct {
+	Version           int       `json:"version" example:"8"`
+	SavedAt           time.Time `json:"savedAt" example:"2026-10-20T10:13:00Z"`
+	PrelimInvalidated bool      `json:"prelimInvalidated" example:"true"`
+}
+
+func (r patchRequest) patch() draftPatch {
+	var p draftPatch
+	if r.Params != nil {
+		p = draftPatch{
+			Amount: r.Params.Amount, Term: r.Params.Term, Goal: r.Params.Goal, PurposeText: r.Params.PurposeText,
+			GraceMonths: r.Params.GraceMonths, OverdraftLimit: r.Params.OverdraftLimit,
+		}
+	}
+	if r.Stage2 != nil && r.Stage2.Guarantor != nil {
+		p.GuarantorPersonID = &r.Stage2.Guarantor.PersonID
+	}
+	return p
+}
+
+// patch godoc
+//
+//	@Summary		Автосохранение черновика
+//	@Description	Передаются только изменённые поля: params и stage2.guarantor.personId. Данные банка не меняются — 400.
+//	@Tags			applications
+//	@Accept			json
+//	@Produce		json
+//	@Param			id			path		string			true	"ID заявки"
+//	@Param			If-Match	header		string			true	"Версия заявки"
+//	@Param			body		body		patchRequest	true	"Изменённые поля"
+//	@Success		200			{object}	patchResponse
+//	@Failure		400			{object}	httpx.ErrorBody
+//	@Failure		403			{object}	httpx.ErrorBody
+//	@Failure		404			{object}	httpx.ErrorBody
+//	@Failure		409			{object}	httpx.ErrorBody
+//	@Failure		412			{object}	httpx.ErrorBody
+//	@Failure		422			{object}	httpx.ErrorBody
+//	@Router			/applications/{id} [patch]
+func (m *Module) patch(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	version, err := httpx.IfMatch(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	var req patchRequest
+	if err := httpx.BindStrict(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	a, invalidated, err := m.patchDraft(c.Request.Context(), c.Param("id"), who.companyID, version, req.patch())
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, patchResponse{Version: a.Version, SavedAt: a.UpdatedAt, PrelimInvalidated: invalidated})
+}

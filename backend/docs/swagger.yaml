@@ -634,6 +634,65 @@ definitions:
         example: 24
         type: integer
     type: object
+  origination.patchGuarantorDTO:
+    properties:
+      personId:
+        example: p-1
+        type: string
+    required:
+    - personId
+    type: object
+  origination.patchParamsDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      goal:
+        example: WORKING_CAPITAL
+        type: string
+      graceMonths:
+        description: 0 — без отсрочки
+        example: 6
+        minimum: 0
+        type: integer
+      overdraftLimit:
+        description: 0 — убрать
+        example: 500000
+        minimum: 0
+        type: integer
+      purposeText:
+        description: '"" — убрать'
+        example: Закупка муки
+        maxLength: 1000
+        type: string
+      term:
+        example: 24
+        type: integer
+    type: object
+  origination.patchRequest:
+    properties:
+      params:
+        $ref: '#/definitions/origination.patchParamsDTO'
+      stage2:
+        $ref: '#/definitions/origination.patchStage2DTO'
+    type: object
+  origination.patchResponse:
+    properties:
+      prelimInvalidated:
+        example: true
+        type: boolean
+      savedAt:
+        example: "2026-10-20T10:13:00Z"
+        type: string
+      version:
+        example: 8
+        type: integer
+    type: object
+  origination.patchStage2DTO:
+    properties:
+      guarantor:
+        $ref: '#/definitions/origination.patchGuarantorDTO'
+    type: object
   origination.prelimDTO:
     properties:
       amountFits:
@@ -1777,6 +1836,62 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Заявка для мастера и карточки
+      tags:
+      - applications
+    patch:
+      consumes:
+      - application/json
+      description: 'Передаются только изменённые поля: params и stage2.guarantor.personId.
+        Данные банка не меняются — 400.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия заявки
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Изменённые поля
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.patchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.patchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Автосохранение черновика
       tags:
       - applications
   /applications/{id}/company-profile:

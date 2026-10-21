@@ -37,6 +37,6 @@ func (r productRow) view() shared.ProductView {
 		Code: r.Code, Name: r.Name, Goals: r.Goals.V,
 		AmountMin: r.AmountMin, AmountMax: r.AmountMax, TermMin: r.TermMin, TermMax: r.TermMax,
 		RateMin: r.RateMin, RateMax: r.RateMax, GraceMaxMonths: r.GraceMaxMonths,
-		MinBusinessAgeMonths: r.MinBusinessAgeMonths, GuarantorForLLC: r.GuarantorForLLC,
+		MinBusinessAgeMonths: r.MinBusinessAgeMonths, GuarantorForLLC: r.GuarantorForLLC, Revolving: r.Revolving,
 	}
 }

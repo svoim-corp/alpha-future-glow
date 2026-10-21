@@ -169,6 +169,88 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "Передаются только изменённые поля: params и stage2.guarantor.personId. Данные банка не меняются — 400.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Автосохранение черновика",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Версия заявки",
+                        "name": "If-Match",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Изменённые поля",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/origination.patchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/origination.patchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "Precondition Failed",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
             }
         },
         "/applications/{id}/company-profile": {
@@ -2569,6 +2651,89 @@
                 "term": {
                     "type": "integer",
                     "example": 24
+                }
+            }
+        },
+        "origination.patchGuarantorDTO": {
+            "type": "object",
+            "required": [
+                "personId"
+            ],
+            "properties": {
+                "personId": {
+                    "type": "string",
+                    "example": "p-1"
+                }
+            }
+        },
+        "origination.patchParamsDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "graceMonths": {
+                    "description": "0 — без отсрочки",
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 6
+                },
+                "overdraftLimit": {
+                    "description": "0 — убрать",
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 500000
+                },
+                "purposeText": {
+                    "description": "\"\" — убрать",
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Закупка муки"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "origination.patchRequest": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/origination.patchParamsDTO"
+                },
+                "stage2": {
+                    "$ref": "#/definitions/origination.patchStage2DTO"
+                }
+            }
+        },
+        "origination.patchResponse": {
+            "type": "object",
+            "properties": {
+                "prelimInvalidated": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "savedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T10:13:00Z"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 8
+                }
+            }
+        },
+        "origination.patchStage2DTO": {
+            "type": "object",
+            "properties": {
+                "guarantor": {
+                    "$ref": "#/definitions/origination.patchGuarantorDTO"
                 }
             }
         },

@@ -40,6 +40,8 @@ func TestCheckParams(t *testing.T) {
 		{"срок короче", params{Amount: 1_500_000, Term: 2}, httpx.CodeBusinessRule},
 		{"срок длиннее", params{Amount: 1_500_000, Term: 37}, httpx.CodeBusinessRule},
 		{"чужая цель", params{Amount: 1_500_000, Term: 24, Goal: ptr("EQUIPMENT")}, httpx.CodeBusinessRule},
+		{"отсрочка у продукта без отсрочки", params{Amount: 1_500_000, Term: 24, GraceMonths: ptr(3)}, httpx.CodeBusinessRule},
+		{"лимит овердрафта у кредита", params{Amount: 1_500_000, Term: 24, OverdraftLimit: ptr[int64](500_000)}, httpx.CodeBusinessRule},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -66,5 +68,31 @@ func TestDefaults(t *testing.T) {
 	}
 	if g := defaultGoal(shared.ProductView{Goals: []string{"A", "B"}}, nil); g != nil {
 		t.Fatalf("целей несколько — не угадываем: %v", *g)
+	}
+}
+
+func TestCheckOptions(t *testing.T) {
+	invest := shared.ProductView{Name: "Инвестиционный кредит", AmountMin: 1_000_000, AmountMax: 30_000_000, TermMin: 12, TermMax: 84, GraceMaxMonths: 6}
+	overdraft := shared.ProductView{Name: "Овердрафт", AmountMin: 100_000, AmountMax: 5_000_000, TermMin: 12, TermMax: 12, Revolving: true}
+	tests := []struct {
+		name string
+		p    shared.ProductView
+		prm  params
+		want string
+	}{
+		{"отсрочка в рамках", invest, params{Term: 60, GraceMonths: ptr(6)}, ""},
+		{"отсрочка длиннее разрешённой", invest, params{Term: 60, GraceMonths: ptr(7)}, httpx.CodeBusinessRule},
+		{"отсрочка не короче срока", invest, params{Term: 6, GraceMonths: ptr(6)}, httpx.CodeBusinessRule},
+		{"лимит овердрафта в рамках", overdraft, params{Term: 12, OverdraftLimit: ptr[int64](500_000)}, ""},
+		{"лимит овердрафта больше максимума", overdraft, params{Term: 12, OverdraftLimit: ptr[int64](6_000_000)}, httpx.CodeBusinessRule},
+		{"лимит овердрафта меньше минимума", overdraft, params{Term: 12, OverdraftLimit: ptr[int64](50_000)}, httpx.CodeBusinessRule},
+		{"без опций", working, params{Term: 24}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := code(checkOptions(tt.p, tt.prm)); got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

@@ -70,6 +70,25 @@ func (s *Store) Application(ctx context.Context, id string) (*appRow, error) {
 	return &a, nil
 }
 
+// UpdateDraft сохраняет параметры черновика и увеличивает версию; false — версия уже другая или это не черновик.
+// В a записываются новые версия и время сохранения.
+func (s *Store) UpdateDraft(ctx context.Context, a *appRow, version int, at time.Time) (bool, error) {
+	err := s.db.GetContext(ctx, &a.Version, `
+		UPDATE origination.applications SET amount = $3, term = $4, goal = $5, purpose_text = $6, grace_months = $7,
+			overdraft_limit = $8, guarantor_person_id = $9, version = version + 1, updated_at = $10
+		WHERE id = $1 AND version = $2 AND status = 'DRAFT'
+		RETURNING version`,
+		a.ID, version, a.Amount, a.Term, a.Goal, a.PurposeText, a.GraceMonths, a.OverdraftLimit, a.GuarantorPersonID, at)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	a.UpdatedAt = at
+	return true, nil
+}
+
 // CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.
 func (s *Store) CompanyApplications(ctx context.Context, companyID string, limit, offset int) ([]appRow, int, error) {
 	var total int
