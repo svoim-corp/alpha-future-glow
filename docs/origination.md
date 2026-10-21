@@ -38,7 +38,7 @@
 | `APPROVED`, `COUNTER_OFFER` | `CLOSED` | клиент отказался от оффера | `OFFER_DECLINE` |
 | `SIGNING` | `ISSUED` | выдача | `DISBURSE` |
 
-`REJECTED`, `ISSUED`, `CLOSED` — конечные. Любой другой переход — `409 INVALID_TRANSITION` с текстом «Нельзя
+`REJECTED`, `ISSUED`, `CLOSED` — конечные. Диаграмма — [application-states.md](application-states.md). Любой другой переход — `409 INVALID_TRANSITION` с текстом «Нельзя
 перевести заявку из статуса «…» в «…»». Стоп-отказ этапа 1 — результат предварительного решения внутри `DRAFT`,
 а не статус.
 
