@@ -1447,6 +1447,72 @@ definitions:
         example: 24
         type: integer
     type: object
+  servicing.loanDetailsDTO:
+    properties:
+      applicationId:
+        example: a-1031
+        type: string
+      balance:
+        example: 1200000
+        type: integer
+      contractNumber:
+        example: КД-2026-0055
+        type: string
+      id:
+        example: l-55
+        type: string
+      issuedAt:
+        example: "2026-10-20"
+        type: string
+      payments:
+        items:
+          $ref: '#/definitions/servicing.paymentDTO'
+        type: array
+      product:
+        $ref: '#/definitions/servicing.productRefDTO'
+      status:
+        example: ACTIVE
+        type: string
+      terms:
+        $ref: '#/definitions/servicing.loanTermsDTO'
+    type: object
+  servicing.loanTermsDTO:
+    properties:
+      amount:
+        example: 1200000
+        type: integer
+      graceMonths:
+        example: 0
+        type: integer
+      monthlyPayment:
+        example: 61958
+        type: integer
+      rate:
+        example: 21.5
+        type: number
+      term:
+        example: 24
+        type: integer
+    type: object
+  servicing.paymentDTO:
+    properties:
+      date:
+        example: "2026-11-20"
+        type: string
+      interest:
+        example: 21500
+        type: integer
+      principal:
+        example: 40458
+        type: integer
+      status:
+        description: PLANNED, PAID, OVERDUE
+        example: PLANNED
+        type: string
+      total:
+        example: 61958
+        type: integer
+    type: object
   servicing.paymentRefDTO:
     properties:
       amount:
@@ -3612,6 +3678,32 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Мои кредиты
+      tags:
+      - loans
+  /loans/{id}:
+    get:
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.loanDetailsDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: 'Кредит: условия и график платежей'
       tags:
       - loans
   /loans/summary:

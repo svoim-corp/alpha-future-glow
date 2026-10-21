@@ -144,3 +144,79 @@ func (m *Module) list(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, out)
 }
+
+type loanTermsDTO struct {
+	Amount         int64   `json:"amount" example:"1200000"`
+	Term           int     `json:"term" example:"24"`
+	Rate           float64 `json:"rate" example:"21.5"`
+	GraceMonths    int     `json:"graceMonths" example:"0"`
+	MonthlyPayment int64   `json:"monthlyPayment" example:"61958"`
+}
+
+type paymentDTO struct {
+	Date      string `json:"date" example:"2026-11-20"`
+	Principal int64  `json:"principal" example:"40458"`
+	Interest  int64  `json:"interest" example:"21500"`
+	Total     int64  `json:"total" example:"61958"`
+	Status    string `json:"status" example:"PLANNED"` // PLANNED, PAID, OVERDUE
+}
+
+type loanDetailsDTO struct {
+	ID             string        `json:"id" example:"l-55"`
+	ApplicationID  string        `json:"applicationId" example:"a-1031"`
+	ContractNumber string        `json:"contractNumber" example:"КД-2026-0055"`
+	Product        productRefDTO `json:"product"`
+	Balance        int64         `json:"balance" example:"1200000"`
+	IssuedAt       string        `json:"issuedAt" example:"2026-10-20"`
+	Status         string        `json:"status" example:"ACTIVE"`
+	Terms          loanTermsDTO  `json:"terms"`
+	Payments       []paymentDTO  `json:"payments"`
+}
+
+// get godoc
+//
+//	@Summary		Кредит: условия и график платежей
+//	@Tags			loans
+//	@Produce		json
+//	@Param			id	path		string	true	"ID кредита"
+//	@Success		200	{object}	loanDetailsDTO
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Router			/loans/{id} [get]
+func (m *Module) get(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	l, err := m.store.Loan(ctx, c.Param("id"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	// Чужой кредит — 404: существование кредитов других компаний не раскрывается.
+	if l == nil || l.CompanyID != company {
+		httpx.Fail(c, httpx.NotFound("Кредит не найден"))
+		return
+	}
+	schedule, err := m.store.LoanPayments(ctx, l.ID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	today := m.today()
+	resp := loanDetailsDTO{
+		ID: l.ID, ApplicationID: l.AppID, ContractNumber: l.ContractNumber,
+		Product: productRefDTO{Code: l.ProductCode, Name: l.ProductName}, Balance: stateOf(l.Amount, schedule, today).balance,
+		IssuedAt: l.IssuedAt.UTC().Format(dateLayout), Status: l.Status,
+		Terms:    loanTermsDTO{Amount: l.Amount, Term: l.Term, Rate: l.Rate, GraceMonths: l.GraceMonths, MonthlyPayment: l.MonthlyPayment},
+		Payments: make([]paymentDTO, len(schedule)),
+	}
+	for i, p := range schedule {
+		resp.Payments[i] = paymentDTO{
+			Date: p.DueDate.Format(dateLayout), Principal: p.Principal, Interest: p.Interest, Total: p.Total, Status: paymentStatus(p, today),
+		}
+	}
+	httpx.JSON(c, http.StatusOK, resp)
+}

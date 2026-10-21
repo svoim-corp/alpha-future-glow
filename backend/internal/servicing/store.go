@@ -98,6 +98,28 @@ func (s *Store) CompanyPayments(ctx context.Context, companyID string) ([]paymen
 	return out, err
 }
 
+// Loan — кредит по id; (nil, nil) — кредита нет.
+func (s *Store) Loan(ctx context.Context, id string) (*loanRow, error) {
+	var l loanRow
+	err := s.db.GetContext(ctx, &l, `SELECT `+loanCols+` FROM servicing.loans WHERE id = $1`, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
+}
+
+// LoanPayments — график кредита по порядку.
+func (s *Store) LoanPayments(ctx context.Context, loanID string) ([]paymentRow, error) {
+	var out []paymentRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT `+paymentCols+` FROM servicing.payments p JOIN servicing.loans l ON l.id = p.loan_id
+		WHERE p.loan_id = $1 ORDER BY p.n`, loanID)
+	return out, err
+}
+
 // ActiveLoans — число действующих кредитов компании.
 func (s *Store) ActiveLoans(ctx context.Context, companyID string) (int, error) {
 	var n int

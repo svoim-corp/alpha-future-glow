@@ -2148,6 +2148,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/loans/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Кредит: условия и график платежей",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.loanDetailsDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/notifications": {
             "get": {
                 "description": "Последние 50 уведомлений пользователя, новые первыми. unread=true — только непрочитанные.",
@@ -4818,6 +4858,98 @@ const docTemplate = `{
                 "term": {
                     "type": "integer",
                     "example": 24
+                }
+            }
+        },
+        "servicing.loanDetailsDTO": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "string",
+                    "example": "a-1031"
+                },
+                "balance": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "contractNumber": {
+                    "type": "string",
+                    "example": "КД-2026-0055"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "issuedAt": {
+                    "type": "string",
+                    "example": "2026-10-20"
+                },
+                "payments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/servicing.paymentDTO"
+                    }
+                },
+                "product": {
+                    "$ref": "#/definitions/servicing.productRefDTO"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "terms": {
+                    "$ref": "#/definitions/servicing.loanTermsDTO"
+                }
+            }
+        },
+        "servicing.loanTermsDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "graceMonths": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "monthlyPayment": {
+                    "type": "integer",
+                    "example": 61958
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 21.5
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "servicing.paymentDTO": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2026-11-20"
+                },
+                "interest": {
+                    "type": "integer",
+                    "example": 21500
+                },
+                "principal": {
+                    "type": "integer",
+                    "example": 40458
+                },
+                "status": {
+                    "description": "PLANNED, PAID, OVERDUE",
+                    "type": "string",
+                    "example": "PLANNED"
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 61958
                 }
             }
         },
