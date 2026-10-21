@@ -4,8 +4,8 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
-	"strconv"
 
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/finance"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
@@ -43,28 +43,15 @@ func mismatch(p productRow, goal, goalName string, amount int64, term int) strin
 	case !slices.Contains(p.Goals.V, goal):
 		return "Не подходит для цели «" + goalName + "»"
 	case amount < p.AmountMin:
-		return "Сумма меньше " + rub(p.AmountMin)
+		return "Сумма меньше " + finance.Rub(p.AmountMin)
 	case amount > p.AmountMax:
-		return "Сумма больше " + rub(p.AmountMax)
+		return "Сумма больше " + finance.Rub(p.AmountMax)
 	case term > 0 && p.TermMin == p.TermMax && term != p.TermMin:
 		return fmt.Sprintf("Срок только %d мес.", p.TermMin)
 	case term > 0 && (term < p.TermMin || term > p.TermMax):
 		return fmt.Sprintf("Срок от %d до %d мес.", p.TermMin, p.TermMax)
 	}
 	return ""
-}
-
-// rub — «1 000 000 ₽»: сумма для текста клиенту, разряды через пробел.
-func rub(n int64) string {
-	s := strconv.FormatInt(n, 10)
-	var out []byte
-	for i := range len(s) {
-		if i > 0 && (len(s)-i)%3 == 0 {
-			out = append(out, ' ')
-		}
-		out = append(out, s[i])
-	}
-	return string(out) + " ₽"
 }
 
 // suitable — продукты с целью goal, в рамки которых укладывается amount. «Лучший» для клиента — с меньшей минимальной

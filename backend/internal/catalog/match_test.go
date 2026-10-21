@@ -71,14 +71,6 @@ func TestMatchOrder(t *testing.T) {
 	}
 }
 
-func TestRub(t *testing.T) {
-	for in, want := range map[int64]string{0: "0 ₽", 999: "999 ₽", 1000: "1 000 ₽", 300_000: "300 000 ₽", 10_000_000: "10 000 000 ₽"} {
-		if got := rub(in); got != want {
-			t.Errorf("rub(%d) = %q, want %q", in, got, want)
-		}
-	}
-}
-
 func TestSuitable(t *testing.T) {
 	line := slices.Clone(testLine)
 	line[0].RateMin, line[1].RateMin, line[2].RateMin, line[3].RateMin = 20, 18, 24, 22
