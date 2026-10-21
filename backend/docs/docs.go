@@ -2129,6 +2129,50 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/support/faq": {
+            "get": {
+                "description": "Вопросы по шагу пути клиента. Без step — по всем шагам.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Частые вопросы",
+                "parameters": [
+                    {
+                        "enum": [
+                            "PRODUCT",
+                            "APPLICATION",
+                            "DOCUMENTS",
+                            "STATUS",
+                            "DECISION"
+                        ],
+                        "type": "string",
+                        "description": "Шаг пути",
+                        "name": "step",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/support.faqDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4179,6 +4223,27 @@ const docTemplate = `{
                 "StatusIssued",
                 "StatusClosed"
             ]
+        },
+        "support.faqDTO": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "example": "Нет. Данные о компании и оборотах банк берёт из ваших счетов и реестров."
+                },
+                "id": {
+                    "type": "string",
+                    "example": "f-4"
+                },
+                "question": {
+                    "type": "string",
+                    "example": "Нужно ли загружать документы или выписки?"
+                },
+                "step": {
+                    "type": "string",
+                    "example": "APPLICATION"
+                }
+            }
         },
         "underwriting.answerBody": {
             "type": "object",

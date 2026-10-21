@@ -1422,6 +1422,21 @@ definitions:
     - StatusSigning
     - StatusIssued
     - StatusClosed
+  support.faqDTO:
+    properties:
+      answer:
+        example: Нет. Данные о компании и оборотах банк берёт из ваших счетов и реестров.
+        type: string
+      id:
+        example: f-4
+        type: string
+      question:
+        example: Нужно ли загружать документы или выписки?
+        type: string
+      step:
+        example: APPLICATION
+        type: string
+    type: object
   underwriting.answerBody:
     properties:
       answers:
@@ -3321,4 +3336,34 @@ paths:
       summary: Подбор продукта по задаче
       tags:
       - catalog
+  /support/faq:
+    get:
+      description: Вопросы по шагу пути клиента. Без step — по всем шагам.
+      parameters:
+      - description: Шаг пути
+        enum:
+        - PRODUCT
+        - APPLICATION
+        - DOCUMENTS
+        - STATUS
+        - DECISION
+        in: query
+        name: step
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/support.faqDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Частые вопросы
+      tags:
+      - support
 swagger: "2.0"
