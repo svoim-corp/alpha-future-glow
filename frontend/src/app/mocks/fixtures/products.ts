@@ -8,17 +8,6 @@ export const goalsFixture: Goal[] = [
 
 export const productsFixture: ProductSummary[] = [
 	{
-		code: 'EXPRESS',
-		name: 'Экспресс-кредит',
-		shortText: 'Небольшая сумма на любые цели бизнеса',
-		goals: ['WORKING_CAPITAL', 'EQUIPMENT'],
-		amount: { min: 100000, max: 1000000 },
-		term: { min: 3, max: 24 },
-		rate: { min: 24, max: 30 },
-		noStatementThreshold: 1000000,
-		bankClientsOnly: false,
-	},
-	{
 		code: 'WORKING',
 		name: 'Оборотный кредит',
 		shortText: 'Закупки, зарплата, налоги, аренда',
@@ -27,6 +16,28 @@ export const productsFixture: ProductSummary[] = [
 		term: { min: 3, max: 36 },
 		rate: { min: 20, max: 28 },
 		noStatementThreshold: 500000,
+		bankClientsOnly: false,
+	},
+	{
+		code: 'INVEST',
+		name: 'Инвестиционный кредит',
+		shortText: 'Оборудование, помещение и развитие бизнеса',
+		goals: ['EQUIPMENT'],
+		amount: { min: 1000000, max: 30000000 },
+		term: { min: 12, max: 84 },
+		rate: { min: 18, max: 26 },
+		noStatementThreshold: null,
+		bankClientsOnly: false,
+	},
+	{
+		code: 'EXPRESS',
+		name: 'Экспресс-кредит',
+		shortText: 'Небольшая сумма на любые цели бизнеса',
+		goals: ['WORKING_CAPITAL', 'EQUIPMENT'],
+		amount: { min: 100000, max: 1000000 },
+		term: { min: 3, max: 24 },
+		rate: { min: 24, max: 30 },
+		noStatementThreshold: 1000000,
 		bankClientsOnly: false,
 	},
 	{
@@ -86,5 +97,6 @@ export const overdraftDetails: ProductDetails = {
 export const matchFixture: ProductMatch[] = [
 	{ code: 'EXPRESS', fits: false, reason: 'Сумма больше 1 000 000 ₽' },
 	{ code: 'WORKING', fits: true, reason: 'Подходит по цели, сумме и сроку' },
+	{ code: 'INVEST', fits: false, reason: 'Сумма меньше 1 000 000 ₽' },
 	{ code: 'OVERDRAFT', fits: false, reason: 'Только для клиентов банка' },
 ];

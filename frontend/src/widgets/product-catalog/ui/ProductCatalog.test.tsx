@@ -29,49 +29,46 @@ const useHappyPath = () => {
 };
 
 describe('ProductCatalog', () => {
-	it('подсвечивает подходящий продукт и показывает, что сумма и срок перейдут в заявку', async () => {
+	it('показывает все продукты, а цель-чип оставляет подходящие и подсвечивает их', async () => {
 		useHappyPath();
-		renderWithProviders(<ProductCatalog />);
+		const { user } = renderWithProviders(<ProductCatalog />);
+
+		expect(await screen.findAllByRole('article')).toHaveLength(3);
+		expect(screen.getByRole('button', { name: 'Все предложения', pressed: true })).toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: 'Пополнить оборотные средства' }));
 
 		expect(await screen.findByText(/Подходят: Оборотный кредит/)).toBeInTheDocument();
+		expect(screen.getAllByRole('article')).toHaveLength(2);
 		expect(screen.getByText('Подходит под задачу')).toBeInTheDocument();
-		expect(screen.getAllByRole('article')).toHaveLength(3);
 	});
 
-	it('по клику на «Условия» открывает панель с условиями и кнопкой «Оформить»', async () => {
+	it('по клику на «Посмотреть условия» открывает диалог с условиями и кнопкой «Оформить»', async () => {
 		useHappyPath();
 		const { user } = renderWithProviders(<ProductCatalog />);
 
 		await user.click(await screen.findByRole('button', { name: 'Условия: Оборотный кредит' }));
 
-		const panel = await screen.findByRole('region', { name: 'Условия продукта' });
-		expect(await within(panel).findByRole('heading', { name: 'Оборотный кредит' })).toBeInTheDocument();
-		expect(within(panel).getByText('Что понадобится')).toBeInTheDocument();
-		expect(within(panel).getByText('Согласие на запрос в бюро кредитных историй')).toBeInTheDocument();
-		expect(within(panel).getByRole('button', { name: 'Оформить' })).toBeEnabled();
+		const dialog = await screen.findByRole('dialog');
+		expect(await within(dialog).findByText('Что понадобится')).toBeInTheDocument();
+		expect(within(dialog).getByText('Согласие на запрос в бюро кредитных историй')).toBeInTheDocument();
+		expect(within(dialog).getByRole('button', { name: 'Оформить' })).toBeEnabled();
 	});
 
-	it('до выбора продукта панель подсказывает, что делать', async () => {
-		useHappyPath();
-		renderWithProviders(<ProductCatalog />);
-
-		expect(await screen.findByText(/Выберите продукт в списке/)).toBeInTheDocument();
-	});
-
-	it('при неверной сумме показывает ошибку под полем и блокирует «Оформить»', async () => {
+	it('калькулятор считает платёж с сервера и меняет продукт', async () => {
 		useHappyPath();
 		const { user } = renderWithProviders(<ProductCatalog />);
 
-		await user.click(await screen.findByRole('button', { name: 'Условия: Оборотный кредит' }));
-		const amount = screen.getByLabelText('Сколько нужно, ₽');
-		await user.clear(amount);
+		expect(await screen.findByText(/76\s300\s–\s82\s300/)).toBeInTheDocument();
+		expect(screen.getByLabelText('Срок')).toBeInTheDocument();
 
-		expect(await screen.findByText('Введите сумму в рублях целым числом')).toBeInTheDocument();
-		const panel = screen.getByRole('region', { name: 'Условия продукта' });
-		expect(await within(panel).findByRole('button', { name: 'Оформить' })).toBeDisabled();
+		await user.selectOptions(screen.getByLabelText('Продукт'), 'OVERDRAFT');
+
+		expect(await screen.findByText('Проценты только за дни в минусе')).toBeInTheDocument();
+		expect(screen.queryByLabelText('Срок')).not.toBeInTheDocument();
 	});
 
-	it('овердрафт показывает лимит вместо расчёта по сроку', async () => {
+	it('овердрафт в диалоге показывает лимит вместо расчёта по сроку', async () => {
 		useHappyPath();
 		server.use(http.get(apiUrl('/products/OVERDRAFT'), () => HttpResponse.json({
 			...workingDetails,
@@ -84,7 +81,7 @@ describe('ProductCatalog', () => {
 
 		await user.click(await screen.findByRole('button', { name: 'Условия: Овердрафт' }));
 
-		expect(await screen.findByText('Лимит на 12 месяцев')).toBeInTheDocument();
+		expect(await screen.findByText('Лимит на 12 месяцев', { selector: 'p' })).toBeInTheDocument();
 	});
 
 	it('при ошибке списка продуктов предлагает повторить', async () => {
@@ -106,7 +103,9 @@ describe('ProductCatalog', () => {
 		server.use(http.post(apiUrl('/products/match'), () => HttpResponse.json(
 			matchFixture.map((item) => ({ ...item, fits: false })),
 		)));
-		renderWithProviders(<ProductCatalog />);
+		const { user } = renderWithProviders(<ProductCatalog />);
+
+		await user.click(await screen.findByRole('button', { name: 'Закрыть кассовый разрыв' }));
 
 		expect(await screen.findByText(/продуктов не нашлось/)).toBeInTheDocument();
 	});

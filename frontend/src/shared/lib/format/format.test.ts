@@ -1,4 +1,12 @@
-import { formatDate, formatDateTime, formatMoneyRange, formatRate, formatRateRange } from './index';
+import {
+	formatCompactMoney,
+	formatCompactMoneyRange,
+	formatDate,
+	formatDateTime,
+	formatMoneyRange,
+	formatRate,
+	formatRateRange,
+} from './index';
 
 const normalize = (value: string) => value.replace(/\s/gu, ' ');
 
@@ -35,5 +43,13 @@ describe('formatMoneyRange', () => {
 
 	it('одинаковые границы — одно значение', () => {
 		expect(normalize(formatMoneyRange(1000, 1000))).toBe('1 000 ₽');
+	});
+});
+
+describe('компактные суммы', () => {
+	it('собирают диапазон для карточки продукта', () => {
+		expect(formatCompactMoneyRange(300000, 10000000)).toBe('300 тыс. — 10 млн ₽');
+		expect(formatCompactMoneyRange(1000000, 30000000)).toBe('1–30 млн ₽');
+		expect(formatCompactMoney(3000000)).toBe('3 млн ₽');
 	});
 });

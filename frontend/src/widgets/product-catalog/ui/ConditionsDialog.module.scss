@@ -1,0 +1,38 @@
+.body {
+	display: grid;
+	gap: 20px;
+}
+
+.text {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--color-text-muted);
+}
+
+.calc {
+	display: grid;
+	gap: 8px;
+	padding: 16px 20px;
+	background: var(--color-raised);
+	border-radius: 16px;
+}
+
+.calcTitle {
+	margin: 0;
+	font-size: 13px;
+	color: var(--color-text-muted);
+}
+
+.subTitle {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.need {
+	padding-left: 20px;
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.7;
+}
