@@ -16,7 +16,6 @@ export type {
 	RadioGroupProps,
 	RadioOption,
 	SelectFieldProps,
-	SelectOption,
 	TextAreaFieldProps,
 } from './Field';
 export { CheckboxField, Field, RadioGroup, SelectField, TextAreaField } from './Field';
@@ -32,6 +31,8 @@ export type { ModalProps } from './Modal';
 export { Modal } from './Modal';
 export type { PageProps } from './Page';
 export { Page } from './Page';
+export type { SelectOption, SelectProps, SelectVariant } from './Select';
+export { Select } from './Select';
 export { Spinner } from './Spinner';
 export type { StepsProps } from './Steps';
 export { Steps } from './Steps';

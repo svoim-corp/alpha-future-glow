@@ -1,6 +1,7 @@
 import { faqFixture, ticketsFixture } from '@test/fixtures/support';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
+import { chooseOption } from '@test/select';
 import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 
@@ -20,7 +21,7 @@ describe('SupportPage', () => {
 		const { user } = renderWithProviders(<SupportPage />);
 
 		expect(await screen.findByText('Зачем выписка из 1С?')).toBeInTheDocument();
-		await user.selectOptions(screen.getByLabelText('Шаг'), 'DOCUMENTS');
+		await chooseOption(user, 'Шаг', 'Документы');
 
 		expect(steps).toHaveBeenCalledWith('DOCUMENTS');
 	});

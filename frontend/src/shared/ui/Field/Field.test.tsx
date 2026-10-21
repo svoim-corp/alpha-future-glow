@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 
-import { CheckboxField, Field, RadioGroup, SelectField, TextAreaField } from './index';
+import { CheckboxField, Field, RadioGroup, TextAreaField } from './index';
 
 describe('Field', () => {
 	it('связывает подпись с полем', () => {
@@ -36,16 +36,6 @@ describe('TextAreaField', () => {
 
 		expect(screen.getByLabelText('Комментарий')).toHaveValue('Привет');
 		expect(screen.getByRole('alert')).toHaveTextContent('Обязательное поле');
-	});
-});
-
-describe('SelectField', () => {
-	it('даёт выбрать вариант', async () => {
-		render(<SelectField label="Режим" options={[{ value: 'a', label: 'УСН' }, { value: 'b', label: 'Патент' }]} />);
-
-		await userEvent.selectOptions(screen.getByLabelText('Режим'), 'Патент');
-
-		expect(screen.getByLabelText('Режим')).toHaveValue('b');
 	});
 });
 

@@ -2,7 +2,7 @@ import { type ProductSummary } from '@entities/product';
 import { PaymentEstimate } from '@features/calculate-payment';
 import { StartApplicationButton } from '@features/start-application';
 import { formatCompactMoney, formatMoney, formatTerm } from '@shared/lib/format';
-import { Icon } from '@shared/ui';
+import { Icon,Select } from '@shared/ui';
 
 import { estimateParams } from '../model/estimate';
 import styles from './PaymentCalculator.module.scss';
@@ -66,12 +66,16 @@ export const PaymentCalculator = ({
 						onChange={onTermChange}
 					/>
 				)}
-				<label className={styles.select}>
-					Продукт
-					<select value={product.code} onChange={(event) => onProductChange(event.target.value)}>
-						{products.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-					</select>
-				</label>
+				<div className={styles.select}>
+					<span id="calc-product-label">Продукт</span>
+					<Select
+						variant="inline"
+						aria-labelledby="calc-product-label"
+						value={product.code}
+						options={products.map((item) => ({ value: item.code, label: item.name }))}
+						onChange={onProductChange}
+					/>
+				</div>
 			</div>
 			<div className={styles.result}>
 				<span>Примерный ежемесячный платёж</span>

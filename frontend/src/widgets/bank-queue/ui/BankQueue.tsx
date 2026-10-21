@@ -92,29 +92,25 @@ export const BankQueue = () => {
 					label="Статус"
 					value={filters.status ?? ANY}
 					options={STATUS_OPTIONS}
-					onChange={(event) => change({
-						status: (event.target.value || undefined) as ApplicationStatus | undefined,
-					})}
+					onChange={(next) => change({ status: (next || undefined) as ApplicationStatus | undefined })}
 				/>
 				<SelectField
 					label="Продукт"
 					value={filters.product ?? ANY}
 					options={PRODUCT_OPTIONS}
-					onChange={(event) => change({ product: event.target.value || undefined })}
+					onChange={(next) => change({ product: next || undefined })}
 				/>
 				<SelectField
 					label="Риск"
 					value={filters.risk ?? ANY}
 					options={RISK_OPTIONS}
-					onChange={(event) => change({ risk: (event.target.value || undefined) as RiskBand | undefined })}
+					onChange={(next) => change({ risk: (next || undefined) as RiskBand | undefined })}
 				/>
 				<SelectField
 					label="Режим решения"
 					value={filters.decisionMode ?? ANY}
 					options={MODE_OPTIONS}
-					onChange={(event) => change({
-						decisionMode: (event.target.value || undefined) as DecisionMode | undefined,
-					})}
+					onChange={(next) => change({ decisionMode: (next || undefined) as DecisionMode | undefined })}
 				/>
 			</div>
 			<AsyncBoundary

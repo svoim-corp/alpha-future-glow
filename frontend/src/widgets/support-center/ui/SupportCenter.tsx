@@ -31,10 +31,9 @@ export const SupportCenter = () => {
 						<SelectFilter
 							label="Шаг"
 							value={step}
-							onChange={(event) => setStep(event.target.value as FaqStep)}
-						>
-							{FAQ_STEPS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-						</SelectFilter>
+							options={FAQ_STEPS}
+							onChange={(next) => setStep(next as FaqStep)}
+						/>
 					</div>
 				</div>
 				<div className={styles.card}>

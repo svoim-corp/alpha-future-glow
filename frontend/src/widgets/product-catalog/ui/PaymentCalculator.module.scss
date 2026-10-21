@@ -54,17 +54,6 @@
 	justify-content: space-between;
 	font-size: 11px;
 	color: var(--color-text-muted);
-
-	select {
-		min-height: 40px;
-		padding: 0 12px;
-		font: inherit;
-		font-size: 12px;
-		color: var(--color-text);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: 10px;
-	}
 }
 
 .result {

@@ -44,18 +44,9 @@
 	gap: 4px;
 	padding: 0 10px;
 
-	span {
+	> span {
 		font-size: 9px;
 		color: var(--color-text-muted);
-	}
-
-	select {
-		max-width: 190px;
-		padding: 4px 20px 4px 0;
-		font-size: 11px;
-		color: var(--color-text);
-		background: transparent;
-		border: 0;
 	}
 }
 
@@ -67,14 +58,6 @@
 	padding: 20px 0 6px;
 	font-size: 10px;
 	color: var(--color-text-muted);
-
-	select {
-		padding: 4px;
-		font-size: 10px;
-		color: var(--color-text);
-		background: transparent;
-		border: 0;
-	}
 }
 
 @media (max-width: 760px) {

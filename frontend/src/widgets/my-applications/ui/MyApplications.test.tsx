@@ -1,6 +1,7 @@
 import { draftApplication, infoRequestedApplication } from '@test/fixtures/applications';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
+import { chooseOption } from '@test/select';
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 
@@ -60,7 +61,7 @@ describe('MyApplications', () => {
 		expect(screen.getByRole('status')).toHaveTextContent('Найдено: 1 из 2');
 
 		await user.clear(screen.getByRole('searchbox'));
-		await user.selectOptions(screen.getByLabelText('Статус'), 'INFO_REQUESTED');
+		await chooseOption(user, 'Статус', 'Нужна информация');
 
 		expect(screen.getAllByRole('listitem')).toHaveLength(1);
 
@@ -77,7 +78,7 @@ describe('MyApplications', () => {
 		const { user } = setup();
 
 		await screen.findAllByRole('listitem');
-		await user.selectOptions(screen.getByLabelText('Сортировка заявок'), 'amount-asc');
+		await chooseOption(user, 'Сортировка заявок', 'По сумме: меньше');
 
 		expect(within(screen.getAllByRole('listitem')[0]!).getByText('Экспресс-кредит')).toBeInTheDocument();
 	});

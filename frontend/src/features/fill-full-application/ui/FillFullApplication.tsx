@@ -126,7 +126,7 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 						label="Поручитель"
 						hint="Выберите из руководителя и учредителей — их данные уже есть в банке"
 						value={personId}
-						onChange={(event) => void pickGuarantor(event.target.value)}
+						onChange={(next) => void pickGuarantor(next)}
 						options={[
 							{ value: '', label: 'Выберите поручителя' },
 							...candidates.map((candidate) => ({

@@ -84,10 +84,17 @@ export const CreatePlan = () => {
 						error={errors.budget?.message}
 						{...register('budget')}
 					/>
-					<SelectField
-						label="Цель"
-						options={[{ value: '', label: 'Не выбрана' }, ...(goals.data ?? []).map((g) => ({ value: g.code, label: g.name }))]}
-						{...register('goal')}
+					<Controller
+						control={control}
+						name="goal"
+						render={({ field }) => (
+							<SelectField
+								label="Цель"
+								options={[{ value: '', label: 'Не выбрана' }, ...(goals.data ?? []).map((g) => ({ value: g.code, label: g.name }))]}
+								value={field.value ?? ''}
+								onChange={field.onChange}
+							/>
+						)}
 					/>
 					<Controller
 						control={control}

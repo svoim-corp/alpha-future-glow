@@ -1,6 +1,7 @@
 import { bankStatsFixture, queuePageFixture } from '@test/fixtures/bank';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
+import { chooseOption } from '@test/select';
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 
@@ -35,7 +36,7 @@ describe('BankQueuePage', () => {
 		const { user } = renderWithProviders(<BankQueuePage />);
 
 		await screen.findByRole('link', { name: 'КЗ-2026-001024' });
-		await user.selectOptions(screen.getByLabelText('Статус'), 'ON_DECISION');
+		await chooseOption(user, 'Статус', 'На решении');
 
 		await screen.findByRole('link', { name: 'КЗ-2026-001024' });
 		expect(query).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'ON_DECISION', page: '1' }));

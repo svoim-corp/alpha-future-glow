@@ -1,6 +1,7 @@
-import { type ChangeEvent, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { type ChangeEvent, type ReactNode, useId } from 'react';
 
 import { Icon } from '../Icon';
+import { Select, type SelectOption } from '../Select';
 import styles from './Toolbar.module.scss';
 
 export interface SearchFieldProps {
@@ -24,18 +25,24 @@ export const SearchField = ({ value, onChange, label, placeholder }: SearchField
 	</label>
 );
 
-export interface SelectFilterProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectFilterProps {
 	label: string;
-	children: ReactNode;
+	options: SelectOption[];
+	value: string;
+	onChange: (value: string) => void;
 }
 
 /** Компактный фильтр-список с подписью над значением */
-export const SelectFilter = ({ label, children, ...rest }: SelectFilterProps) => (
-	<label className={styles.filter}>
-		<span>{label}</span>
-		<select {...rest}>{children}</select>
-	</label>
-);
+export const SelectFilter = ({ label, options, value, onChange }: SelectFilterProps) => {
+	const labelId = useId();
+
+	return (
+		<div className={styles.filter}>
+			<span id={labelId}>{label}</span>
+			<Select variant="filter" aria-labelledby={labelId} options={options} value={value} onChange={onChange} />
+		</div>
+	);
+};
 
 /** Панель фильтров списка: поиск и выпадающие фильтры в одну строку */
 export const FilterToolbar = ({ children }: { children: ReactNode }) => (

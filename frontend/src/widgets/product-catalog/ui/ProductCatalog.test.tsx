@@ -6,6 +6,7 @@ import {
 } from '@test/fixtures/products';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
+import { chooseOption } from '@test/select';
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 
@@ -62,7 +63,7 @@ describe('ProductCatalog', () => {
 		expect(await screen.findByText(/76\s300\s–\s82\s300/)).toBeInTheDocument();
 		expect(screen.getByLabelText('Срок')).toBeInTheDocument();
 
-		await user.selectOptions(screen.getByLabelText('Продукт'), 'OVERDRAFT');
+		await chooseOption(user, 'Продукт', 'Овердрафт');
 
 		expect(await screen.findByText('Проценты только за дни в минусе')).toBeInTheDocument();
 		expect(screen.queryByLabelText('Срок')).not.toBeInTheDocument();

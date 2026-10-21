@@ -248,3 +248,9 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+.sort {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+}

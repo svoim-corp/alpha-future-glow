@@ -4,7 +4,7 @@ export type { FieldProps } from './Field';
 export { Field } from './Field';
 export type { RadioGroupProps, RadioOption } from './RadioGroup';
 export { RadioGroup } from './RadioGroup';
-export type { SelectFieldProps, SelectOption } from './SelectField';
+export type { SelectFieldProps } from './SelectField';
 export { SelectField } from './SelectField';
 export type { TextAreaFieldProps } from './TextAreaField';
 export { TextAreaField } from './TextAreaField';

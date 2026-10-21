@@ -1,48 +1,53 @@
-import clsx from 'clsx';
-import { type ReactNode, type SelectHTMLAttributes } from 'react';
+import { type ReactNode } from 'react';
 
+import { Select, type SelectOption } from '../Select';
 import styles from './Field.module.scss';
 import { FieldMessages } from './FieldMessages';
 import { useFieldIds } from './useFieldIds';
 
-export interface SelectOption {
-	value: string;
-	label: string;
-}
-
-export interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectFieldProps {
 	label: ReactNode;
 	options: SelectOption[];
+	value: string;
+	onChange: (value: string) => void;
 	hint?: string;
 	error?: string;
+	id?: string;
+	name?: string;
+	disabled?: boolean;
+	className?: string;
+	'aria-describedby'?: string;
 }
 
 export const SelectField = ({
 	label,
 	options,
+	value,
+	onChange,
 	hint,
 	error,
 	id,
+	name,
+	disabled,
 	className,
 	'aria-describedby': describedBy,
-	...rest
 }: SelectFieldProps) => {
 	const ids = useFieldIds({ id, hint, error, describedBy });
 
 	return (
 		<div className={styles.field}>
 			<label className={styles.label} htmlFor={ids.fieldId}>{label}</label>
-			<select
-				{...rest}
+			<Select
 				id={ids.fieldId}
-				className={clsx(styles.control, className)}
-				aria-invalid={error ? true : undefined}
+				name={name}
+				className={className}
+				options={options}
+				value={value}
+				onChange={onChange}
+				disabled={disabled}
+				invalid={Boolean(error)}
 				aria-describedby={ids.describedBy}
-			>
-				{options.map((option) => (
-					<option key={option.value} value={option.value}>{option.label}</option>
-				))}
-			</select>
+			/>
 			<FieldMessages hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId} />
 		</div>
 	);

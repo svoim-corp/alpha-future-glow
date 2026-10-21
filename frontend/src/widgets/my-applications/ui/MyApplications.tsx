@@ -20,6 +20,7 @@ import {
 	Metrics,
 	panelId,
 	SearchField,
+	Select,
 	SelectFilter,
 	tabId,
 	Tabs,
@@ -33,6 +34,24 @@ import styles from './MyApplications.module.scss';
 type TabKey = 'submitted' | 'drafts';
 
 const SUBMITTED_STATUSES = Object.keys(STATUS_VIEW).filter((status) => status !== 'DRAFT') as ApplicationStatus[];
+
+const PERIOD_OPTIONS = [
+	{ value: 'all', label: 'За всё время' },
+	{ value: '7', label: 'За 7 дней' },
+	{ value: '30', label: 'За 30 дней' },
+	{ value: '90', label: 'За 90 дней' },
+];
+
+const SORT_OPTIONS = [
+	{ value: 'date', label: 'Сначала новые' },
+	{ value: 'amount-desc', label: 'По сумме: больше' },
+	{ value: 'amount-asc', label: 'По сумме: меньше' },
+];
+
+const statusOptions = [
+	{ value: '', label: 'Все статусы' },
+	...SUBMITTED_STATUSES.map((status) => ({ value: status, label: STATUS_VIEW[status].label })),
+];
 
 const Row = ({ item }: { item: ApplicationShort }) => (
 	<li className={styles.row}>
@@ -81,6 +100,7 @@ export const MyApplications = () => {
 	const drafts = items.filter((item) => item.status === 'DRAFT');
 	const shown = applyFilters(submitted, filters, new Date().getTime());
 	const products = [...new Map(submitted.map((item) => [item.product.code, item.product.name])).entries()];
+	const productOptions = [{ value: '', label: 'Все продукты' }, ...products.map(([value, label]) => ({ value, label }))];
 	const set = <K extends keyof ListFilters>(key: K, value: ListFilters[K]) => {
 		setFilters({ ...filters, [key]: value });
 	};
@@ -137,46 +157,34 @@ export const MyApplications = () => {
 								<SelectFilter
 									label="Статус"
 									value={filters.status}
-									onChange={(event) => set('status', event.target.value as ApplicationStatus | '')}
-								>
-									<option value="">Все статусы</option>
-									{SUBMITTED_STATUSES.map((status) => (
-										<option key={status} value={status}>{STATUS_VIEW[status].label}</option>
-									))}
-								</SelectFilter>
+									options={statusOptions}
+									onChange={(next) => set('status', next as ApplicationStatus | '')}
+								/>
 								<SelectFilter
 									label="Продукт"
 									value={filters.product}
-									onChange={(event) => set('product', event.target.value)}
-								>
-									<option value="">Все продукты</option>
-									{products.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-								</SelectFilter>
+									options={productOptions}
+									onChange={(next) => set('product', next)}
+								/>
 								<SelectFilter
 									label="Период"
 									value={filters.period}
-									onChange={(event) => set('period', event.target.value as ListFilters['period'])}
-								>
-									<option value="all">За всё время</option>
-									<option value="7">За 7 дней</option>
-									<option value="30">За 30 дней</option>
-									<option value="90">За 90 дней</option>
-								</SelectFilter>
+									options={PERIOD_OPTIONS}
+									onChange={(next) => set('period', next as ListFilters['period'])}
+								/>
 							</FilterToolbar>
 							<ListToolbar>
 								<span role="status">Найдено: {shown.length} из {submitted.length}</span>
-								<label>
-									Сортировать:{' '}
-									<select
+								<span className={styles.sort}>
+									Сортировать:
+									<Select
+										variant="inline"
 										aria-label="Сортировка заявок"
 										value={filters.sort}
-										onChange={(event) => set('sort', event.target.value as ListFilters['sort'])}
-									>
-										<option value="date">Сначала новые</option>
-										<option value="amount-desc">По сумме: больше</option>
-										<option value="amount-asc">По сумме: меньше</option>
-									</select>
-								</label>
+										options={SORT_OPTIONS}
+										onChange={(next) => set('sort', next as ListFilters['sort'])}
+									/>
+								</span>
 							</ListToolbar>
 							{shown.length === 0 ? (
 								<div className={styles.empty}>

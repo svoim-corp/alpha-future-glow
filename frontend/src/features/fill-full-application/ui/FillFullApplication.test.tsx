@@ -2,6 +2,7 @@ import { fullApplication } from '@test/fixtures/applications';
 import { companyProfileFixture } from '@test/fixtures/companyProfile';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
+import { chooseOption } from '@test/select';
 import { screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 
@@ -35,8 +36,8 @@ describe('FillFullApplication', () => {
 		const empty = { ...fullApplication, stage2: { ...fullApplication.stage2, guarantor: null } };
 		const { user } = renderForm(empty);
 
-		const option = await screen.findByRole('option', { name: 'Смирнов Олег Викторович — руководитель, учредитель' });
-		await user.selectOptions(screen.getByLabelText('Поручитель'), option);
+		await screen.findByRole('combobox', { name: 'Поручитель' });
+		await chooseOption(user, 'Поручитель', 'Смирнов Олег Викторович — руководитель, учредитель');
 
 		await waitFor(() => expect(patch).toHaveBeenCalledWith({ stage2: { guarantor: { personId: 'p-1' } } }));
 		expect(screen.queryByLabelText('ИНН поручителя')).not.toBeInTheDocument();
@@ -128,6 +129,6 @@ describe('FillFullApplication', () => {
 		await user.click(screen.getByRole('button', { name: 'Отправить заявку' }));
 
 		expect(await screen.findByText('Заявка уже отправлена')).toBeInTheDocument();
-		expect(screen.getByLabelText('Поручитель')).toHaveValue('p-1');
+		expect(screen.getByRole('combobox', { name: 'Поручитель' })).toHaveTextContent('Смирнов Олег Викторович — руководитель, учредитель');
 	});
 });

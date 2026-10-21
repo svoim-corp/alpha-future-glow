@@ -1,0 +1,136 @@
+.root {
+	position: relative;
+	min-width: 0;
+}
+
+.trigger {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-width: 0;
+	font: inherit;
+	color: var(--color-text);
+	text-align: left;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+
+	&:disabled {
+		cursor: not-allowed;
+		color: var(--color-disabled-text);
+	}
+}
+
+.value {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chevron {
+	flex: none;
+	color: var(--color-text-muted);
+	transition: transform 0.15s;
+}
+
+.trigger[aria-expanded='true'] .chevron {
+	transform: rotate(180deg);
+}
+
+/* Поле формы: как остальные контролы Field */
+.field .trigger {
+	min-height: var(--control-height);
+	padding: 11px 10px 11px 14px;
+	background: var(--color-surface);
+	border: 1px solid var(--color-control-border);
+	border-radius: var(--radius-control);
+
+	&:hover:not(:disabled) {
+		border-color: var(--color-text);
+	}
+
+	&[aria-expanded='true'] {
+		border-color: var(--color-focus);
+	}
+
+	&[aria-invalid='true'] {
+		padding: 10px 9px 10px 13px;
+		border: 2px solid var(--color-danger);
+	}
+
+	&:disabled {
+		background: var(--color-raised);
+	}
+}
+
+/* Фильтр в панели: без рамки, значение под подписью */
+.filter .trigger {
+	max-width: 190px;
+	padding: 2px 0;
+	font-size: 11px;
+}
+
+/* Мелкий переключатель в строке (сортировка, продукт в калькуляторе) */
+.inline .trigger {
+	padding: 4px 4px 4px 8px;
+	font-size: 11px;
+	border-radius: var(--radius-sm);
+
+	&:hover:not(:disabled) {
+		background: var(--color-primary-soft);
+	}
+}
+
+.panel {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	z-index: 30;
+	box-sizing: border-box;
+	width: max-content;
+	min-width: 100%;
+	max-width: min(360px, calc(100vw - 32px));
+	max-height: 260px;
+	margin: 0;
+	padding: 6px;
+	overflow-y: auto;
+	font-size: 13px;
+	color: var(--color-text);
+	list-style: none;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 18px;
+	box-shadow: 0 12px 40px rgb(0 0 0 / 12%);
+}
+
+.up {
+	top: auto;
+	bottom: calc(100% + 6px);
+}
+
+.filter .panel {
+	min-width: 200px;
+}
+
+.option {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 40px;
+	padding: 8px 12px;
+	cursor: pointer;
+	border-radius: var(--radius-control);
+}
+
+.active {
+	background: var(--color-raised);
+}
+
+.selected {
+	font-weight: 600;
+	color: var(--color-primary-text);
+	background: var(--color-primary-soft);
+}
