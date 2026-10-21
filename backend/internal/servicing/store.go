@@ -130,6 +130,41 @@ func (s *Store) PeriodPayments(ctx context.Context, companyID string, from, to t
 	return out, err
 }
 
+// reminderRow — платёж, о котором пора напомнить, и кому.
+type reminderRow struct {
+	paymentRow
+	ApplicantID    string `db:"applicant_id"`
+	ContractNumber string `db:"contract_number"`
+}
+
+// DueForReminder — неоплаченные платежи действующих кредитов с from по to, о которых ещё не напоминали.
+func (s *Store) DueForReminder(ctx context.Context, from, to time.Time) ([]reminderRow, error) {
+	var out []reminderRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT `+paymentCols+`, l.applicant_id, l.contract_number
+		FROM servicing.payments p JOIN servicing.loans l ON l.id = p.loan_id
+		WHERE l.status = 'ACTIVE' AND p.status = 'PLANNED' AND p.reminded_at IS NULL AND p.due_date BETWEEN $1 AND $2
+		ORDER BY p.due_date, p.loan_id`, from, to)
+	return out, err
+}
+
+// ClaimReminder отмечает, что о платеже напомнили; false — уже напомнили (например, параллельный проход).
+func (s *Store) ClaimReminder(ctx context.Context, loanID string, n int, at time.Time) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE servicing.payments SET reminded_at = $3 WHERE loan_id = $1 AND n = $2 AND reminded_at IS NULL`, loanID, n, at)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	return rows > 0, err
+}
+
+// UnclaimReminder снимает отметку, если уведомление не ушло.
+func (s *Store) UnclaimReminder(ctx context.Context, loanID string, n int) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE servicing.payments SET reminded_at = NULL WHERE loan_id = $1 AND n = $2`, loanID, n)
+	return err
+}
+
 // ActiveLoans — число действующих кредитов компании.
 func (s *Store) ActiveLoans(ctx context.Context, companyID string) (int, error) {
 	var n int

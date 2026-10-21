@@ -153,6 +153,18 @@ func run(log *slog.Logger) error {
 		<-pipelineDone
 	}()
 
+	// Напоминания Servicing о платежах: так же останавливаются вместе с сервером.
+	remindersCtx, stopReminders := context.WithCancel(ctx)
+	remindersDone := make(chan struct{})
+	go func() {
+		defer close(remindersDone)
+		servicingMod.Run(remindersCtx)
+	}()
+	defer func() {
+		stopReminders()
+		<-remindersDone
+	}()
+
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
 	r.Use(httpx.TraceID(), httpx.Logger(log), httpx.Recovery(log), auth.Middleware(identityMod))
