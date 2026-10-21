@@ -122,7 +122,6 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 			)}
 			{isLlc && (
 				<div className={styles.group}>
-					<h3 className={styles.legend}>Поручитель</h3>
 					<SelectField
 						label="Поручитель"
 						hint="Выберите из руководителя и учредителей — их данные уже есть в банке"
