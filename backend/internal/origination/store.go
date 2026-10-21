@@ -89,6 +89,57 @@ func (s *Store) UpdateDraft(ctx context.Context, a *appRow, version int, at time
 	return true, nil
 }
 
+// LockApplication — заявка под блокировкой строки до конца транзакции; (nil, nil) — заявки нет.
+func (s *Store) LockApplication(ctx context.Context, q sqlx.ExtContext, id string) (*appRow, error) {
+	var a appRow
+	err := sqlx.GetContext(ctx, q, &a, `SELECT `+appCols+` FROM origination.applications WHERE id = $1 FOR UPDATE`, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// SaveTransition записывает статус и поля, которые меняются вместе с ним, и увеличивает версию (в a — новая).
+func (s *Store) SaveTransition(ctx context.Context, q sqlx.ExtContext, a *appRow) error {
+	return sqlx.GetContext(ctx, q, &a.Version, `
+		UPDATE origination.applications SET status = $2, number = $3, submitted_at = $4, truth_confirmed = $5,
+			deleted_at = $6, updated_at = $7, version = version + 1
+		WHERE id = $1
+		RETURNING version`,
+		a.ID, a.Status, a.Number, a.SubmittedAt, a.TruthConfirmed, a.DeletedAt, a.UpdatedAt)
+}
+
+type eventRow struct {
+	AppID     string    `db:"app_id"`
+	From      string    `db:"from_status"`
+	To        string    `db:"to_status"`
+	Action    string    `db:"action"`
+	ActorType string    `db:"actor_type"`
+	ActorID   *string   `db:"actor_id"`
+	ActorName *string   `db:"actor_name"`
+	Comment   *string   `db:"comment"`
+	At        time.Time `db:"at"`
+}
+
+func (s *Store) InsertEvent(ctx context.Context, q sqlx.ExtContext, e *eventRow) error {
+	_, err := sqlx.NamedExecContext(ctx, q, `
+		INSERT INTO origination.status_events (app_id, from_status, to_status, action, actor_type, actor_id, actor_name, comment, at)
+		VALUES (:app_id, :from_status, :to_status, :action, :actor_type, :actor_id, :actor_name, :comment, :at)`, e)
+	return err
+}
+
+// Events — история заявки по порядку.
+func (s *Store) Events(ctx context.Context, appID string) ([]eventRow, error) {
+	var out []eventRow
+	err := s.db.SelectContext(ctx, &out, `
+		SELECT app_id, from_status, to_status, action, actor_type, actor_id, actor_name, comment, at
+		FROM origination.status_events WHERE app_id = $1 ORDER BY at, id`, appID)
+	return out, err
+}
+
 // CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.
 func (s *Store) CompanyApplications(ctx context.Context, companyID string, limit, offset int) ([]appRow, int, error) {
 	var total int

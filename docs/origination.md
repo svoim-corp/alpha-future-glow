@@ -13,6 +13,33 @@
 Все клиентские эндпоинты — для пользователя с компанией (`CLIENT`). Чужая заявка — `403 FORBIDDEN`, сотрудник банка
 (без компании) — `403 FORBIDDEN`. Удалённый черновик для клиента не существует — `404 NOT_FOUND`.
 
+## Машина состояний
+
+Реализовано (`internal/origination/machine.go`). Статус меняется только через `Transition` (для других зон —
+`shared.Applications.Transition`). Переход выполняется в транзакции под блокировкой строки заявки: из одновременных
+переходов из одного статуса проходит один, остальные получают `409`. Вместе со статусом увеличивается `version`
+и пишется событие истории (`StatusEvent`: из какого статуса, в какой, действие, кто, комментарий, время). После
+коммита публикуется `ApplicationStatusChanged` (его слушают очередь банка и конвейер Scoring); сбой подписчика
+логируется и не отменяет переход.
+
+| Из | В | Кто | Действие (`action`) |
+|---|---|---|---|
+| `DRAFT` | `SUBMITTED` | клиент | `SUBMIT` |
+| `DRAFT` | `CLOSED` | клиент удалил черновик | `DELETE_DRAFT` |
+| `SUBMITTED` | `DATA_CHECK` | конвейер Scoring | `CHECKS_DONE` |
+| `DATA_CHECK` | `SCORING` | конвейер Scoring | `SCORING_STARTED` |
+| `DATA_CHECK`, `ON_DECISION` | `INFO_REQUESTED` | сотрудник | `INFO_REQUEST` |
+| `INFO_REQUESTED` | `DATA_CHECK` | клиент ответил | `INFO_ANSWERED` |
+| `SCORING` | `ON_DECISION` | конвейер Scoring | `SCORED` |
+| `ON_DECISION` | `APPROVED`, `COUNTER_OFFER`, `REJECTED` | авторешение или сотрудник | `DECISION` |
+| `APPROVED`, `COUNTER_OFFER` | `SIGNING` | клиент принял оффер | `OFFER_ACCEPT` |
+| `APPROVED`, `COUNTER_OFFER` | `CLOSED` | клиент отказался от оффера | `OFFER_DECLINE` |
+| `SIGNING` | `ISSUED` | выдача | `DISBURSE` |
+
+`REJECTED`, `ISSUED`, `CLOSED` — конечные. Любой другой переход — `409 INVALID_TRANSITION` с текстом «Нельзя
+перевести заявку из статуса «…» в «…»». Стоп-отказ этапа 1 — результат предварительного решения внутри `DRAFT`,
+а не статус.
+
 ## Рамки продукта
 
 Параметры проверяются по продукту из Catalog при создании черновика и при автосохранении. Нарушение —
