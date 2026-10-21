@@ -1,6 +1,6 @@
 import { CATEGORIES } from '@entities/document';
 import { getErrorMessage } from '@shared/api';
-import { Alert, Button, FileUpload, Modal, SelectField } from '@shared/ui';
+import { Alert, Button, FileUpload, Icon, Modal, SelectField } from '@shared/ui';
 import { useState } from 'react';
 
 import { useUploadDocumentMutation } from '../api/uploadApi';
@@ -40,7 +40,7 @@ export const UploadDocument = () => {
 
 	return (
 		<>
-			<Button onClick={() => setOpen(true)}>Добавить документ</Button>
+			<Button onClick={() => setOpen(true)}>Добавить документ <Icon name="documents" size={17} /></Button>
 			{open && (
 				<Modal
 					title="Добавить документ"

@@ -12,7 +12,7 @@ describe('DocumentsPage', () => {
 		renderWithProviders(<DocumentsPage />);
 
 		expect(await screen.findByRole('article', { name: 'Реквизиты компании' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: 'Все файлы 6' })).toHaveAttribute('aria-pressed', 'true');
+		expect(screen.getByRole('button', { name: /Все файлы\s*6/ })).toHaveAttribute('aria-pressed', 'true');
 		expect(screen.getByRole('button', { name: 'Добавить документ' })).toBeInTheDocument();
 	});
 

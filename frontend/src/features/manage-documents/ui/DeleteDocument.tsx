@@ -1,5 +1,5 @@
 import { getErrorMessage } from '@shared/api';
-import { Alert, Button, Modal } from '@shared/ui';
+import { Alert, Button, Icon, Modal } from '@shared/ui';
 import { useState } from 'react';
 
 import { useDeleteDocumentMutation } from '../api/deleteApi';
@@ -22,7 +22,9 @@ export const DeleteDocument = ({ id, name }: { id: string; name: string }) => {
 
 	return (
 		<>
-			<Button variant="ghost" compact onClick={() => setOpen(true)}>{`Удалить: ${name}`}</Button>
+			<Button variant="ghost" compact aria-label={`Удалить: ${name}`} onClick={() => setOpen(true)}>
+				<Icon name="close" size={16} />
+			</Button>
 			{open && (
 				<Modal
 					title="Удалить документ?"

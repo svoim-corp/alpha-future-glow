@@ -3,11 +3,13 @@ import {
 	DocumentCard,
 	type DocumentCategory,
 	type DocumentSort,
+	formatFileSize,
 	useGetDocumentsQuery,
 } from '@entities/document';
 import { AttachDocument, DeleteDocument } from '@features/manage-documents';
 import { useDebouncedValue } from '@shared/lib/debounce';
-import { AsyncBoundary, Field, SelectField } from '@shared/ui';
+import { AsyncBoundary, Icon, SearchField, SelectFilter } from '@shared/ui';
+import clsx from 'clsx';
 import { useState } from 'react';
 
 import styles from './DocumentsLibrary.module.scss';
@@ -17,6 +19,18 @@ const SORTS = [
 	{ value: '-uploadedAt', label: 'Сначала новые' },
 ];
 
+const pluralFiles = (count: number) => {
+	const rest = count % 100;
+	const last = count % 10;
+
+	if (rest > 10 && rest < 20) {
+		return `${count} файлов`;
+	}
+
+	return last === 1 ? `${count} файл` : last >= 2 && last <= 4 ? `${count} файла` : `${count} файлов`;
+};
+
+/** Библиотека по макету documents.html: вводный блок, поиск и сортировка, категории, сетка файлов */
 export const DocumentsLibrary = () => {
 	const [category, setCategory] = useState<DocumentCategory | 'ALL'>('ALL');
 	const [search, setSearch] = useState('');
@@ -28,34 +42,51 @@ export const DocumentsLibrary = () => {
 		sort,
 	});
 	const filtered = category !== 'ALL' || q.trim() !== '';
+	const totalBytes = data?.items.reduce((total, item) => total + item.sizeBytes, 0) ?? 0;
 
 	return (
 		<div className={styles.library}>
+			<div className={styles.intro}>
+				<div className={styles.introMain}>
+					<span className={styles.introIcon}><Icon name="documents" size={20} /></span>
+					<div>
+						<strong>Ваши документы — в одном месте</strong>
+						<p>Выбирайте сохранённые файлы при заполнении заявки.</p>
+					</div>
+				</div>
+				{data && (
+					<span className={styles.storage}>
+						<strong>{pluralFiles(data.counts.ALL)}</strong>
+						{!filtered && totalBytes > 0 && ` · ${formatFileSize(totalBytes)}`}
+					</span>
+				)}
+			</div>
 			<div className={styles.toolbar}>
-				<Field
+				<SearchField
 					label="Поиск документов"
-					type="search"
 					placeholder="Найти документ по названию"
 					value={search}
-					onChange={(event) => setSearch(event.target.value)}
+					onChange={setSearch}
 				/>
-				<SelectField
+				<SelectFilter
 					label="Сортировка"
 					value={sort}
-					options={SORTS}
 					onChange={(event) => setSort(event.target.value as DocumentSort)}
-				/>
+				>
+					{SORTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+				</SelectFilter>
 			</div>
 			<div className={styles.chips} role="group" aria-label="Категории документов">
 				{CATEGORIES.map((item) => (
 					<button
 						key={item.value}
 						type="button"
-						className={styles.chip}
+						className={clsx(styles.chip)}
 						aria-pressed={category === item.value}
 						onClick={() => setCategory(item.value)}
 					>
-						{data ? `${item.label} ${data.counts[item.value === 'ALL' ? 'ALL' : item.value]}` : item.label}
+						{item.label}
+						{data && item.value === 'ALL' && <span>{data.counts.ALL}</span>}
 					</button>
 				))}
 			</div>
@@ -66,9 +97,9 @@ export const DocumentsLibrary = () => {
 				onRetry={() => void refetch()}
 				loadingLabel="Загружаем документы"
 				errorText="Не удалось загрузить документы"
-				emptyTitle={filtered ? 'Ничего не найдено' : 'Документов пока нет'}
+				emptyTitle={filtered ? 'Файлы не найдены' : 'Документов пока нет'}
 				emptyText={filtered
-					? 'Измените поиск или выберите другую категорию.'
+					? 'Измените запрос или выберите другую категорию.'
 					: 'Добавьте файл один раз — и используйте его в новых заявках.'}
 			>
 				<div className={styles.grid}>

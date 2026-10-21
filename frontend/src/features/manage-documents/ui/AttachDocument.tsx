@@ -1,6 +1,6 @@
 import { useGetMyApplicationsQuery } from '@entities/application';
 import { getErrorMessage } from '@shared/api';
-import { Alert, AsyncBoundary, Button, Modal, RadioGroup } from '@shared/ui';
+import { Alert, AsyncBoundary, Button, Icon, Modal, RadioGroup } from '@shared/ui';
 import { useState } from 'react';
 
 import { useAttachDocumentMutation } from '../api/attachApi';
@@ -30,14 +30,15 @@ export const AttachDocument = ({ id, name }: { id: string; name: string }) => {
 	return (
 		<>
 			<Button
-				variant="secondary"
+				variant="ghost"
 				compact
+				aria-label={`В заявку: ${name}`}
 				onClick={() => {
 					setDone(false);
 					setOpen(true);
 				}}
 			>
-				{`В заявку: ${name}`}
+				<Icon name="applications" size={15} /> В заявку
 			</Button>
 			{done && <Alert tone="success" title="Файл прикреплён к черновику" />}
 			{open && (
