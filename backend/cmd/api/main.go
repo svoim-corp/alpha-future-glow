@@ -125,7 +125,7 @@ func run(log *slog.Logger) error {
 	})
 	servicingMod.Wire(servicing.Ports{Notifier: notificationsMod.Notifier()})
 	plannerMod.Wire(planner.Ports{
-		Products: catalogMod.Products(),
+		Matcher:  catalogMod.ProductMatcher(),
 		Notifier: notificationsMod.Notifier(),
 	})
 

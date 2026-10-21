@@ -11,8 +11,8 @@ import (
 
 // Ports — данные и действия других зон, нужные зоне. Подставляются в cmd/api/main.go.
 type Ports struct {
-	Products shared.Products // подбор продукта по плану
-	Notifier shared.Notifier // уведомления PLAN_MATCH
+	Matcher  shared.ProductMatcher // подбор продукта по цели и бюджету плана
+	Notifier shared.Notifier       // уведомления PLAN_MATCH
 }
 
 type Module struct {
