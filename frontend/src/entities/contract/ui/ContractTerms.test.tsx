@@ -10,7 +10,8 @@ describe('ContractTermsView', () => {
 
 		expect(screen.getByText('Ежемесячный платёж')).toBeInTheDocument();
 		expect(screen.getByText('20.11.2026')).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'Кредитный договор' })).toHaveAttribute('href', '/api/v1/documents/d-1');
+		expect(screen.getByRole('link', { name: 'Кредитный договор' }))
+			.toHaveAttribute('href', '/api/v1/applications/a-1031/contract/documents/d-1');
 		expect(screen.getAllByRole('listitem')).toHaveLength(2);
 	});
 });

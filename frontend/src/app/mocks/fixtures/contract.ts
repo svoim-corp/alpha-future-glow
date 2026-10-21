@@ -10,8 +10,16 @@ export const contractFixture: Contract = {
 		firstPaymentDate: '2026-11-20',
 	},
 	documents: [
-		{ id: 'd-1', title: 'Кредитный договор', url: '/api/v1/documents/d-1' },
-		{ id: 'd-2', title: 'Договор поручительства', url: '/api/v1/documents/d-2' },
+		{
+			id: 'd-1',
+			title: 'Кредитный договор',
+			url: '/api/v1/applications/a-1031/contract/documents/d-1',
+		},
+		{
+			id: 'd-2',
+			title: 'Договор поручительства',
+			url: '/api/v1/applications/a-1031/contract/documents/d-2',
+		},
 	],
 	signed: false,
 	disbursed: false,

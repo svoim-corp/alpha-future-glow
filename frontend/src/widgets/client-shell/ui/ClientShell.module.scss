@@ -583,6 +583,11 @@
 		min-width: 60px;
 	}
 
+	/* В узкой шапке влезает только иконка: обрезанный плейсхолдер выглядит как ошибка */
+	.search input::placeholder {
+		color: transparent;
+	}
+
 	.actions {
 		gap: 4px;
 	}

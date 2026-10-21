@@ -596,6 +596,11 @@ export const handlers = [
 	}),
 
 	// ── планер (API_SPEC_ADDITIONAL) ───────────
+	// печатная форма документа к подписанию (API_SPEC 4.7)
+	http.get(url('/applications/:id/contract/documents/:docId'), ({ params }) => new HttpResponse(
+		`Печатная форма ${String(params.docId)} (демо)`,
+		{ headers: { 'content-type': 'text/plain; charset=utf-8' } },
+	)),
 	http.get(url('/plans/recommendations'), () => HttpResponse.json(
 		db.plans
 			.filter((plan) => plan.dateMode === 'UNSCHEDULED' || plan.recommendation)
