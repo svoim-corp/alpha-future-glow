@@ -77,3 +77,25 @@ func TestListProducts(t *testing.T) {
 		t.Fatalf("рамки WORKING: %+v", w0)
 	}
 }
+
+func TestProductDetails(t *testing.T) {
+	_, r := newTestModule(t)
+	w := do(r, "GET", "/api/v1/products/INVEST", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", w.Code, w.Body.String())
+	}
+	got := decode[productDetailsDTO](t, w)
+	if got.GraceMaxMonths == nil || *got.GraceMaxMonths != 6 || !got.Requirements.GuarantorForLLC ||
+		got.Requirements.MinBusinessAgeMonths == nil || *got.Requirements.MinBusinessAgeMonths != 12 || len(got.WhatYouNeed) != 2 {
+		t.Fatalf("условия INVEST: %+v", got)
+	}
+
+	w = do(r, "GET", "/api/v1/products/WORKING", "")
+	if got := decode[productDetailsDTO](t, w); got.GraceMaxMonths != nil || got.Requirements.MinBusinessAgeMonths != nil {
+		t.Fatalf("у WORKING нет отсрочки и требования к возрасту: %s", w.Body.String())
+	}
+
+	if w := do(r, "GET", "/api/v1/products/NOPE", ""); w.Code != http.StatusNotFound {
+		t.Fatalf("неизвестный продукт: %d", w.Code)
+	}
+}

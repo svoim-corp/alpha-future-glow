@@ -1265,6 +1265,42 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/products/{code}": {
+            "get": {
+                "description": "Все условия для панели «Условия». whatYouNeed — только действия клиента: данные компании банк берёт сам.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Условия продукта",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "INVEST",
+                        "description": "Код продукта",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/catalog.productDetailsDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1278,6 +1314,66 @@ const docTemplate = `{
                 "min": {
                     "type": "integer",
                     "example": 300000
+                }
+            }
+        },
+        "catalog.productDetailsDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "$ref": "#/definitions/catalog.moneyRangeDTO"
+                },
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Оборудование, помещение, расширение бизнеса"
+                },
+                "goals": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "WORKING_CAPITAL"
+                    ]
+                },
+                "graceMaxMonths": {
+                    "description": "null — отсрочки нет",
+                    "type": "integer",
+                    "example": 6
+                },
+                "limitRule": {
+                    "type": "string",
+                    "example": "До 15% годового оборота по счетам в банке"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
+                },
+                "rate": {
+                    "$ref": "#/definitions/catalog.rateRangeDTO"
+                },
+                "requirements": {
+                    "$ref": "#/definitions/catalog.requirementsDTO"
+                },
+                "shortText": {
+                    "type": "string",
+                    "example": "Закупки, зарплата, налоги, аренда"
+                },
+                "term": {
+                    "$ref": "#/definitions/catalog.termRangeDTO"
+                },
+                "whatYouNeed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Согласие на запрос в БКИ"
+                    ]
                 }
             }
         },
@@ -1326,6 +1422,20 @@ const docTemplate = `{
                 "min": {
                     "type": "number",
                     "example": 20
+                }
+            }
+        },
+        "catalog.requirementsDTO": {
+            "type": "object",
+            "properties": {
+                "guarantorForLlc": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "minBusinessAgeMonths": {
+                    "description": "null — требования к возрасту бизнеса нет",
+                    "type": "integer",
+                    "example": 12
                 }
             }
         },

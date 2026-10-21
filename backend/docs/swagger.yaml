@@ -9,6 +9,48 @@ definitions:
         example: 300000
         type: integer
     type: object
+  catalog.productDetailsDTO:
+    properties:
+      amount:
+        $ref: '#/definitions/catalog.moneyRangeDTO'
+      code:
+        example: WORKING
+        type: string
+      description:
+        example: Оборудование, помещение, расширение бизнеса
+        type: string
+      goals:
+        example:
+        - WORKING_CAPITAL
+        items:
+          type: string
+        type: array
+      graceMaxMonths:
+        description: null — отсрочки нет
+        example: 6
+        type: integer
+      limitRule:
+        example: До 15% годового оборота по счетам в банке
+        type: string
+      name:
+        example: Оборотный кредит
+        type: string
+      rate:
+        $ref: '#/definitions/catalog.rateRangeDTO'
+      requirements:
+        $ref: '#/definitions/catalog.requirementsDTO'
+      shortText:
+        example: Закупки, зарплата, налоги, аренда
+        type: string
+      term:
+        $ref: '#/definitions/catalog.termRangeDTO'
+      whatYouNeed:
+        example:
+        - Согласие на запрос в БКИ
+        items:
+          type: string
+        type: array
+    type: object
   catalog.productSummaryDTO:
     properties:
       amount:
@@ -41,6 +83,16 @@ definitions:
       min:
         example: 20
         type: number
+    type: object
+  catalog.requirementsDTO:
+    properties:
+      guarantorForLlc:
+        example: true
+        type: boolean
+      minBusinessAgeMonths:
+        description: null — требования к возрасту бизнеса нет
+        example: 12
+        type: integer
     type: object
   catalog.termRangeDTO:
     properties:
@@ -2024,6 +2076,31 @@ paths:
               $ref: '#/definitions/catalog.productSummaryDTO'
             type: array
       summary: Линейка продуктов для каталога
+      tags:
+      - catalog
+  /products/{code}:
+    get:
+      description: 'Все условия для панели «Условия». whatYouNeed — только действия
+        клиента: данные компании банк берёт сам.'
+      parameters:
+      - description: Код продукта
+        example: INVEST
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/catalog.productDetailsDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Условия продукта
       tags:
       - catalog
 swagger: "2.0"

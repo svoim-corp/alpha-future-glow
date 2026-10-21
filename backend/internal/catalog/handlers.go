@@ -61,3 +61,55 @@ func (m *Module) listProducts(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, out)
 }
+
+type requirementsDTO struct {
+	MinBusinessAgeMonths *int `json:"minBusinessAgeMonths" example:"12"` // null — требования к возрасту бизнеса нет
+	GuarantorForLLC      bool `json:"guarantorForLlc" example:"true"`
+}
+
+type productDetailsDTO struct {
+	productSummaryDTO
+	Description    string          `json:"description" example:"Оборудование, помещение, расширение бизнеса"`
+	GraceMaxMonths *int            `json:"graceMaxMonths" example:"6"` // null — отсрочки нет
+	Requirements   requirementsDTO `json:"requirements"`
+	LimitRule      string          `json:"limitRule" example:"До 15% годового оборота по счетам в банке"`
+	WhatYouNeed    []string        `json:"whatYouNeed" example:"Согласие на запрос в БКИ"`
+}
+
+// positive — 0 в рамках продукта значит «нет», в API это null.
+func positive(n int) *int {
+	if n <= 0 {
+		return nil
+	}
+	return &n
+}
+
+// productDetails godoc
+//
+//	@Summary		Условия продукта
+//	@Description	Все условия для панели «Условия». whatYouNeed — только действия клиента: данные компании банк берёт сам.
+//	@Tags			catalog
+//	@Produce		json
+//	@Param			code	path		string	true	"Код продукта"	example(INVEST)
+//	@Success		200		{object}	productDetailsDTO
+//	@Failure		404		{object}	httpx.ErrorBody
+//	@Router			/products/{code} [get]
+func (m *Module) productDetails(c *gin.Context) {
+	p, err := m.store.Product(c.Request.Context(), c.Param("code"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if p == nil {
+		httpx.Fail(c, httpx.NotFound("Продукт не найден"))
+		return
+	}
+	httpx.JSON(c, http.StatusOK, productDetailsDTO{
+		productSummaryDTO: toSummary(*p),
+		Description:       p.Description,
+		GraceMaxMonths:    positive(p.GraceMaxMonths),
+		Requirements:      requirementsDTO{MinBusinessAgeMonths: positive(p.MinBusinessAgeMonths), GuarantorForLLC: p.GuarantorForLLC},
+		LimitRule:         p.LimitRule,
+		WhatYouNeed:       p.WhatYouNeed.V,
+	})
+}

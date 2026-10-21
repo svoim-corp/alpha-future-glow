@@ -2,6 +2,8 @@ package catalog
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/jmoiron/sqlx"
 
@@ -38,4 +40,17 @@ func (s *Store) Products(ctx context.Context) ([]productRow, error) {
 	var out []productRow
 	err := s.db.SelectContext(ctx, &out, `SELECT `+productCols+` FROM catalog.products ORDER BY sort, code`)
 	return out, err
+}
+
+// Product — продукт по коду; (nil, nil) — такого продукта нет.
+func (s *Store) Product(ctx context.Context, code string) (*productRow, error) {
+	var p productRow
+	err := s.db.GetContext(ctx, &p, `SELECT `+productCols+` FROM catalog.products WHERE code = $1`, code)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
