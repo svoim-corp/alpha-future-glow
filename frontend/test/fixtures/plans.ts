@@ -52,3 +52,10 @@ export const plansFixture: PlansResponse = {
 	],
 	summary: { total: 3, withPeriod: 2, unscheduled: 1, budgetRub: 4250000 },
 };
+
+export const makePlan = (patch: Partial<PlansResponse['items'][number]> = {}): PlansResponse['items'][number] => ({
+	id: 'p-today', title: 'Закупка оборудования', note: null, goal: 'EQUIPMENT', budgetRub: 1200000,
+	dateMode: 'PERIOD', startDate: '2026-10-20', endDate: '2026-10-22', state: 'ACTIVE',
+	notifications: { inApp: true, email: false }, recommendation: null, createdAt: '2026-10-20T09:00:00Z',
+	...patch,
+});

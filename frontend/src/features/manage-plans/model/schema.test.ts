@@ -8,7 +8,7 @@ const base: PlanValues = {
 	startDate: '',
 	endDate: '',
 	note: '',
-	email: false,
+	inApp: true,
 };
 const messages = (values: PlanValues) => {
 	const result = planSchema.safeParse(values);
@@ -30,6 +30,25 @@ describe('planSchema', () => {
 		expect(messages({ ...base, dateMode: 'PERIOD', startDate: '2027-06-10', endDate: '2027-06-01' }))
 			.toEqual(['Окончание не может быть раньше начала']);
 		expect(messages({ ...base, dateMode: 'PERIOD', startDate: '2027-06-01', endDate: '2027-06-01' })).toEqual([]);
+	});
+
+	it('цель обязательна, ограничения длины соответствуют серверу', () => {
+		expect(messages({ ...base, goal: '' })).toContain('Опишите цель');
+		expect(messages({ ...base, goal: '   ' })).toContain('Опишите цель');
+		expect(messages({ ...base, goal: 'я'.repeat(65) })).toContain('Не больше 64 символов');
+		expect(planSchema.parse({ ...base, goal: '  Своя задача  ' }).goal).toBe('Своя задача');
+		expect(messages({ ...base, title: 'Я', note: 'а'.repeat(2000) })).toEqual([]);
+		expect(messages({ ...base, title: 'а'.repeat(201) })).toContain('Не больше 200 символов');
+		expect(messages({ ...base, note: 'а'.repeat(2001) })).toContain('Не больше 2000 символов');
+	});
+
+	it('не принимает несуществующую дату, но принимает високосный день', () => {
+		expect(messages({ ...base, dateMode: 'DAY', startDate: '2027-02-29' })).toContain('Укажите корректную дату');
+		expect(messages({ ...base, dateMode: 'DAY', startDate: '2028-02-29' })).toEqual([]);
+	});
+
+	it('не допускает потерю точности бюджета', () => {
+		expect(messages({ ...base, budget: '9007199254740992' })).toContain('Сумма слишком велика');
 	});
 
 	it('бюджет — положительное целое', () => {

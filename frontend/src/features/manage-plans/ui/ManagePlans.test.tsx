@@ -20,6 +20,8 @@ describe('CreatePlan', () => {
 
 		await user.click(screen.getByRole('button', { name: 'Новый план' }));
 		const dialog = screen.getByRole('dialog');
+		await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Сохранить план' })).toBeEnabled());
+		await user.type(screen.getByLabelText('Цель'), 'Открыть вторую пекарню');
 		await user.type(within(dialog).getByLabelText('Название'), 'Новая печь');
 		await user.type(within(dialog).getByLabelText('Ориентировочный бюджет, ₽'), '1200000');
 		await user.click(within(dialog).getByRole('button', { name: 'Сохранить план' }));
@@ -27,7 +29,7 @@ describe('CreatePlan', () => {
 		await waitFor(() => expect(body).toHaveBeenCalledWith({
 			title: 'Новая печь',
 			note: null,
-			goal: null,
+			goal: 'Открыть вторую пекарню',
 			budgetRub: 1200000,
 			dateMode: 'UNSCHEDULED',
 			startDate: null,
@@ -43,11 +45,13 @@ describe('CreatePlan', () => {
 
 		await user.click(screen.getByRole('button', { name: 'Новый план' }));
 		const dialog = screen.getByRole('dialog');
+		await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Сохранить план' })).toBeEnabled());
+		await user.type(screen.getByLabelText('Цель'), 'Открыть вторую пекарню');
 		await user.type(within(dialog).getByLabelText('Название'), 'Ремонт');
 		await user.type(within(dialog).getByLabelText('Ориентировочный бюджет, ₽'), '100');
 		await user.click(within(dialog).getByRole('radio', { name: 'Период' }));
-		await user.type(within(dialog).getByLabelText('Начало'), '2027-06-10');
-		await user.type(within(dialog).getByLabelText('Окончание'), '2027-06-01');
+		await user.type(within(dialog).getByLabelText('Начало'), '10.06.2027');
+		await user.type(within(dialog).getByLabelText('Окончание'), '01.06.2027');
 		await user.click(within(dialog).getByRole('button', { name: 'Сохранить план' }));
 
 		expect(await within(dialog).findByText('Окончание не может быть раньше начала')).toBeInTheDocument();
@@ -64,10 +68,12 @@ describe('CreatePlan', () => {
 
 		await user.click(screen.getByRole('button', { name: 'Новый план' }));
 		const dialog = screen.getByRole('dialog');
+		await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Сохранить план' })).toBeEnabled());
+		await user.type(screen.getByLabelText('Цель'), 'Открыть вторую пекарню');
 		await user.type(within(dialog).getByLabelText('Название'), 'Закупка');
 		await user.type(within(dialog).getByLabelText('Ориентировочный бюджет, ₽'), '50000');
 		await user.click(within(dialog).getByRole('radio', { name: 'Один день' }));
-		await user.type(within(dialog).getByLabelText('Дата'), '2026-11-05');
+		await user.type(within(dialog).getByLabelText('Дата'), '05.11.2026');
 		await user.click(within(dialog).getByRole('button', { name: 'Сохранить план' }));
 
 		await waitFor(() => expect(body).toHaveBeenCalledWith(expect.objectContaining({

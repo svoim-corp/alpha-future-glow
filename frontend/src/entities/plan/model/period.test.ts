@@ -5,7 +5,7 @@ const plan = (patch: Partial<BusinessPlan>): BusinessPlan => ({
 	id: 'p-1',
 	title: 'План',
 	note: null,
-	goal: null,
+	goal: 'EQUIPMENT',
 	budgetRub: 100,
 	dateMode: 'PERIOD',
 	startDate: '2027-06-01',

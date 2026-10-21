@@ -15,6 +15,7 @@ import tseslint from 'typescript-eslint';
 /* ------------------------------------------------------------------ */
 const LAYERS = ['app', 'pages', 'widgets', 'features', 'entities', 'shared'];
 const SLICED_LAYERS = ['pages', 'widgets', 'features', 'entities'];
+const DESIGN_SCRIPTS = ['docs/designs/**/*.js', 'docs/ui-kit/**/*.js'];
 
 /**
  * Публичный API shared: @shared/ui, @shared/api, @shared/config, @shared/lib/<модуль>.
@@ -108,8 +109,12 @@ export default tseslint.config(
 	},
 
 	js.configs.recommended,
-	...tseslint.configs.recommendedTypeChecked,
+	...tseslint.configs.recommendedTypeChecked.map((config) => ({
+		...config,
+		ignores: [...(config.ignores ?? []), ...DESIGN_SCRIPTS],
+	})),
 	{
+		ignores: DESIGN_SCRIPTS,
 		languageOptions: {
 			ecmaVersion: 'latest',
 			sourceType: 'module',
@@ -132,7 +137,10 @@ export default tseslint.config(
 		...react.configs.flat['jsx-runtime'],
 		settings: { react: { version: 'detect' } },
 	},
-	reactHooks.configs.flat['recommended-latest'],
+	{
+		...reactHooks.configs.flat['recommended-latest'],
+		ignores: DESIGN_SCRIPTS,
+	},
 	{
 		files: ['src/**/*.tsx'],
 		...jsxA11y.flatConfigs.recommended,
@@ -140,6 +148,7 @@ export default tseslint.config(
 
 	/* ---------- Общие правила ---------- */
 	{
+		ignores: DESIGN_SCRIPTS,
 		plugins: {
 			'@stylistic': stylistic,
 			'simple-import-sort': simpleImportSort,
@@ -240,6 +249,14 @@ export default tseslint.config(
 			'@typescript-eslint/no-non-null-assertion': 'off',
 			'@typescript-eslint/unbound-method': 'off',
 		},
+	},
+
+	// Скрипты HTML-макетов — обычный браузерный JS вне TypeScript-проекта.
+	// Для них действуют js.configs.recommended; недоступное хранилище допустимо игнорировать.
+	{
+		files: DESIGN_SCRIPTS,
+		languageOptions: { globals: { ...globals.browser } },
+		rules: { 'no-empty': ['error', { allowEmptyCatch: true }] },
 	},
 
 	// Конфиги без типизированных правил: eslint.config.js не в tsconfig,

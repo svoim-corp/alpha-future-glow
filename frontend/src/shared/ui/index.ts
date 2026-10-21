@@ -10,6 +10,8 @@ export type { CardProps } from './Card';
 export { Card } from './Card';
 export type { DataTableColumn, DataTableProps } from './DataTable';
 export { DataTable } from './DataTable';
+export type { DateFieldProps } from './DateField';
+export { DateField } from './DateField';
 export type {
 	CheckboxFieldProps,
 	FieldProps,
@@ -29,6 +31,10 @@ export type { MetricItem, MetricsProps } from './Metrics';
 export { Metrics } from './Metrics';
 export type { ModalProps } from './Modal';
 export { Modal } from './Modal';
+export type { MoneyFieldProps } from './MoneyField';
+export { MoneyField } from './MoneyField';
+export type { MonthPickerProps } from './MonthPicker';
+export { MonthPicker } from './MonthPicker';
 export type { PageProps } from './Page';
 export { Page } from './Page';
 export type { SelectOption, SelectProps, SelectVariant } from './Select';
@@ -40,3 +46,5 @@ export type { TabItem, TabsProps } from './Tabs';
 export { panelId, tabId,Tabs } from './Tabs';
 export type { SearchFieldProps, SelectFilterProps } from './Toolbar';
 export { FilterToolbar, ListToolbar, SearchField, SelectFilter } from './Toolbar';
+export type { TooltipProps } from './Tooltip';
+export { Tooltip } from './Tooltip';

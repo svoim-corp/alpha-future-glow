@@ -13,7 +13,7 @@ export interface BusinessPlan {
 	id: string;
 	title: string;
 	note: string | null;
-	goal: string | null;
+	goal: string;
 	budgetRub: number;
 	dateMode: DateMode;
 	startDate: string | null;
@@ -36,4 +36,20 @@ export interface PlanHomeRecommendation {
 	productCode: string;
 	productName: string;
 	reason: string;
+}
+
+export interface CreatePlanArgs {
+	title: string;
+	note: string | null;
+	goal: string;
+	budgetRub: number;
+	dateMode: DateMode;
+	startDate: string | null;
+	endDate: string | null;
+	notifications: { inApp: boolean; email: boolean };
+}
+
+export interface PlanPatch extends Partial<Omit<CreatePlanArgs, 'notifications'>> {
+	state?: PlanState;
+	notifications?: { inApp?: boolean; email?: boolean };
 }
