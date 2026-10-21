@@ -231,3 +231,30 @@ func (m *Module) getContract(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, resp)
 }
+
+// getDocument godoc
+//
+//	@Summary		Печатная форма документа договора
+//	@Description	HTML для открытия в новой вкладке. Формирует банк по условиям принятого предложения; это не загрузка файлов клиента.
+//	@Tags			offer
+//	@Produce		html
+//	@Param			id		path		string	true	"ID заявки"
+//	@Param			docId	path		string	true	"ID документа"	Enums(d-1, d-2)
+//	@Success		200		{string}	string	"Печатная форма"
+//	@Failure		403		{object}	httpx.ErrorBody
+//	@Failure		404		{object}	httpx.ErrorBody	"Документа нет или предложение не принято"
+//	@Router			/applications/{id}/contract/documents/{docId} [get]
+func (m *Module) getDocument(c *gin.Context) {
+	company, err := clientCompany(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	html, err := m.renderDocument(c.Request.Context(), c.Param("id"), company, c.Param("docId"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.Header("Content-Disposition", "inline")
+	c.Data(http.StatusOK, "text/html; charset=utf-8", html)
+}

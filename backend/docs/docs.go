@@ -458,6 +458,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/contract/documents/{docId}": {
+            "get": {
+                "description": "HTML для открытия в новой вкладке. Формирует банк по условиям принятого предложения; это не загрузка файлов клиента.",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "offer"
+                ],
+                "summary": "Печатная форма документа договора",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "d-1",
+                            "d-2"
+                        ],
+                        "type": "string",
+                        "description": "ID документа",
+                        "name": "docId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Печатная форма",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Документа нет или предложение не принято",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/guarantor/consent-bki": {
             "post": {
                 "description": "Для выбранного поручителя, на этапе 2. При смене поручителя согласие нужно дать заново.",
