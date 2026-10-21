@@ -34,4 +34,18 @@ describe('SupportPage', () => {
 
 		expect(await screen.findByText('Обращение будет привязано к заявке a-1031.')).toBeInTheDocument();
 	});
+
+	it('поиск оставляет подходящие вопросы и сообщает, если ответа нет', async () => {
+		server.use(
+			http.get(apiUrl('/support/faq'), () => HttpResponse.json(faqFixture)),
+			http.get(apiUrl('/support/tickets'), () => HttpResponse.json(ticketsFixture)),
+		);
+		const { user } = renderWithProviders(<SupportPage />);
+
+		await screen.findByText('Зачем выписка из 1С?');
+		await user.type(screen.getByRole('searchbox', { name: 'Поиск по вопросам' }), 'такого нет');
+
+		expect(screen.queryByText('Зачем выписка из 1С?')).not.toBeInTheDocument();
+		expect(screen.getByText(/Подходящий ответ не найден/)).toBeInTheDocument();
+	});
 });

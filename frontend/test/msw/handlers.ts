@@ -1,5 +1,6 @@
 import { http, type HttpHandler,HttpResponse } from 'msw';
 
+import { clientUser } from '../fixtures/session';
 import { apiUrl } from './apiUrl';
 
 /**
@@ -7,6 +8,8 @@ import { apiUrl } from './apiUrl';
  * В конкретном тесте переопределяй через server.use(...).
  */
 export const handlers: HttpHandler[] = [
+	// заголовок страниц берёт название компании из текущего пользователя
+	http.get(apiUrl('/auth/me'), () => HttpResponse.json(clientUser)),
 	// колокольчик в шапке запрашивает уведомления на любой клиентской странице
 	http.get(apiUrl('/notifications'), () => HttpResponse.json({ unreadCount: 0, items: [] })),
 	// главная запрашивает кредиты, документы и подбор по планам на любой клиентской странице

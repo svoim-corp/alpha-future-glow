@@ -1,0 +1,41 @@
+.list {
+	display: grid;
+	gap: 12px;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+
+.ticket {
+	padding: 16px 18px;
+	background: var(--color-raised);
+	border-radius: 16px;
+}
+
+.head {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	justify-content: space-between;
+
+	h3 {
+		margin: 0;
+		font-size: 13px;
+		font-weight: 600;
+	}
+}
+
+.meta {
+	margin: 8px 0 0;
+	font-size: 10px;
+	color: var(--color-text-muted);
+}
+
+.reply {
+	padding: 10px 14px;
+	margin: 12px 0 0;
+	font-size: 12px;
+	line-height: 1.6;
+	background: var(--color-primary-soft);
+	border-radius: 12px;
+}
