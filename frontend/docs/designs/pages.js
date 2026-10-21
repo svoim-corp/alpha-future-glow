@@ -111,46 +111,6 @@
     document.querySelector('#product-detail-body').innerHTML = `<div class="detail-values"><div><span>Сумма</span><strong>${item.amount}</strong></div><div><span>Срок</span><strong>${item.term}</strong></div><div><span>Диапазон ставок</span><strong>${item.rate}</strong></div></div><p class="dialog-description">${item.note}</p><div class="soft-info"><p>Итоговые условия определяются после рассмотрения. Подбор продукта не гарантирует одобрения.</p></div><p class="dialog-notice">Это просмотр дизайна. Оформление заявки не запускается.</p>`;
     openDialog('product-detail',button);
   }));
-  // Documents: only synthetic previews and selection states; files are never uploaded.
-  const files = [...document.querySelectorAll('.file-card')];
-  const filesGrid = document.querySelector('#files-grid');
-  if (filesGrid) {
-    let category = 'all';
-    const query = document.querySelector('#document-search'), sort = document.querySelector('#document-sort');
-    function filterFiles() {
-      let visible = 0;
-      files.forEach(card => { card.hidden = (category !== 'all' && card.dataset.category !== category) || !card.dataset.name.toLocaleLowerCase('ru').includes(query.value.trim().toLocaleLowerCase('ru')); if (!card.hidden) visible++; });
-      const date = card => { const value = card.querySelector('.file-card-meta > span').textContent.split(' · ').at(-1).split('.'); return Number(`${value[2]}${value[1]}${value[0]}`); };
-      [...files].sort((a,b) => sort.value === 'date' ? date(b)-date(a) : a.dataset.name.localeCompare(b.dataset.name,'ru')).forEach(card => filesGrid.append(card));
-      document.querySelector('#documents-empty').hidden = visible > 0;
-    }
-    document.querySelectorAll('.document-categories [data-category]').forEach(button => button.addEventListener('click', () => {
-      category = button.dataset.category;
-      document.querySelectorAll('.document-categories button').forEach(item => { item.classList.toggle('is-selected',item===button); item.setAttribute('aria-pressed', String(item===button)); });
-      filterFiles();
-    }));
-    query.addEventListener('input',filterFiles); sort.addEventListener('change',filterFiles); filterFiles();
-    document.querySelectorAll('[data-file]').forEach(button => button.addEventListener('click', () => {
-      const name = button.closest('.file-card').dataset.name;
-      document.querySelector('#file-preview-title').textContent = name;
-      document.querySelector('#file-preview-body').innerHTML = `<div class="document-demo-preview"><span class="row-eyebrow">ДЕМОНСТРАЦИОННОЕ ПРЕВЬЮ</span><hr><h3>${escape(name)}</h3><p>ООО «Северная пекарня»<br>ИНН 7712345678</p><hr><p>Здесь в приложении будет просмотр PDF, изображения или содержимого текстового документа.</p><p>Это образец представления, а не реальный файл.</p></div><p class="table-note">Оригинальные файлы к макету не прикреплены.</p>`;
-      openDialog('file-preview',button);
-    }));
-    document.querySelectorAll('[data-reuse]').forEach(button => button.addEventListener('click', () => openDialog('reuse-dialog',button)));
-    document.querySelectorAll('[data-delete-file]').forEach(button => button.addEventListener('click', () => {
-      document.querySelector('#delete-description').textContent = `Документ «${button.closest('.file-card').dataset.name}» будет удалён из личной библиотеки. В этом макете удаление не выполняется.`;
-      openDialog('delete-dialog',button);
-    }));
-    document.querySelector('#document-upload').addEventListener('change', event => {
-      const file = event.target.files[0];
-      const invalid = file && (!/\.(pdf|jpe?g|png|txt)$/i.test(file.name) || file.size > 25*1024*1024);
-      const output = document.querySelector('#upload-status');
-      output.textContent = !file ? 'Файл не выбран.' : invalid ? 'Для этого макета выберите PDF, JPG, PNG или TXT до 25 МБ.' : `Выбран: ${file.name}. ${(file.size/1024).toFixed(0)} КБ. Файл никуда не отправляется.`;
-      event.target.setAttribute('aria-invalid',String(Boolean(invalid))); output.classList.toggle('ui-error',Boolean(invalid));
-      if (invalid) event.target.value = '';
-    });
-  }
-  // FAQ and chat show interaction states without sending anything.
   document.querySelector('#faq-search')?.addEventListener('input',event => {
     let count = 0;
     document.querySelectorAll('.faq-item').forEach(item => { item.hidden = !item.dataset.name.toLocaleLowerCase('ru').includes(event.target.value.trim().toLocaleLowerCase('ru')); if (!item.hidden) count++; });
