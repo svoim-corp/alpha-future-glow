@@ -42,6 +42,7 @@ func (m *Module) Wire(p Ports) { m.ports = p }
 
 func (m *Module) Register(r httpx.Routes) {
 	r.Client.POST("/applications", m.create)
+	r.Client.GET("/applications", m.list)
 }
 
 // ResetDemo удаляет заявки: в демо их создают заново.

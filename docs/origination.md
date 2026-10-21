@@ -49,3 +49,22 @@
 ```json
 { "id": "a-1031", "status": "DRAFT", "version": 1, "redirect": "/applications/a-1031/edit" }
 ```
+
+### `GET /applications?mine=true`
+
+Реализовано. Блок «Мои заявки»: черновики и поданные заявки компании пользователя, недавно изменённые первыми.
+Клиент всегда видит только свою компанию, `mine` принимается для совместимости. Удалённые черновики не показываются.
+Пагинация — `?page=1&size=20` (размер до 100).
+
+- `number` присваивается при отправке, у черновика — `null`.
+- `actionRequired: true` — ход за клиентом: `INFO_REQUESTED`, `APPROVED`, `COUNTER_OFFER`, `SIGNING`.
+
+```json
+{
+  "items": [
+    { "id": "a-1024", "number": "КЗ-2026-001024", "product": { "code": "WORKING", "name": "Оборотный кредит" }, "amount": 1500000, "term": 24, "status": "INFO_REQUESTED", "statusLabel": "Нужна доп. информация", "actionRequired": true, "updatedAt": "2026-10-20T12:40:00Z" },
+    { "id": "a-1031", "number": null, "product": { "code": "EXPRESS", "name": "Экспресс-кредит" }, "amount": 500000, "term": 12, "status": "DRAFT", "statusLabel": "Черновик", "actionRequired": false, "updatedAt": "2026-10-19T09:10:00Z" }
+  ],
+  "page": 1, "size": 20, "total": 2
+}
+```

@@ -16,6 +16,58 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/applications": {
+            "get": {
+                "description": "Блок «Мои заявки»: черновики и поданные заявки компании, недавно изменённые первыми.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Заявки компании",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Заявки своей компании (клиент видит только их)",
+                        "name": "mine",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Страница",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Размер страницы (до 100)",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/origination.applicationsPage"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Кнопка «Оформить». Компания берётся из пользователя, полномочия заявителя — из данных банка.",
                 "consumes": [
@@ -2150,6 +2202,74 @@ const docTemplate = `{
                 }
             }
         },
+        "origination.applicationShortDTO": {
+            "type": "object",
+            "properties": {
+                "actionRequired": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a-1024"
+                },
+                "number": {
+                    "description": "null у черновика",
+                    "type": "string",
+                    "example": "КЗ-2026-001024"
+                },
+                "product": {
+                    "$ref": "#/definitions/origination.productRefDTO"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "INFO_REQUESTED"
+                },
+                "statusLabel": {
+                    "type": "string",
+                    "example": "Нужна доп. информация"
+                },
+                "term": {
+                    "type": "integer",
+                    "example": 24
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2026-10-20T12:40:00Z"
+                }
+            }
+        },
+        "origination.applicationsPage": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/origination.applicationShortDTO"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
         "origination.createRequest": {
             "type": "object",
             "required": [
@@ -2199,6 +2319,19 @@ const docTemplate = `{
                 "version": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "origination.productRefDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Оборотный кредит"
                 }
             }
         },

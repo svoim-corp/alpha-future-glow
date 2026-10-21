@@ -43,6 +43,9 @@ type authorityRecord struct {
 	Powers     []string             `json:"powers"`
 }
 
+const appCols = `id, number, company_id, applicant_id, product_code, goal, purpose_text, amount, term, grace_months,
+	overdraft_limit, guarantor_person_id, truth_confirmed, authority, status, version, created_at, updated_at, submitted_at, deleted_at`
+
 func (s *Store) Insert(ctx context.Context, a *appRow) error {
 	return s.db.GetContext(ctx, &a.ID, `
 		INSERT INTO origination.applications (id, company_id, applicant_id, product_code, goal, amount, term, authority,
@@ -50,6 +53,20 @@ func (s *Store) Insert(ctx context.Context, a *appRow) error {
 		VALUES ('a-' || nextval('origination.application_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
 		RETURNING id`,
 		a.CompanyID, a.ApplicantID, a.ProductCode, a.Goal, a.Amount, a.Term, a.Authority, a.Status, a.Version, a.CreatedAt)
+}
+
+// CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.
+func (s *Store) CompanyApplications(ctx context.Context, companyID string, limit, offset int) ([]appRow, int, error) {
+	var total int
+	if err := s.db.GetContext(ctx, &total, `
+		SELECT count(*) FROM origination.applications WHERE company_id = $1 AND deleted_at IS NULL`, companyID); err != nil {
+		return nil, 0, err
+	}
+	var out []appRow
+	err := s.db.SelectContext(ctx, &out, `SELECT `+appCols+` FROM origination.applications
+		WHERE company_id = $1 AND deleted_at IS NULL
+		ORDER BY updated_at DESC, id DESC LIMIT $2 OFFSET $3`, companyID, limit, offset)
+	return out, total, err
 }
 
 // Reset удаляет все заявки; связанные таблицы схемы очищаются каскадом.

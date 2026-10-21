@@ -411,6 +411,53 @@ definitions:
         - $ref: '#/definitions/shared.NotificationType'
         example: INFO_REQUESTED
     type: object
+  origination.applicationShortDTO:
+    properties:
+      actionRequired:
+        example: true
+        type: boolean
+      amount:
+        example: 1500000
+        type: integer
+      id:
+        example: a-1024
+        type: string
+      number:
+        description: null у черновика
+        example: КЗ-2026-001024
+        type: string
+      product:
+        $ref: '#/definitions/origination.productRefDTO'
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: INFO_REQUESTED
+      statusLabel:
+        example: Нужна доп. информация
+        type: string
+      term:
+        example: 24
+        type: integer
+      updatedAt:
+        example: "2026-10-20T12:40:00Z"
+        type: string
+    type: object
+  origination.applicationsPage:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/origination.applicationShortDTO'
+        type: array
+      page:
+        example: 1
+        type: integer
+      size:
+        example: 20
+        type: integer
+      total:
+        example: 2
+        type: integer
+    type: object
   origination.createRequest:
     properties:
       amount:
@@ -446,6 +493,15 @@ definitions:
       version:
         example: 1
         type: integer
+    type: object
+  origination.productRefDTO:
+    properties:
+      code:
+        example: WORKING
+        type: string
+      name:
+        example: Оборотный кредит
+        type: string
     type: object
   planner.createPlanRequest:
     properties:
@@ -1424,6 +1480,42 @@ info:
   version: "1.0"
 paths:
   /applications:
+    get:
+      description: 'Блок «Мои заявки»: черновики и поданные заявки компании, недавно
+        изменённые первыми.'
+      parameters:
+      - description: Заявки своей компании (клиент видит только их)
+        in: query
+        name: mine
+        type: boolean
+      - default: 1
+        description: Страница
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Размер страницы (до 100)
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.applicationsPage'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Заявки компании
+      tags:
+      - applications
     post:
       consumes:
       - application/json
