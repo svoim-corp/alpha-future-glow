@@ -6,7 +6,7 @@ export const ApplicationEditPage = () => {
 	const { id = '' } = useParams();
 
 	return (
-		<Page title="Заявка на кредит" subtitle="Изменения сохраняются автоматически — можно вернуться позже.">
+		<Page eyebrow="ОФОРМЛЕНИЕ КРЕДИТА" title="Заявка на кредит" subtitle="Изменения сохраняются автоматически — можно вернуться позже.">
 			<ApplicationWizard applicationId={id} />
 		</Page>
 	);

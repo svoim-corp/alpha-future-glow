@@ -11,7 +11,7 @@ import { DecideOffer } from '@features/decide-offer';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { paths } from '@shared/config';
 import { formatMoney, formatTerm } from '@shared/lib/format';
-import { AsyncBoundary, ButtonLink, Card, KeyValueList } from '@shared/ui';
+import { AsyncBoundary, ButtonLink, Card, Metrics } from '@shared/ui';
 import { Navigate, useNavigate } from 'react-router';
 
 import styles from './ApplicationTracker.module.scss';
@@ -42,19 +42,23 @@ export const ApplicationTracker = ({ applicationId }: { applicationId: string })
 				<div className={styles.tracker}>
 					<Card className={styles.card} aria-labelledby="t-summary">
 						<div className={styles.head}>
-							<h2 id="t-summary" className={styles.title}>
-								{application.number ? `Заявка ${application.number}` : 'Заявка'}
-							</h2>
+							<div>
+								<span className={styles.eyebrow}>ЗАЯВКА НА КРЕДИТ</span>
+								<h2 id="t-summary" className={styles.title}>
+									{application.number ? `Заявка ${application.number}` : 'Заявка'}
+								</h2>
+								{application.company && <p className={styles.company}>{application.company.name}</p>}
+							</div>
 							<StatusBadge status={application.status} />
 						</div>
-						<KeyValueList
+						<Metrics
+							label="Параметры заявки"
 							items={[
 								{ label: 'Продукт', value: application.product.name },
 								{ label: 'Сумма', value: formatMoney(application.params.amount) },
 								...(application.params.term === null
 									? []
 									: [{ label: 'Срок', value: formatTerm(application.params.term) }]),
-								...(application.company ? [{ label: 'Компания', value: application.company.name }] : []),
 							]}
 						/>
 					</Card>

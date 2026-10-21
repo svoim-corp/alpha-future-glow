@@ -2,6 +2,8 @@ import { ContractTermsView, useGetContractQuery } from '@entities/contract';
 import { SignContract } from '@features/sign-contract';
 import { AsyncBoundary, Card } from '@shared/ui';
 
+import styles from './ContractSigning.module.scss';
+
 export const ContractSigning = ({ applicationId }: { applicationId: string }) => {
 	const { data, isLoading, isError, refetch } = useGetContractQuery(applicationId);
 
@@ -14,15 +16,15 @@ export const ContractSigning = ({ applicationId }: { applicationId: string }) =>
 			errorText="Не удалось загрузить договор"
 		>
 			{data && (
-				<>
-					<Card>
-						<h2>Условия кредита</h2>
+				<div className={styles.signing}>
+					<Card className={styles.card}>
+						<h2 className={styles.title}>Условия кредита</h2>
 						<ContractTermsView contract={data} />
 					</Card>
-					<Card>
+					<Card className={styles.card}>
 						<SignContract applicationId={applicationId} contract={data} />
 					</Card>
-				</>
+				</div>
 			)}
 		</AsyncBoundary>
 	);

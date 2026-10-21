@@ -6,7 +6,11 @@ export const ApplicationSignPage = () => {
 	const { id = '' } = useParams();
 
 	return (
-		<Page title="Подписание договора" subtitle="Проверьте условия и документы. Подпись имитируется, без кода из SMS.">
+		<Page
+			eyebrow="ПОСЛЕДНИЙ ШАГ"
+			title="Подписание договора"
+			subtitle="Проверьте условия и документы. Подпись имитируется, без кода из SMS."
+		>
 			<ContractSigning applicationId={id} />
 		</Page>
 	);

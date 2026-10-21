@@ -6,7 +6,7 @@ export const ApplicationPage = () => {
 	const { id = '' } = useParams();
 
 	return (
-		<Page title="Статус заявки" subtitle="Всегда видно, что происходит и чей сейчас ход.">
+		<Page eyebrow="ВАША ЗАЯВКА" title="Статус заявки" subtitle="Всегда видно, что происходит и чей сейчас ход.">
 			<ApplicationTracker applicationId={id} />
 		</Page>
 	);

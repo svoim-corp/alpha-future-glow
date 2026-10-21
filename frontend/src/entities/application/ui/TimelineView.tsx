@@ -1,5 +1,5 @@
 import { formatDateTime } from '@shared/lib/format';
-import { AsyncBoundary } from '@shared/ui';
+import { AsyncBoundary, Icon } from '@shared/ui';
 import clsx from 'clsx';
 
 import { useGetTimelineQuery } from '../api/trackingApi';
@@ -21,7 +21,7 @@ export const TimelineView = ({ applicationId }: { applicationId: string }) => {
 		>
 			{data && (
 				<div>
-					<div className={styles.current}>
+					<div className={clsx(styles.current, data.current.actor === 'CLIENT' && styles.yourTurn)}>
 						<p className={styles.what}>{data.current.whatsHappening}</p>
 						<p className={styles.next}>
 							{data.current.actor === 'CLIENT' ? 'Ход за вами: ' : 'Ход за банком: '}
@@ -35,7 +35,10 @@ export const TimelineView = ({ applicationId }: { applicationId: string }) => {
 								className={clsx(styles.step, step.state === 'DONE' && styles.done, step.state === 'CURRENT' && styles.now)}
 								aria-current={step.state === 'CURRENT' ? 'step' : undefined}
 							>
-								<span>
+								<span className={styles.marker}>
+									{step.state === 'DONE' && <Icon name="check" size={14} />}
+								</span>
+								<span className={styles.label}>
 									{step.label}
 									<span className="visually-hidden">{` — ${STATE_TEXT[step.state]}`}</span>
 								</span>
