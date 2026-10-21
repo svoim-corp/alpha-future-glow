@@ -66,3 +66,45 @@
 | `kozlov` | 3 600 000 | 2 000 000 |
 | `polyakov` | 1 200 000 | 1 000 000 |
 | `kuznetsov` | 1 600 000 | 1 000 000 |
+
+## Тестовые сценарии
+
+Как пройти каждую ветку «Схемы решения» и что должно получиться на каждом шаге. Продукт во всех сценариях —
+`WORKING`, срок 24 мес., суммы — из таблицы лимитов выше. Перед прогоном — `POST /admin/seed/reset` (demo-профиль).
+
+Общий путь клиента: `POST /auth/login` → `POST /applications` (черновик) → `POST /applications/{id}/consents/bki` →
+`POST /applications/{id}/prelim` → (при `amountFits: false` — `POST .../prelim/choice`) → этап 2: выбор поручителя
+(`PATCH`, для ООО), `POST .../guarantor/consent-bki`, `POST .../validate` → `POST .../submit`.
+После `submit` заявка сама проходит `SUBMITTED → DATA_CHECK → SCORING → ON_DECISION` (фоновый конвейер, секунды)
+и либо получает авторешение, либо ждёт сотрудника в очереди `GET /bank/applications`.
+
+| Логин | Черновик | Этап 1 (`prelim`) | После `submit` | Сотрудник | Итог |
+|---|---|---|---|---|---|
+| `smirnov` | создаётся, полномочия `HEAD` | `LIMIT`, лимит 3 300 000, `amountFits: true`, суды — `WARN` | балл 740, `LOW`, авто | — | `APPROVED` (авто) |
+| `petrova` | создаётся, полномочия `MCHD` до 01.03.2027 | как у `smirnov` | как у `smirnov` | в анкете — «Заявитель действует по МЧД» | `APPROVED` (авто) |
+| `volkov` | `403`: «Срок действия доверенности истёк 30.09.2026» | — | — | — | черновика нет |
+| `orlova` | создаётся | `STOP`, `BUSINESS_TOO_YOUNG` | — | — | стоп-отказ на этапе 1 |
+| `belov` | создаётся | `STOP`, `BKI_OVERDUE` (просрочка 95 дн.) | — | — | стоп-отказ на этапе 1 |
+| `gromov` | создаётся | `STOP`, `COMPANY_INACTIVE` (ликвидация) | — | — | стоп-отказ на этапе 1 |
+| `zaitsev` | создаётся | `STOP`, `CRITICAL_RISK` (банкротство) | — | — | стоп-отказ на этапе 1 |
+| `sokolova` | создаётся | `LIMIT`, лимит 900 000, `amountFits: false` | `REDUCE_AMOUNT` 900 000 → балл 690, к сотруднику; `KEEP_AMOUNT` → к сотруднику («сумма выше лимита») | одобряет или предлагает иные условия | решение сотрудника |
+| `morozov` | создаётся | `LIMIT`, лимит 3 900 000 | балл 660, `MEDIUM`, ждёт сотрудника; рекомендация `COUNTER_OFFER` на 2 400 000 | `POST .../decision` `COUNTER` | `COUNTER_OFFER` |
+| `kozlov` | создаётся | `LIMIT`, лимит 3 600 000 | балл 690, ждёт сотрудника; в `completeness` — `WARN TURNOVER_MISMATCH` (обороты выше выручки ГИР БО на ~58%) | `POST .../info-requests` → клиент отвечает → заявка снова проходит скоринг → решение | `INFO_REQUESTED`, затем решение сотрудника |
+| `polyakov` | создаётся | `LIMIT`, лимит 1 200 000 | балл 220, `HIGH`, авто | — | `REJECTED` (авто), альтернатива `EXPRESS` до 600 000 |
+| `kuznetsov` | создаётся, ИП | `LIMIT`, лимит 1 600 000; ГИР БО не запрашивается | балл 730, авто | — | `APPROVED` (авто), без поручителя |
+
+### Что проверить у сотрудника
+
+- `GET /bank/applications/stats` и `GET /bank/applications?status=ON_DECISION&decisionMode=MANUAL` — в очереди `morozov`, `kozlov`
+  (и `sokolova`); у авторешений `decisionMode: AUTO`.
+- `POST /bank/applications/{id}/assign` от `ivanova`, затем от `sidorov` — второй получает `409`.
+- `GET /bank/applications/{id}` — у сотрудника видны цифры ГИР БО, у клиента в `company-profile` — только `girbo.accounted`.
+- `GET /bank/applications/{id}/score` — балл и вклад каждого фактора (`modelVersion: rules-v1`).
+- `GET .../checks` и `POST .../checks/refresh` — снимки внешних проверок со временем запроса.
+- `POST .../decision` с одним и тем же `Idempotency-Key` дважды — второй ответ повторяет первый, решение одно.
+- `COUNTER` с суммой или ставкой вне рамок продукта — `422 BUSINESS_RULE`.
+
+### Сквозная проверка
+
+Каждый логин из таблицы проходит путь через `deploy/` до своего исхода; `smirnov` и `kuznetsov` — дальше до выдачи
+(оффер, подписание, выдача — зона Offer, разработчик A).
