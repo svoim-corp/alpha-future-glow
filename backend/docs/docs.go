@@ -751,6 +751,96 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/submit": {
+            "post": {
+                "description": "Проверка полноты, номер заявки, статус SUBMITTED и запуск банковского конвейера в фоне.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Отправить заявку в банк",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Версия заявки",
+                        "name": "If-Match",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ идемпотентности",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Подтверждение достоверности",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/origination.submitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/origination.submitResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Заявка заполнена не полностью — поля как в validate",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "Precondition Failed",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/validate": {
             "post": {
                 "description": "Что ещё нужно для отправки. Подтверждение достоверности приходит при отправке, здесь оно всегда в списке.",
@@ -3105,6 +3195,43 @@ const docTemplate = `{
                 },
                 "turnover": {
                     "$ref": "#/definitions/origination.turnoverDTO"
+                }
+            }
+        },
+        "origination.submitRequest": {
+            "type": "object",
+            "required": [
+                "truthConfirmed"
+            ],
+            "properties": {
+                "truthConfirmed": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "origination.submitResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "a-1031"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "КЗ-2026-001031"
+                },
+                "redirect": {
+                    "type": "string",
+                    "example": "/applications/a-1031"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "SUBMITTED"
                 }
             }
         },

@@ -31,8 +31,9 @@ func canTransition(from, to shared.Status) bool { return slices.Contains(transit
 
 // transition переводит заявку в статус to и пишет историю в одной транзакции под блокировкой строки, поэтому
 // параллельные переходы (конвейер, сотрудник, клиент) не теряются. apply меняет заявку вместе со статусом
-// (номер при отправке, отметка удаления). После коммита публикуется ApplicationStatusChanged.
-func (m *Module) transition(ctx context.Context, id string, to shared.Status, actor shared.Actor, action, comment string, apply func(*appRow)) (*appRow, error) {
+// (номер при отправке, отметка удаления) и может отменить переход ошибкой. После коммита публикуется
+// ApplicationStatusChanged.
+func (m *Module) transition(ctx context.Context, id string, to shared.Status, actor shared.Actor, action, comment string, apply func(*appRow) error) (*appRow, error) {
 	var a *appRow
 	var from shared.Status
 	now := m.now().UTC()
@@ -50,7 +51,9 @@ func (m *Module) transition(ctx context.Context, id string, to shared.Status, ac
 		}
 		a.Status, a.UpdatedAt = string(to), now
 		if apply != nil {
-			apply(a)
+			if err := apply(a); err != nil {
+				return err
+			}
 		}
 		if err := m.store.SaveTransition(ctx, tx, a); err != nil {
 			return fmt.Errorf("save status %s: %w", id, err)

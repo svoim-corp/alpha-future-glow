@@ -789,6 +789,30 @@ definitions:
       turnover:
         $ref: '#/definitions/origination.turnoverDTO'
     type: object
+  origination.submitRequest:
+    properties:
+      truthConfirmed:
+        example: true
+        type: boolean
+    required:
+    - truthConfirmed
+    type: object
+  origination.submitResponse:
+    properties:
+      id:
+        example: a-1031
+        type: string
+      number:
+        example: КЗ-2026-001031
+        type: string
+      redirect:
+        example: /applications/a-1031
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: SUBMITTED
+    type: object
   origination.turnoverDTO:
     properties:
       avgMonthlyIncome:
@@ -2284,6 +2308,67 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Выбор при сумме выше лимита
+      tags:
+      - applications
+  /applications/{id}/submit:
+    post:
+      consumes:
+      - application/json
+      description: Проверка полноты, номер заявки, статус SUBMITTED и запуск банковского
+        конвейера в фоне.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия заявки
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Ключ идемпотентности
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Подтверждение достоверности
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.submitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.submitResponse'
+        "400":
+          description: Заявка заполнена не полностью — поля как в validate
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Отправить заявку в банк
       tags:
       - applications
   /applications/{id}/validate:

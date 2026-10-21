@@ -198,6 +198,13 @@ func (s *Store) SetDraftAmount(ctx context.Context, id string, amount int64, at 
 	return version, err == nil, err
 }
 
+// NextNumber — порядковый номер для номера заявки. Пропуски допустимы: номер берётся до перехода.
+func (s *Store) NextNumber(ctx context.Context) (int64, error) {
+	var n int64
+	err := s.db.GetContext(ctx, &n, `SELECT nextval('origination.number_seq')`)
+	return n, err
+}
+
 // CompanyApplications — заявки компании без удалённых черновиков, недавно изменённые первыми, и их общее число.
 func (s *Store) CompanyApplications(ctx context.Context, companyID string, limit, offset int) ([]appRow, int, error) {
 	var total int

@@ -239,6 +239,27 @@
 
 Данные банка о компании недоступны — `502 UPSTREAM_UNAVAILABLE`: без них поручителя не проверить.
 
+### `POST /applications/{id}/submit`
+
+Реализовано. Отправка заявки: проверка полноты, номер, `DRAFT → SUBMITTED` с действием `SUBMIT`.
+
+Заголовки: `If-Match` (обязателен), `Idempotency-Key` (повтор с тем же ключом возвращает тот же ответ). Запрос:
+```json
+{ "truthConfirmed": true }
+```
+Ответ `200`:
+```json
+{ "id": "a-1031", "number": "КЗ-2026-000001", "status": "SUBMITTED", "redirect": "/applications/a-1031" }
+```
+
+- Неполная заявка — `400 VALIDATION_ERROR`, `fields` — те же пункты, что в `validate` (код `REQUIRED`).
+  `truthConfirmed: false` — пункт `stage2.truthConfirmed`.
+- Номер — `КЗ-<год отправки>-<сквозной номер из 6 цифр>`, присваивается вместе с `submittedAt` в транзакции
+  перехода. Версия проверяется под блокировкой строки: изменённый после проверки черновик — `412`.
+- После коммита публикуются `ApplicationStatusChanged` (заявка появляется в очереди банка) и `ApplicationSubmitted`
+  (Scoring ставит её в фоновый конвейер `SUBMITTED → DATA_CHECK → SCORING → ON_DECISION`). Ответ не ждёт проверок.
+- Ошибки: `409` — не черновик, `412` — версия устарела, `502` — данные банка недоступны.
+
 ### `DELETE /applications/{id}`
 
 Реализовано. Удаляет черновик, только `DRAFT` (иначе `409 INVALID_TRANSITION`). Ответ `204`.

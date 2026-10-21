@@ -17,6 +17,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/events"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
@@ -158,7 +159,10 @@ func newEnv(t *testing.T) *env {
 
 	bus := events.New()
 	companies, prelims := newFakeCompanies(), &fakePrelims{m: map[string]*shared.PrelimView{}}
-	m := New(module.Deps{DB: conn, Bus: bus})
+	if err := idempotency.Migrate(ctx, conn); err != nil {
+		t.Fatal(err)
+	}
+	m := New(module.Deps{DB: conn, Bus: bus, Idem: idempotency.New(conn)})
 	m.now = func() time.Time { return today }
 	m.Wire(Ports{
 		Products:  fakeProducts{"WORKING": working, "EXPRESS": express},
@@ -228,4 +232,21 @@ func (e *env) draft(t *testing.T, user string) createResponse {
 		t.Fatalf("черновик %s: %d %s", user, w.Code, w.Body.String())
 	}
 	return decode[createResponse](t, w)
+}
+
+// ready — черновик ООО, готовый к отправке: этап 1, согласия и поручитель. Возвращает id и версию.
+func (e *env) ready(t *testing.T, user string) (string, int) {
+	t.Helper()
+	id := e.draft(t, user).ID
+	e.passPrelim(t, id)
+	if w := e.do("POST", "/api/v1/applications/"+id+"/consents/bki", user, consentBody); w.Code != http.StatusCreated {
+		t.Fatalf("согласие: %s", w.Body.String())
+	}
+	if st, _, fail := e.patch(id, user, "1", `{"stage2":{"guarantor":{"personId":"p-1"}}}`); st != http.StatusOK {
+		t.Fatalf("поручитель: %d %+v", st, fail)
+	}
+	if w := e.do("POST", "/api/v1/applications/"+id+"/guarantor/consent-bki", user, `{"given":true}`); w.Code != http.StatusCreated {
+		t.Fatalf("согласие поручителя: %s", w.Body.String())
+	}
+	return id, 2
 }

@@ -463,3 +463,57 @@ func (m *Module) validate(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, resp)
 }
+
+type submitRequest struct {
+	TruthConfirmed *bool `json:"truthConfirmed" binding:"required" example:"true"`
+}
+
+type submitResponse struct {
+	ID       string        `json:"id" example:"a-1031"`
+	Number   string        `json:"number" example:"КЗ-2026-001031"`
+	Status   shared.Status `json:"status" example:"SUBMITTED"`
+	Redirect string        `json:"redirect" example:"/applications/a-1031"`
+}
+
+// submitApplication godoc
+//
+//	@Summary		Отправить заявку в банк
+//	@Description	Проверка полноты, номер заявки, статус SUBMITTED и запуск банковского конвейера в фоне.
+//	@Tags			applications
+//	@Accept			json
+//	@Produce		json
+//	@Param			id				path		string			true	"ID заявки"
+//	@Param			If-Match		header		string			true	"Версия заявки"
+//	@Param			Idempotency-Key	header		string			false	"Ключ идемпотентности"
+//	@Param			body			body		submitRequest	true	"Подтверждение достоверности"
+//	@Success		200				{object}	submitResponse
+//	@Failure		400				{object}	httpx.ErrorBody	"Заявка заполнена не полностью — поля как в validate"
+//	@Failure		403				{object}	httpx.ErrorBody
+//	@Failure		404				{object}	httpx.ErrorBody
+//	@Failure		409				{object}	httpx.ErrorBody
+//	@Failure		412				{object}	httpx.ErrorBody
+//	@Failure		502				{object}	httpx.ErrorBody
+//	@Router			/applications/{id}/submit [post]
+func (m *Module) submitApplication(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	version, err := httpx.IfMatch(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	var req submitRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	a, err := m.submit(c.Request.Context(), c.Param("id"), who, version, *req.TruthConfirmed)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusOK, submitResponse{ID: a.ID, Number: *a.Number, Status: shared.Status(a.Status), Redirect: "/applications/" + a.ID})
+}

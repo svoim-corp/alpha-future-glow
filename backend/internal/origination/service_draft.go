@@ -160,8 +160,9 @@ func (m *Module) deleteDraft(ctx context.Context, id string, who applicant) erro
 	if _, err := m.draftOf(ctx, id, who.companyID); err != nil {
 		return err
 	}
-	_, err := m.transition(ctx, id, shared.StatusClosed, who.actor, actionDeleteDraft, "", func(a *appRow) {
+	_, err := m.transition(ctx, id, shared.StatusClosed, who.actor, actionDeleteDraft, "", func(a *appRow) error {
 		a.DeletedAt = &a.UpdatedAt
+		return nil
 	})
 	return err
 }
