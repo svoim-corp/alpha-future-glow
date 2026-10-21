@@ -38,6 +38,7 @@
   --color-warning-soft: #FFF3D6;
   --color-danger: #A12C3B;
   --color-danger-soft: #FBECEF;
+  --color-on-danger: #FFFFFF;
   --color-info: #315DA0;
   --color-info-soft: #EAF0FA;
   --color-control-border: #87838D;
@@ -70,6 +71,7 @@
   --color-warning-soft: #382F1D;
   --color-danger: #E7A1AA;
   --color-danger-soft: #3D262D;
+  --color-on-danger: #2A1015;
   --color-info: #A5C3F5;
   --color-info-soft: #233148;
   --color-control-border: #77737E;

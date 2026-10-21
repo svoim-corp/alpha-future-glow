@@ -45,3 +45,21 @@
 		padding: var(--space-3) var(--space-4);
 	}
 }
+
+.theme {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	background: var(--color-raised);
+	border: 0;
+	border-radius: 50%;
+
+	&:hover {
+		color: var(--color-primary-text);
+		background: var(--color-primary-soft);
+	}
+}

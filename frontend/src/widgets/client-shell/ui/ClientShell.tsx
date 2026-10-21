@@ -2,12 +2,12 @@ import { NotificationBell } from '@entities/notification';
 import { useGetMeQuery } from '@entities/session';
 import { SignOutButton } from '@features/sign-out';
 import { ROUTES } from '@shared/config';
+import { useTheme } from '@shared/lib/theme';
 import { Icon, type IconName } from '@shared/ui';
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 
-import { useTheme } from '../model/useTheme';
 import styles from './ClientShell.module.scss';
 
 interface NavEntry {
