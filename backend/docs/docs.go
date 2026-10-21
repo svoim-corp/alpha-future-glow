@@ -15,6 +15,70 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/applications": {
+            "post": {
+                "description": "Кнопка «Оформить». Компания берётся из пользователя, полномочия заявителя — из данных банка.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Создать черновик заявки",
+                "parameters": [
+                    {
+                        "description": "Параметры из подбора",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/origination.createRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/origination.createResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет полномочий: не руководитель и нет действующей МЧД",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/company-profile": {
             "get": {
                 "description": "Профиль из клиентской базы банка, сверенный с реестрами. Только для чтения.",
@@ -2083,6 +2147,58 @@ const docTemplate = `{
                         }
                     ],
                     "example": "INFO_REQUESTED"
+                }
+            }
+        },
+        "origination.createRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "productCode"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1500000
+                },
+                "goal": {
+                    "description": "null — цель продукта, если она одна",
+                    "type": "string",
+                    "example": "WORKING_CAPITAL"
+                },
+                "productCode": {
+                    "type": "string",
+                    "example": "WORKING"
+                },
+                "term": {
+                    "description": "null — только у продукта с единственным сроком",
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "origination.createResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "a-1031"
+                },
+                "redirect": {
+                    "type": "string",
+                    "example": "/applications/a-1031/edit"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "DRAFT"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },

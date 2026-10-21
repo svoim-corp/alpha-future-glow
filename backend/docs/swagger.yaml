@@ -411,6 +411,42 @@ definitions:
         - $ref: '#/definitions/shared.NotificationType'
         example: INFO_REQUESTED
     type: object
+  origination.createRequest:
+    properties:
+      amount:
+        example: 1500000
+        type: integer
+      goal:
+        description: null — цель продукта, если она одна
+        example: WORKING_CAPITAL
+        type: string
+      productCode:
+        example: WORKING
+        type: string
+      term:
+        description: null — только у продукта с единственным сроком
+        example: 24
+        type: integer
+    required:
+    - amount
+    - productCode
+    type: object
+  origination.createResponse:
+    properties:
+      id:
+        example: a-1031
+        type: string
+      redirect:
+        example: /applications/a-1031/edit
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: DRAFT
+      version:
+        example: 1
+        type: integer
+    type: object
   planner.createPlanRequest:
     properties:
       budgetRub:
@@ -1387,6 +1423,49 @@ info:
   title: Умный кредитный кабинет API
   version: "1.0"
 paths:
+  /applications:
+    post:
+      consumes:
+      - application/json
+      description: Кнопка «Оформить». Компания берётся из пользователя, полномочия
+        заявителя — из данных банка.
+      parameters:
+      - description: Параметры из подбора
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.createRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/origination.createResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: 'Нет полномочий: не руководитель и нет действующей МЧД'
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Создать черновик заявки
+      tags:
+      - applications
   /applications/{id}/company-profile:
     get:
       description: Профиль из клиентской базы банка, сверенный с реестрами. Только
