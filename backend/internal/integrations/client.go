@@ -325,7 +325,7 @@ type girboDTO struct {
 	NetProfit int64 `json:"netProfit"`
 }
 
-func (c *client) girbo(ctx context.Context, inn string) (*shared.GIRBOReport, error) {
+func (c *client) GIRBO(ctx context.Context, inn string) (*shared.GIRBOReport, error) {
 	var d girboDTO
 	if ok, err := c.do(ctx, http.MethodGet, "/mock/girbo/"+esc(inn), nil, nameGIRBO, &d); !ok || err != nil {
 		return nil, err

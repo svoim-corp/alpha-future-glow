@@ -110,7 +110,7 @@ func (ch *checker) fetch(ctx context.Context, req shared.CheckRequest, s shared.
 	case shared.SourceFNS:
 		return fact(ch.client.fns(ctx, req.INN))
 	case shared.SourceGIRBO:
-		return fact(ch.client.girbo(ctx, req.INN))
+		return fact(ch.client.GIRBO(ctx, req.INN))
 	case shared.SourceCourts:
 		return fact(ch.client.courts(ctx, req.INN))
 	}

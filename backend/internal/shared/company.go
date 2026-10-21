@@ -38,8 +38,10 @@ type CompanyProfile struct {
 	TaxRegime           string
 	Head                Person
 	Founders            []Founder
-	GuarantorCandidates []Person // руководитель и учредители-физлица; для ИП — пусто
-	Turnover            Turnover // по счетам в банке
+	GuarantorCandidates []Person      // руководитель и учредители-физлица; для ИП — пусто
+	Turnover            Turnover      // по счетам в банке
+	Sources             []CheckSource // откуда собран профиль: BANK, EGRUL
+	GIRBOAccounted      bool          // отчётность в ГИР БО учтена; цифры клиенту не показываются
 }
 
 type OKVED struct{ Code, Name string }

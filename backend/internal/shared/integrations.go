@@ -21,6 +21,8 @@ type Registries interface {
 	Registration(ctx context.Context, inn string, t CompanyType) (*Registration, error)
 	// MCHD — доверенность из реестра МЧД; (nil, nil) — доверенность не найдена.
 	MCHD(ctx context.Context, number string) (*MCHDRecord, error)
+	// GIRBO — последняя бухгалтерская отчётность ООО; (nil, nil) — отчётности нет.
+	GIRBO(ctx context.Context, inn string) (*GIRBOReport, error)
 }
 
 // Checks — внешние проверки по заявке со снимками ответов (CheckResult). Реализует: разработчик B (Integrations).
