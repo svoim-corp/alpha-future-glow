@@ -83,3 +83,25 @@ func TestSubmitErrors(t *testing.T) {
 		t.Fatalf("после ошибок заявка — черновик: %s", v.Status)
 	}
 }
+
+func TestTimeline(t *testing.T) {
+	e := newEnv(t)
+	id, version := e.ready(t, "smirnov")
+	if w := e.do("POST", "/api/v1/applications/"+id+"/submit", "smirnov", `{"truthConfirmed":true}`, "If-Match", fmt.Sprint(version)); w.Code != http.StatusOK {
+		t.Fatal(w.Body.String())
+	}
+	w := e.do("GET", "/api/v1/applications/"+id+"/timeline", "smirnov", "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	got := decode[timelineResponse](t, w)
+	if got.Current.Status != shared.StatusSubmitted || got.Current.Label != "Подана" || got.Current.Actor != turnBank || got.Current.WhatsHappening == "" {
+		t.Fatalf("текущий статус: %+v", got.Current)
+	}
+	if len(got.Steps) != 4 || got.Steps[0].State != stepCurrent || got.Steps[0].At == nil || !got.Steps[0].At.Equal(today) || got.Steps[1].At != nil {
+		t.Fatalf("шаги: %+v", got.Steps)
+	}
+	if w := e.do("GET", "/api/v1/applications/"+id+"/timeline", "orlova", ""); w.Code != http.StatusForbidden {
+		t.Fatalf("чужая заявка: %d", w.Code)
+	}
+}

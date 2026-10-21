@@ -517,3 +517,65 @@ func (m *Module) submitApplication(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusOK, submitResponse{ID: a.ID, Number: *a.Number, Status: shared.Status(a.Status), Redirect: "/applications/" + a.ID})
 }
+
+type timelineCurrentDTO struct {
+	Status         shared.Status `json:"status" example:"INFO_REQUESTED"`
+	Label          string        `json:"label" example:"Нужна доп. информация"`
+	WhatsHappening string        `json:"whatsHappening" example:"Банк проверил заявку и просит уточнить данные"`
+	NextStep       string        `json:"nextStep" example:"Ответьте на запрос банка ниже"`
+	Actor          string        `json:"actor" example:"CLIENT"` // чей ход: CLIENT или BANK
+}
+
+type timelineStepDTO struct {
+	Status shared.Status `json:"status" example:"SUBMITTED"`
+	Label  string        `json:"label" example:"Подана"`
+	At     *time.Time    `json:"at" example:"2026-10-20T10:25:00Z"`
+	State  string        `json:"state" example:"DONE"` // DONE, CURRENT, PENDING
+}
+
+type timelineResponse struct {
+	Current timelineCurrentDTO `json:"current"`
+	Steps   []timelineStepDTO  `json:"steps"`
+}
+
+// timeline godoc
+//
+//	@Summary		Таймлайн заявки для клиента
+//	@Description	Что сейчас происходит, что делать дальше, чей ход, и шаги: пройденные, текущий и ожидаемые.
+//	@Tags			applications
+//	@Produce		json
+//	@Param			id	path		string	true	"ID заявки"
+//	@Success		200	{object}	timelineResponse
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Router			/applications/{id}/timeline [get]
+func (m *Module) timeline(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	a, err := m.ownApplication(ctx, c.Param("id"), who.companyID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	events, err := m.store.Events(ctx, a.ID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	st := shared.Status(a.Status)
+	txt := statusTexts[st]
+	resp := timelineResponse{
+		Current: timelineCurrentDTO{Status: st, Label: st.Label(), WhatsHappening: txt.whatsHappening, NextStep: txt.nextStep, Actor: txt.turn},
+	}
+	for _, s := range steps(st, events) {
+		resp.Steps = append(resp.Steps, timelineStepDTO{Status: s.status, Label: s.status.Label(), At: s.at, State: s.state})
+	}
+	if resp.Steps == nil {
+		resp.Steps = []timelineStepDTO{}
+	}
+	httpx.JSON(c, http.StatusOK, resp)
+}

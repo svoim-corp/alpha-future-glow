@@ -834,6 +834,47 @@
                 }
             }
         },
+        "/applications/{id}/timeline": {
+            "get": {
+                "description": "Что сейчас происходит, что делать дальше, чей ход, и шаги: пройденные, текущий и ожидаемые.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Таймлайн заявки для клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/origination.timelineResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/validate": {
             "post": {
                 "description": "Что ещё нужно для отправки. Подтверждение достоверности приходит при отправке, здесь оно всегда в списке.",
@@ -3217,6 +3258,76 @@
                 "redirect": {
                     "type": "string",
                     "example": "/applications/a-1031"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "SUBMITTED"
+                }
+            }
+        },
+        "origination.timelineCurrentDTO": {
+            "type": "object",
+            "properties": {
+                "actor": {
+                    "description": "чей ход: CLIENT или BANK",
+                    "type": "string",
+                    "example": "CLIENT"
+                },
+                "label": {
+                    "type": "string",
+                    "example": "Нужна доп. информация"
+                },
+                "nextStep": {
+                    "type": "string",
+                    "example": "Ответьте на запрос банка ниже"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/shared.Status"
+                        }
+                    ],
+                    "example": "INFO_REQUESTED"
+                },
+                "whatsHappening": {
+                    "type": "string",
+                    "example": "Банк проверил заявку и просит уточнить данные"
+                }
+            }
+        },
+        "origination.timelineResponse": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "$ref": "#/definitions/origination.timelineCurrentDTO"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/origination.timelineStepDTO"
+                    }
+                }
+            }
+        },
+        "origination.timelineStepDTO": {
+            "type": "object",
+            "properties": {
+                "at": {
+                    "type": "string",
+                    "example": "2026-10-20T10:25:00Z"
+                },
+                "label": {
+                    "type": "string",
+                    "example": "Подана"
+                },
+                "state": {
+                    "description": "DONE, CURRENT, PENDING",
+                    "type": "string",
+                    "example": "DONE"
                 },
                 "status": {
                     "allOf": [

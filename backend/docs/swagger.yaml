@@ -813,6 +813,52 @@ definitions:
         - $ref: '#/definitions/shared.Status'
         example: SUBMITTED
     type: object
+  origination.timelineCurrentDTO:
+    properties:
+      actor:
+        description: 'чей ход: CLIENT или BANK'
+        example: CLIENT
+        type: string
+      label:
+        example: Нужна доп. информация
+        type: string
+      nextStep:
+        example: Ответьте на запрос банка ниже
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: INFO_REQUESTED
+      whatsHappening:
+        example: Банк проверил заявку и просит уточнить данные
+        type: string
+    type: object
+  origination.timelineResponse:
+    properties:
+      current:
+        $ref: '#/definitions/origination.timelineCurrentDTO'
+      steps:
+        items:
+          $ref: '#/definitions/origination.timelineStepDTO'
+        type: array
+    type: object
+  origination.timelineStepDTO:
+    properties:
+      at:
+        example: "2026-10-20T10:25:00Z"
+        type: string
+      label:
+        example: Подана
+        type: string
+      state:
+        description: DONE, CURRENT, PENDING
+        example: DONE
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/shared.Status'
+        example: SUBMITTED
+    type: object
   origination.turnoverDTO:
     properties:
       avgMonthlyIncome:
@@ -2369,6 +2415,34 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Отправить заявку в банк
+      tags:
+      - applications
+  /applications/{id}/timeline:
+    get:
+      description: 'Что сейчас происходит, что делать дальше, чей ход, и шаги: пройденные,
+        текущий и ожидаемые.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/origination.timelineResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Таймлайн заявки для клиента
       tags:
       - applications
   /applications/{id}/validate:

@@ -50,6 +50,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Client.POST("/applications/:id/guarantor/consent-bki", m.consentGuarantor)
 	r.Client.POST("/applications/:id/validate", m.validate)
 	r.Client.POST("/applications/:id/submit", m.deps.Idem.Middleware(), m.submitApplication)
+	r.Client.GET("/applications/:id/timeline", m.timeline)
 }
 
 // ResetDemo удаляет заявки: в демо их создают заново.
