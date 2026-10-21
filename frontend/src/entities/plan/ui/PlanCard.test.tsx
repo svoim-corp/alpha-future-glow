@@ -49,7 +49,8 @@ describe('PlanRecommendations', () => {
 		renderWithProviders(<PlanRecommendations />);
 
 		expect(await screen.findByText('Идеи становятся ближе')).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'Открыть планер' })).toHaveAttribute('href', '/planner');
+		expect(screen.getByRole('link', { name: /Все планы/ })).toHaveAttribute('href', '/planner');
+		expect(screen.getByRole('link', { name: /Изучить/ })).toHaveAttribute('href', '/products');
 		expect(screen.getByText(/не решение банка/)).toBeInTheDocument();
 	});
 });
