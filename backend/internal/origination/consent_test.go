@@ -49,3 +49,45 @@ func TestConsentBKIErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestGuarantorConsent(t *testing.T) {
+	e := newEnv(t)
+	id := e.draft(t, "smirnov").ID
+	path := "/api/v1/applications/" + id + "/guarantor/consent-bki"
+
+	if w := e.do("POST", path, "smirnov", `{"given":true}`); w.Code != http.StatusConflict {
+		t.Fatalf("до этапа 2: %d", w.Code)
+	}
+	e.passPrelim(t, id)
+	if w := e.do("POST", path, "smirnov", `{"given":true}`); w.Code != http.StatusBadRequest {
+		t.Fatalf("поручитель не выбран: %d", w.Code)
+	}
+	if st, _, _ := e.patch(id, "smirnov", "1", `{"stage2":{"guarantor":{"personId":"p-1"}}}`); st != http.StatusOK {
+		t.Fatalf("выбор поручителя: %d", st)
+	}
+	w := e.do("POST", path, "smirnov", `{"given":true}`)
+	if got := decode[guarantorConsentResponse](t, w); w.Code != http.StatusCreated || !got.Given || !got.At.Equal(today) {
+		t.Fatalf("согласие: %d %s", w.Code, w.Body.String())
+	}
+	if a := decode[applicationDTO](t, e.do("GET", "/api/v1/applications/"+id, "smirnov", "")); !a.Stage2.Guarantor.BKIConsent {
+		t.Fatalf("согласие поручителя в заявке: %+v", a.Stage2.Guarantor)
+	}
+
+	// Другой поручитель — согласие прежнего не действует.
+	if st, _, _ := e.patch(id, "smirnov", "2", `{"stage2":{"guarantor":{"personId":"p-3"}}}`); st != http.StatusOK {
+		t.Fatalf("смена поручителя: %d", st)
+	}
+	if a := decode[applicationDTO](t, e.do("GET", "/api/v1/applications/"+id, "smirnov", "")); a.Stage2.Guarantor.PersonID != "p-3" || a.Stage2.Guarantor.BKIConsent {
+		t.Fatalf("после смены поручителя: %+v", a.Stage2.Guarantor)
+	}
+	// Тот же поручитель повторно — согласие сохраняется.
+	if w := e.do("POST", path, "smirnov", `{"given":true}`); w.Code != http.StatusCreated {
+		t.Fatal(w.Body.String())
+	}
+	if st, _, _ := e.patch(id, "smirnov", "3", `{"stage2":{"guarantor":{"personId":"p-3"}}}`); st != http.StatusOK {
+		t.Fatalf("тот же поручитель: %d", st)
+	}
+	if a := decode[applicationDTO](t, e.do("GET", "/api/v1/applications/"+id, "smirnov", "")); !a.Stage2.Guarantor.BKIConsent {
+		t.Fatalf("согласие того же поручителя не сбрасывается: %+v", a.Stage2.Guarantor)
+	}
+}

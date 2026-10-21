@@ -369,3 +369,50 @@ func (m *Module) delete(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
+
+type guarantorConsentRequest struct {
+	Given *bool `json:"given" binding:"required" example:"true"`
+}
+
+type guarantorConsentResponse struct {
+	Given bool      `json:"given" example:"true"`
+	At    time.Time `json:"at" example:"2026-10-20T10:20:00Z"`
+}
+
+// consentGuarantor godoc
+//
+//	@Summary		Согласие поручителя на запрос в БКИ
+//	@Description	Для выбранного поручителя, на этапе 2. При смене поручителя согласие нужно дать заново.
+//	@Tags			applications
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"ID заявки"
+//	@Param			body	body		guarantorConsentRequest	true	"Согласие"
+//	@Success		201		{object}	guarantorConsentResponse
+//	@Failure		400		{object}	httpx.ErrorBody	"Поручитель не выбран"
+//	@Failure		403		{object}	httpx.ErrorBody
+//	@Failure		404		{object}	httpx.ErrorBody
+//	@Failure		409		{object}	httpx.ErrorBody	"Не черновик или этап 1 не пройден"
+//	@Router			/applications/{id}/guarantor/consent-bki [post]
+func (m *Module) consentGuarantor(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	var req guarantorConsentRequest
+	if err := httpx.Bind(c, &req); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if err := mustGive(req.Given); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	cs, err := m.giveGuarantorConsent(c.Request.Context(), c.Param("id"), who)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	httpx.JSON(c, http.StatusCreated, guarantorConsentResponse{Given: true, At: cs.GivenAt})
+}

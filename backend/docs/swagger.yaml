@@ -617,6 +617,23 @@ definitions:
         example: 1
         type: integer
     type: object
+  origination.guarantorConsentRequest:
+    properties:
+      given:
+        example: true
+        type: boolean
+    required:
+    - given
+    type: object
+  origination.guarantorConsentResponse:
+    properties:
+      at:
+        example: "2026-10-20T10:20:00Z"
+        type: string
+      given:
+        example: true
+        type: boolean
+    type: object
   origination.guarantorDTO:
     properties:
       bkiConsent:
@@ -2024,6 +2041,50 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Согласие на запрос в БКИ
+      tags:
+      - applications
+  /applications/{id}/guarantor/consent-bki:
+    post:
+      consumes:
+      - application/json
+      description: Для выбранного поручителя, на этапе 2. При смене поручителя согласие
+        нужно дать заново.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Согласие
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/origination.guarantorConsentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/origination.guarantorConsentResponse'
+        "400":
+          description: Поручитель не выбран
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Не черновик или этап 1 не пройден
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Согласие поручителя на запрос в БКИ
       tags:
       - applications
   /applications/{id}/info-requests:

@@ -417,6 +417,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/applications/{id}/guarantor/consent-bki": {
+            "post": {
+                "description": "Для выбранного поручителя, на этапе 2. При смене поручителя согласие нужно дать заново.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Согласие поручителя на запрос в БКИ",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Согласие",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/origination.guarantorConsentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/origination.guarantorConsentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Поручитель не выбран",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Не черновик или этап 1 не пройден",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/applications/{id}/info-requests": {
             "get": {
                 "produces": [
@@ -2738,6 +2803,31 @@ const docTemplate = `{
                 "version": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "origination.guarantorConsentRequest": {
+            "type": "object",
+            "required": [
+                "given"
+            ],
+            "properties": {
+                "given": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "origination.guarantorConsentResponse": {
+            "type": "object",
+            "properties": {
+                "at": {
+                    "type": "string",
+                    "example": "2026-10-20T10:20:00Z"
+                },
+                "given": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

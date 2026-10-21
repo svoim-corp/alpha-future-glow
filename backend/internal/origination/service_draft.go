@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/jmoiron/sqlx"
+
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
@@ -59,7 +62,17 @@ func (m *Module) patchDraft(ctx context.Context, id, companyID string, version i
 		}
 	}
 
-	ok, err := m.store.UpdateDraft(ctx, &next, version, m.now().UTC())
+	guarantorChanged := in.GuarantorPersonID != nil && (a.GuarantorPersonID == nil || *a.GuarantorPersonID != *in.GuarantorPersonID)
+	var ok bool
+	err = db.WithTx(ctx, m.deps.DB, func(tx *sqlx.Tx) error {
+		if ok, err = m.store.UpdateDraft(ctx, tx, &next, version, m.now().UTC()); err != nil || !ok {
+			return err
+		}
+		if guarantorChanged {
+			return m.store.DeleteGuarantorConsent(ctx, tx, id)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, false, fmt.Errorf("save draft %s: %w", id, err)
 	}

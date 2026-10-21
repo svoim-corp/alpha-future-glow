@@ -37,3 +37,33 @@ func (m *Module) giveBKIConsent(ctx context.Context, id string, who applicant, t
 	}
 	return c, nil
 }
+
+// guarantorConsentText — согласие поручителя в демо фиксирует заявитель: поручитель — человек, известный банку,
+// отдельного входа у него нет.
+const guarantorConsentText = "Поручитель согласен на запрос его кредитной истории в бюро кредитных историй"
+
+// giveGuarantorConsent фиксирует согласие выбранного поручителя. Нужен этап 2 и выбранный поручитель.
+func (m *Module) giveGuarantorConsent(ctx context.Context, id string, who applicant) (*consentRow, error) {
+	a, err := m.draftOf(ctx, id, who.companyID)
+	if err != nil {
+		return nil, err
+	}
+	prelim, err := m.ports.Prelims.Prelim(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("load prelim %s: %w", id, err)
+	}
+	if stageOf(a, prelim).stage != stageFull {
+		return nil, httpx.InvalidTransition("Сначала пройдите предварительную проверку")
+	}
+	if a.GuarantorPersonID == nil {
+		return nil, httpx.Validation("", httpx.FieldError{Field: "stage2.guarantor.personId", Code: "REQUIRED", Message: "Сначала выберите поручителя"})
+	}
+	c := &consentRow{
+		AppID: a.ID, Subject: string(shared.ConsentGuarantor), PersonID: a.GuarantorPersonID, Text: guarantorConsentText,
+		GivenBy: who.actor.UserID, GivenAt: m.now().UTC(),
+	}
+	if err := m.store.SaveConsent(ctx, c); err != nil {
+		return nil, fmt.Errorf("save guarantor consent %s: %w", id, err)
+	}
+	return c, nil
+}

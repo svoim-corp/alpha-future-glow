@@ -26,11 +26,12 @@ func (m *Module) ownApplication(ctx context.Context, id, companyID string) (*app
 
 // dossier — всё, что мастер показывает по заявке: сама заявка, продукт, данные банка и этап.
 type dossier struct {
-	app     *appRow
-	product *shared.ProductView    // nil — продукт убрали из каталога
-	profile *shared.CompanyProfile // nil — данные банка сейчас недоступны
-	stage   stageState
-	consent *consentRow // согласие заявителя на БКИ; nil — не дано
+	app              *appRow
+	product          *shared.ProductView    // nil — продукт убрали из каталога
+	profile          *shared.CompanyProfile // nil — данные банка сейчас недоступны
+	stage            stageState
+	consent          *consentRow // согласие заявителя на БКИ; nil — не дано
+	guarantorConsent *consentRow // согласие поручителя на БКИ; nil — не дано
 }
 
 // dossier собирает состояние заявки. Недоступность данных банка не ломает мастер: заявка показывается без них,
@@ -52,6 +53,9 @@ func (m *Module) dossier(ctx context.Context, a *appRow) (*dossier, error) {
 	if d.consent, err = m.store.Consent(ctx, a.ID, shared.ConsentApplicant); err != nil {
 		return nil, fmt.Errorf("load bki consent %s: %w", a.ID, err)
 	}
+	if d.guarantorConsent, err = m.store.Consent(ctx, a.ID, shared.ConsentGuarantor); err != nil {
+		return nil, fmt.Errorf("load guarantor consent %s: %w", a.ID, err)
+	}
 	return d, nil
 }
 
@@ -71,4 +75,10 @@ func (d *dossier) guarantorName(personID string) string {
 		}
 	}
 	return ""
+}
+
+// guarantorAgreed — согласие на БКИ дал именно выбранный сейчас поручитель.
+func (d *dossier) guarantorAgreed() bool {
+	g, c := d.app.GuarantorPersonID, d.guarantorConsent
+	return g != nil && c != nil && c.PersonID != nil && *c.PersonID == *g
 }

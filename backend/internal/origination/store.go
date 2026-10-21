@@ -72,8 +72,8 @@ func (s *Store) Application(ctx context.Context, id string) (*appRow, error) {
 
 // UpdateDraft сохраняет параметры черновика и увеличивает версию; false — версия уже другая или это не черновик.
 // В a записываются новые версия и время сохранения.
-func (s *Store) UpdateDraft(ctx context.Context, a *appRow, version int, at time.Time) (bool, error) {
-	err := s.db.GetContext(ctx, &a.Version, `
+func (s *Store) UpdateDraft(ctx context.Context, q sqlx.ExtContext, a *appRow, version int, at time.Time) (bool, error) {
+	err := sqlx.GetContext(ctx, q, &a.Version, `
 		UPDATE origination.applications SET amount = $3, term = $4, goal = $5, purpose_text = $6, grace_months = $7,
 			overdraft_limit = $8, guarantor_person_id = $9, version = version + 1, updated_at = $10
 		WHERE id = $1 AND version = $2 AND status = 'DRAFT'
@@ -87,6 +87,12 @@ func (s *Store) UpdateDraft(ctx context.Context, a *appRow, version int, at time
 	}
 	a.UpdatedAt = at
 	return true, nil
+}
+
+// DeleteGuarantorConsent убирает согласие поручителя: оно дано конкретным человеком и при смене поручителя не действует.
+func (s *Store) DeleteGuarantorConsent(ctx context.Context, q sqlx.ExtContext, appID string) error {
+	_, err := q.ExecContext(ctx, `DELETE FROM origination.consents WHERE app_id = $1 AND subject = 'GUARANTOR'`, appID)
+	return err
 }
 
 // LockApplication — заявка под блокировкой строки до конца транзакции; (nil, nil) — заявки нет.

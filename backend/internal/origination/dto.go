@@ -145,7 +145,7 @@ func toApplicationDTO(d *dossier) applicationDTO {
 		resp.Consents.BKI = &consentDTO{Given: true, At: c.GivenAt}
 	}
 	if id := a.GuarantorPersonID; id != nil {
-		resp.Stage2.Guarantor = &guarantorDTO{PersonID: *id, FullName: d.guarantorName(*id)}
+		resp.Stage2.Guarantor = &guarantorDTO{PersonID: *id, FullName: d.guarantorName(*id), BKIConsent: d.guarantorAgreed()}
 	}
 	return resp
 }
