@@ -69,3 +69,59 @@ type Alternative struct {
 	ProductCode string
 	MaxAmount   int64
 }
+
+// Scores — результат полного скоринга. Реализует: разработчик B (Scoring). Использует: Underwriting (B) для очереди и разбора.
+type Scores interface {
+	// Score — последний результат скоринга; (nil, nil) — скоринга ещё не было.
+	Score(ctx context.Context, appID string) (*ScoreView, error)
+}
+
+// DecisionMaker — принятие решения по заявке. Реализует: разработчик B (Scoring). Использует: Underwriting (B) для ручного решения.
+// Проверяет рамки продукта (httpx.BusinessRule), переводит заявку в статус решения и публикует DecisionMade.
+type DecisionMaker interface {
+	Decide(ctx context.Context, appID string, in DecisionInput, actor Actor) (*DecisionView, error)
+}
+
+type RiskBand string
+
+const (
+	RiskLow    RiskBand = "LOW"
+	RiskMedium RiskBand = "MEDIUM"
+	RiskHigh   RiskBand = "HIGH"
+)
+
+type ScoreView struct {
+	Score                int
+	RiskBand             RiskBand
+	AutoDecisionEligible bool
+	AutoDecisionReason   string
+	DecisionMode         DecisionMode // AUTO — решено автоматически, MANUAL — ждёт сотрудника
+	Factors              []ScoreFactor
+	Suggested            *SuggestedDecision
+	ModelVersion         string
+	ScoredAt             time.Time
+}
+
+// ScoreFactor — вклад признака в балл (стр. 14 ТЗ: каждому признаку — своё влияние).
+type ScoreFactor struct {
+	Code   string
+	Label  string
+	Impact int
+}
+
+type SuggestedDecision struct {
+	Decision Status // StatusApproved, StatusCounterOffer или StatusRejected
+	Amount   int64
+	Rate     float64
+}
+
+// DecisionInput — решение. Для отказа нужен только Reason; для одобрения и иных условий — все параметры.
+type DecisionInput struct {
+	Result       Status // StatusApproved, StatusCounterOffer или StatusRejected
+	ProductCode  string
+	Amount       int64
+	Term         int
+	Rate         float64
+	Reason       string
+	Alternatives []Alternative
+}
