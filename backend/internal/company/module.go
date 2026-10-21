@@ -19,30 +19,36 @@ var migrations embed.FS
 // Ports — данные и действия других зон, нужные Company. Подставляются в cmd/api/main.go.
 type Ports struct {
 	BankData     shared.BankData     // карточка клиента и обороты из АБС
-	Registries   shared.Registries   // ЕГРЮЛ/ЕГРИП, ГИР БО
+	Registries   shared.Registries   // ЕГРЮЛ/ЕГРИП, ГИР БО, реестр МЧД
 	Applications shared.Applications // проверка доступа к company-profile
 }
 
 type Module struct {
-	deps     module.Deps
-	store    *Store
-	ports    Ports
-	profiles *profiles
+	deps        module.Deps
+	store       *Store
+	ports       Ports
+	profiles    *profiles
+	authorities *authorities
 }
 
 func New(deps module.Deps) *Module {
 	s := &Store{db: deps.DB}
-	return &Module{deps: deps, store: s, profiles: &profiles{store: s, now: time.Now}}
+	return &Module{
+		deps: deps, store: s,
+		profiles:    &profiles{store: s, now: time.Now},
+		authorities: &authorities{store: s, now: time.Now},
+	}
 }
 
 func (m *Module) Migrate(ctx context.Context) error {
 	return db.Migrate(ctx, m.deps.DB, "company", migrations)
 }
 
-// Wire подставляет зависимости. Companies() могли отдать раньше: profiles общий по указателю.
+// Wire подставляет зависимости. Companies() и Authorities() могли отдать раньше: реализации общие по указателю.
 func (m *Module) Wire(p Ports) {
 	m.ports = p
 	m.profiles.bank, m.profiles.reg = p.BankData, p.Registries
+	m.authorities.bank, m.authorities.reg = p.BankData, p.Registries
 }
 
 func (m *Module) Register(r httpx.Routes) {
