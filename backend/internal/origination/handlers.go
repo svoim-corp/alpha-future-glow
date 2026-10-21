@@ -345,3 +345,27 @@ func (m *Module) consentBKI(c *gin.Context) {
 	}
 	httpx.JSON(c, http.StatusCreated, consentResponse{Given: true, By: cs.GivenBy, At: cs.GivenAt})
 }
+
+// delete godoc
+//
+//	@Summary		Удалить черновик
+//	@Description	Только черновик. Заявка закрывается (DRAFT → CLOSED) и пропадает из списка клиента.
+//	@Tags			applications
+//	@Param			id	path	string	true	"ID заявки"
+//	@Success		204
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Failure		409	{object}	httpx.ErrorBody
+//	@Router			/applications/{id} [delete]
+func (m *Module) delete(c *gin.Context) {
+	who, err := client(c)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	if err := m.deleteDraft(c.Request.Context(), c.Param("id"), who); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

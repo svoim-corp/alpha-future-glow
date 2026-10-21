@@ -170,6 +170,45 @@
                     }
                 }
             },
+            "delete": {
+                "description": "Только черновик. Заявка закрывается (DRAFT → CLOSED) и пропадает из списка клиента.",
+                "tags": [
+                    "applications"
+                ],
+                "summary": "Удалить черновик",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "Передаются только изменённые поля: params и stage2.guarantor.personId. Данные банка не меняются — 400.",
                 "consumes": [

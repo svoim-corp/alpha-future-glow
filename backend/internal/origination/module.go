@@ -45,6 +45,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/applications", m.list)
 	r.Client.GET("/applications/:id", m.get)
 	r.Client.PATCH("/applications/:id", m.patch)
+	r.Client.DELETE("/applications/:id", m.delete)
 	r.Client.POST("/applications/:id/consents/bki", m.consentBKI)
 }
 

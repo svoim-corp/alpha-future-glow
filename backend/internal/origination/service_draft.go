@@ -138,3 +138,17 @@ func (m *Module) conflict(ctx context.Context, id string) error {
 	}
 	return httpx.VersionConflict()
 }
+
+const actionDeleteDraft = "DELETE_DRAFT"
+
+// deleteDraft — черновик не стирается, а закрывается: переход DRAFT → CLOSED остаётся в истории, а клиенту
+// удалённый черновик больше не виден.
+func (m *Module) deleteDraft(ctx context.Context, id string, who applicant) error {
+	if _, err := m.draftOf(ctx, id, who.companyID); err != nil {
+		return err
+	}
+	_, err := m.transition(ctx, id, shared.StatusClosed, who.actor, actionDeleteDraft, "", func(a *appRow) {
+		a.DeletedAt = &a.UpdatedAt
+	})
+	return err
+}

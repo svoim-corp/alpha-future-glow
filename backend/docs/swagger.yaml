@@ -1832,6 +1832,33 @@ paths:
       tags:
       - applications
   /applications/{id}:
+    delete:
+      description: Только черновик. Заявка закрывается (DRAFT → CLOSED) и пропадает
+        из списка клиента.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Удалить черновик
+      tags:
+      - applications
     get:
       description: 'Полное состояние заявки: этап, параметры, данные банка (только
         чтение), результат этапа 1, блокировки.'
