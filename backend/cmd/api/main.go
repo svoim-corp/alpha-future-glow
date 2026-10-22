@@ -19,6 +19,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/docs"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/catalog"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/company"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/dashboard"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/identity"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/integrations"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/notifications"
@@ -88,6 +89,7 @@ func run(log *slog.Logger) error {
 	supportMod := support.New(deps)
 	notificationsMod := notifications.New(deps)
 	plannerMod := planner.New(deps)
+	dashboardMod := dashboard.New(deps)
 
 	// Связи между зонами (shared-интерфейсы). Пока у поставщика нет реализации, он отдаёт заглушку из своего ports.go.
 	companyMod.Wire(company.Ports{
@@ -133,10 +135,15 @@ func run(log *slog.Logger) error {
 		Matcher:  catalogMod.ProductMatcher(),
 		Notifier: notificationsMod.Notifier(),
 	})
+	dashboardMod.Wire(dashboard.Ports{
+		Applications: originationMod.Applications(),
+		Loans:        servicingMod.LoanOwners(),
+		Plans:        plannerMod.PlanOwners(),
+	})
 
 	zones := []zone{
 		companyMod, identityMod, catalogMod, originationMod, integrationsMod, scoringMod,
-		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod,
+		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod, dashboardMod,
 	}
 	for _, z := range zones {
 		if err := z.Migrate(ctx); err != nil {

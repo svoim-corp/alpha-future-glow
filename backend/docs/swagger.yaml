@@ -290,6 +290,50 @@ definitions:
         - $ref: '#/definitions/shared.CheckSource'
         example: BANK_ACCOUNTS
     type: object
+  dashboard.config:
+    properties:
+      schemaVersion:
+        example: 1
+        type: integer
+      widgets:
+        items:
+          $ref: '#/definitions/dashboard.widget'
+        type: array
+    type: object
+  dashboard.documentDTO:
+    properties:
+      config:
+        $ref: '#/definitions/dashboard.config'
+      revision:
+        example: 8efc6500-8373-4e9d-9f0a-a5d9efae1175
+        type: string
+      updatedAt:
+        example: "2026-10-22T10:00:00Z"
+        type: string
+    type: object
+  dashboard.widget:
+    properties:
+      h:
+        example: 3
+        type: integer
+      id:
+        example: 77a45b12-67cf-4e29-848a-0db98fb07eb8
+        type: string
+      settings:
+        type: object
+      type:
+        example: loan
+        type: string
+      w:
+        example: 4
+        type: integer
+      x:
+        example: 0
+        type: integer
+      "y":
+        example: 0
+        type: integer
+    type: object
   httpx.ErrorBody:
     properties:
       code:
@@ -4686,6 +4730,89 @@ paths:
       summary: Кредиты на главной
       tags:
       - loans
+  /me/dashboard:
+    get:
+      description: Сохранённая раскладка виджетов пользователя в его компании. 204
+        — настройку ещё не сохраняли, клиент строит исходную.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ETag — ревизия в кавычках
+          schema:
+            $ref: '#/definitions/dashboard.documentDTO'
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Настройка главной
+      tags:
+      - dashboard
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Заменяет документ целиком и атомарно. Нужен If-Match с ревизией или If-None-Match: * для первого сохранения.
+        Повтор с тем же Idempotency-Key и телом возвращает исходный результат.
+      parameters:
+      - description: Ревизия сохранённой настройки в кавычках
+        in: header
+        name: If-Match
+        type: string
+      - description: '* — первое сохранение'
+        in: header
+        name: If-None-Match
+        type: string
+      - description: Ключ попытки сохранения
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Настройка формата v1
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dashboard.config'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dashboard.documentDTO'
+        "400":
+          description: VALIDATION_ERROR или DASHBOARD_SCHEMA_UNSUPPORTED
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: IDEMPOTENCY_KEY_REUSED
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: DASHBOARD_VERSION_CONFLICT
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "428":
+          description: PRECONDITION_REQUIRED
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Сохранить настройку главной
+      tags:
+      - dashboard
   /notifications:
     get:
       description: Последние 50 уведомлений пользователя, новые первыми. unread=true

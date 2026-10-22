@@ -321,3 +321,39 @@ Content-Type: application/json
 
 ### Мои обращения
 GET {{api}}/support/tickets
+
+###############################################################################
+# 13. Настройка главной
+###############################################################################
+
+### Сохранённая настройка: 204 — ещё не сохраняли
+GET {{api}}/me/dashboard
+
+### Первое сохранение
+PUT {{api}}/me/dashboard
+If-None-Match: *
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{
+  "schemaVersion": 1,
+  "widgets": [
+    { "id": "widget-loan", "type": "loan", "x": 0, "y": 0, "w": 4, "h": 3, "settings": { "loanId": "{{loanId}}" } },
+    { "id": "widget-quick", "type": "quick", "x": 4, "y": 0, "w": 8, "h": 2, "settings": { "actions": ["apply", "plan", "support"] } }
+  ]
+}
+
+> {% client.global.set("dashboardRevision", response.body.revision); %}
+
+### Изменение: удалить виджет — обычный PUT нового массива
+PUT {{api}}/me/dashboard
+If-Match: "{{dashboardRevision}}"
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{
+  "schemaVersion": 1,
+  "widgets": [
+    { "id": "widget-loan", "type": "loan", "x": 0, "y": 0, "w": 4, "h": 3, "settings": { "loanId": "{{loanId}}" } }
+  ]
+}

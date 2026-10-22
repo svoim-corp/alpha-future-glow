@@ -40,3 +40,16 @@ func (p loans) Open(ctx context.Context, in shared.LoanOpening) (string, error) 
 	}
 	return l.ID, nil
 }
+
+// LoanOwners отдаёт реализацию shared.LoanOwners другим зонам.
+func (m *Module) LoanOwners() shared.LoanOwners { return loanOwners{m: m} }
+
+type loanOwners struct{ m *Module }
+
+func (p loanOwners) LoanCompany(ctx context.Context, id string) (string, error) {
+	l, err := p.m.store.Loan(ctx, id)
+	if err != nil || l == nil {
+		return "", err
+	}
+	return l.CompanyID, nil
+}

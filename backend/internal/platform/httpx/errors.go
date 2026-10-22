@@ -15,6 +15,12 @@ const (
 	CodeBusinessRule      = "BUSINESS_RULE"
 	CodeUpstreamUnavail   = "UPSTREAM_UNAVAILABLE"
 	CodeInternal          = "INTERNAL"
+
+	// Настройка главной (docs/dashboard.md).
+	CodeDashboardSchema   = "DASHBOARD_SCHEMA_UNSUPPORTED"
+	CodeDashboardConflict = "DASHBOARD_VERSION_CONFLICT"
+	CodePreconditionReq   = "PRECONDITION_REQUIRED"
+	CodeIdempotencyReused = "IDEMPOTENCY_KEY_REUSED"
 )
 
 // FieldError — ошибка конкретного поля.

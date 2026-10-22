@@ -2985,6 +2985,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/dashboard": {
+            "get": {
+                "description": "Сохранённая раскладка виджетов пользователя в его компании. 204 — настройку ещё не сохраняли, клиент строит исходную.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Настройка главной",
+                "responses": {
+                    "200": {
+                        "description": "ETag — ревизия в кавычках",
+                        "schema": {
+                            "$ref": "#/definitions/dashboard.documentDTO"
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Заменяет документ целиком и атомарно. Нужен If-Match с ревизией или If-None-Match: * для первого сохранения.\nПовтор с тем же Idempotency-Key и телом возвращает исходный результат.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Сохранить настройку главной",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ревизия сохранённой настройки в кавычках",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "* — первое сохранение",
+                        "name": "If-None-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ попытки сохранения",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Настройка формата v1",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dashboard.config"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dashboard.documentDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "VALIDATION_ERROR или DASHBOARD_SCHEMA_UNSUPPORTED",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "IDEMPOTENCY_KEY_REUSED",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "DASHBOARD_VERSION_CONFLICT",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "428": {
+                        "description": "PRECONDITION_REQUIRED",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/notifications": {
             "get": {
                 "description": "Последние 50 уведомлений пользователя, новые первыми. unread=true — только непрочитанные.",
@@ -3953,6 +4074,69 @@ const docTemplate = `{
                         }
                     ],
                     "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
+        "dashboard.config": {
+            "type": "object",
+            "properties": {
+                "schemaVersion": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "widgets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dashboard.widget"
+                    }
+                }
+            }
+        },
+        "dashboard.documentDTO": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/dashboard.config"
+                },
+                "revision": {
+                    "type": "string",
+                    "example": "8efc6500-8373-4e9d-9f0a-a5d9efae1175"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2026-10-22T10:00:00Z"
+                }
+            }
+        },
+        "dashboard.widget": {
+            "type": "object",
+            "properties": {
+                "h": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "id": {
+                    "type": "string",
+                    "example": "77a45b12-67cf-4e29-848a-0db98fb07eb8"
+                },
+                "settings": {
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "loan"
+                },
+                "w": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "x": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "y": {
+                    "type": "integer",
+                    "example": 0
                 }
             }
         },
