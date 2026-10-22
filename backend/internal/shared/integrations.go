@@ -25,6 +25,48 @@ type Registries interface {
 	GIRBO(ctx context.Context, inn string) (*GIRBOReport, error)
 }
 
+// Debits — счета клиента и списания в АБС банка (docs/servicing.md). Реализует: разработчик B (Integrations).
+// Использует: Servicing (A). Недоступность АБС — httpx.Upstream.
+type Debits interface {
+	// Accounts — счета компании; пустой список — счетов нет или компании нет в АБС.
+	Accounts(ctx context.Context, inn string) ([]BankAccount, error)
+	// Debit передаёт поручение на списание и возвращает id поручения в банке. Повтор с тем же RequestID не создаёт
+	// второе списание.
+	Debit(ctx context.Context, req DebitRequest) (externalID string, err error)
+	// DebitStatus — результат поручения; (nil, nil) — банк поручение не знает, его можно передать заново.
+	DebitStatus(ctx context.Context, externalID string) (*DebitResult, error)
+}
+
+type BankAccount struct {
+	ID       string
+	Number   string
+	Currency string // RUB, …
+	Active   bool
+	Balance  *int64 // nil — АБС не отдаёт остаток
+}
+
+type DebitRequest struct {
+	RequestID string // id операции у нас: по нему банк узнаёт повтор
+	INN       string
+	AccountID string
+	Amount    int64
+}
+
+type DebitStatus string
+
+const (
+	DebitProcessing DebitStatus = "PROCESSING"
+	DebitSucceeded  DebitStatus = "SUCCEEDED"
+	DebitFailed     DebitStatus = "FAILED"
+)
+
+type DebitResult struct {
+	Status       DebitStatus
+	PostedAmount int64     // только у SUCCEEDED
+	PostedAt     time.Time // только у SUCCEEDED
+	Reason       string    // только у FAILED: понятный клиенту текст
+}
+
 // Checks — внешние проверки по заявке со снимками ответов (CheckResult). Реализует: разработчик B (Integrations).
 // Используют: Scoring, Underwriting (B). Integrations только описывает ответ источника; решение по нему принимает Scoring.
 type Checks interface {

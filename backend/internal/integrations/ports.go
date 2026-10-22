@@ -10,3 +10,6 @@ func (m *Module) Registries() shared.Registries { return m.client }
 
 // Checks отдаёт реализацию shared.Checks другим зонам.
 func (m *Module) Checks() shared.Checks { return m.checker }
+
+// Debits отдаёт реализацию shared.Debits другим зонам.
+func (m *Module) Debits() shared.Debits { return m.client }

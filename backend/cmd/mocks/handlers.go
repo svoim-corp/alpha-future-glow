@@ -7,12 +7,20 @@ import (
 )
 
 // server отдаёт синтетические ответы внешних сервисов (API_SPEC.md, 4.14). Поведение задаётся ИНН из seed.
-type server struct{ data dataset }
+type server struct {
+	data   dataset
+	ledger *ledger
+}
+
+func newServer() *server { return &server{data: newDataset(), ledger: newLedger()} }
 
 func (s *server) register(r gin.IRouter) {
 	m := r.Group("/mock")
 	m.GET("/core-banking/clients/:inn", s.bankClient)
 	m.GET("/core-banking/turnover/:inn", s.turnover)
+	m.GET("/core-banking/accounts/:inn", s.accounts)
+	m.POST("/core-banking/debits", s.createDebit)
+	m.GET("/core-banking/debits/:id", s.debitStatus)
 	m.GET("/egrul/:inn", s.egrul)
 	m.GET("/egrip/:inn", s.egrip)
 	m.GET("/transparent-business/:inn", s.transparentBusiness)

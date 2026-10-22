@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -15,7 +16,7 @@ func init() { gin.SetMode(gin.TestMode) }
 
 func newRouter() *gin.Engine {
 	r := gin.New()
-	(&server{data: newDataset()}).register(r)
+	newServer().register(r)
 	return r
 }
 
@@ -169,5 +170,64 @@ func TestErrors(t *testing.T) {
 		if code := do(t, r, tt.method, tt.path, tt.body, nil); code != tt.code {
 			t.Errorf("%s %s: %d, want %d", tt.method, tt.path, code, tt.code)
 		}
+	}
+}
+
+func TestAccounts(t *testing.T) {
+	r := newRouter()
+	for _, sc := range scenarios {
+		var accs []account
+		if code := do(t, r, "GET", "/mock/core-banking/accounts/"+sc.inn, "", &accs); code != http.StatusOK {
+			t.Fatalf("%s: %d", sc.login, code)
+		}
+		if len(accs) == 0 || accs[0].Status != accountActive || accs[0].Currency != currencyRUB || accs[0].Balance <= 0 || len(accs[0].Number) != 20 {
+			t.Fatalf("%s: основной счёт %+v", sc.login, accs)
+		}
+	}
+}
+
+func TestDebits(t *testing.T) {
+	r := newRouter()
+	debitOf := func(requestID, accountID string, amount int) string {
+		t.Helper()
+		var resp struct{ DebitID, Status string }
+		body := `{"requestId":"` + requestID + `","inn":"7712345678","accountId":"` + accountID + `","amount":` + strconv.Itoa(amount) + `}`
+		if code := do(t, r, "POST", "/mock/core-banking/debits", body, &resp); code != http.StatusOK || resp.Status != debitProcessing {
+			t.Fatalf("debit %s: %d %+v", requestID, code, resp)
+		}
+		return resp.DebitID
+	}
+	status := func(id string) debit {
+		t.Helper()
+		var d debit
+		if code := do(t, r, "GET", "/mock/core-banking/debits/"+id, "", &d); code != http.StatusOK {
+			t.Fatalf("status %s: %d", id, code)
+		}
+		return d
+	}
+
+	id := debitOf("rp-1", "acc-7712345678-1", 20_000)
+	if again := debitOf("rp-1", "acc-7712345678-1", 20_000); again != id {
+		t.Fatalf("повтор поручения создал новое: %s и %s", id, again)
+	}
+	if d := status(id); d.Status != debitSucceeded || d.PostedAmount == nil || *d.PostedAmount != 20_000 || d.PostedAt == nil {
+		t.Fatalf("успешное списание: %+v", d)
+	}
+	var accs []account
+	do(t, r, "GET", "/mock/core-banking/accounts/7712345678", "", &accs)
+	if want := newDataset().companies["7712345678"].turnover.AvgMonthlyIncome*balanceMonths - 20_000; accs[0].Balance != want {
+		t.Fatalf("остаток %d, want %d", accs[0].Balance, want)
+	}
+
+	for _, tt := range []struct{ requestID, accountID string }{{"rp-2", "acc-7712345678-2"}, {"rp-3", "acc-7712345678-3"}} {
+		if d := status(debitOf(tt.requestID, tt.accountID, 20_000)); d.Status != debitFailed || d.Reason == nil {
+			t.Fatalf("%s: ожидался отказ, %+v", tt.accountID, d)
+		}
+	}
+	if code := do(t, r, "GET", "/mock/core-banking/debits/dbt-404", "", nil); code != http.StatusNotFound {
+		t.Fatalf("неизвестное поручение: %d", code)
+	}
+	if code := do(t, r, "POST", "/mock/core-banking/debits", `{"requestId":"rp-9","inn":"7712345678","accountId":"acc-x","amount":1}`, nil); code != http.StatusNotFound {
+		t.Fatalf("неизвестный счёт: %d", code)
 	}
 }
