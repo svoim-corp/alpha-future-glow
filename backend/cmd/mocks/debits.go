@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -31,17 +30,14 @@ type debit struct {
 	acc *account
 }
 
-// ledger — состояние списаний в памяти: после перезапуска мока поручения забываются, сервер отправит их заново.
+// ledger — поручения в памяти по debitId: после перезапуска мока они забываются, сервер отправит их заново.
+// debitId выводится из requestId: повтор поручения не создаёт второе списание, а id не повторяются между запусками.
 type ledger struct {
-	mu        sync.Mutex
-	seq       int
-	debits    map[string]*debit // по debitId
-	byRequest map[string]*debit // по requestId: повтор поручения не создаёт второе списание
+	mu     sync.Mutex
+	debits map[string]*debit
 }
 
-func newLedger() *ledger {
-	return &ledger{debits: map[string]*debit{}, byRequest: map[string]*debit{}}
-}
+func newLedger() *ledger { return &ledger{debits: map[string]*debit{}} }
 
 // accounts — счета компании. Остатки меняются списаниями, поэтому чтение — под той же блокировкой.
 func (s *server) accounts(c *gin.Context) {
@@ -90,11 +86,11 @@ func (s *server) createDebit(c *gin.Context) {
 	l := s.ledger
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	d, ok := l.byRequest[req.RequestID]
+	id := "dbt-" + req.RequestID
+	d, ok := l.debits[id]
 	if !ok {
-		l.seq++
-		d = &debit{DebitID: fmt.Sprintf("dbt-%d", l.seq), RequestID: req.RequestID, AccountID: acc.ID, Status: debitProcessing, Amount: req.Amount, acc: acc}
-		l.debits[d.DebitID], l.byRequest[req.RequestID] = d, d
+		d = &debit{DebitID: id, RequestID: req.RequestID, AccountID: acc.ID, Status: debitProcessing, Amount: req.Amount, acc: acc}
+		l.debits[id] = d
 	}
 	c.JSON(http.StatusOK, gin.H{"debitId": d.DebitID, "status": d.Status})
 }
