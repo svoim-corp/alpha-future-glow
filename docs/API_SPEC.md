@@ -88,8 +88,8 @@ Identity ──► Origination ◄── Catalog
 - Префикс: `/api/v1`. Формат: `application/json; charset=utf-8`. Загрузки файлов нет: данные клиента банк берёт сам (Уточн.).
 - Аутентификация: httpOnly cookie `session` после `/auth/login`. Роли: `CLIENT`, `BANK_OFFICER`. Клиент видит только заявки своей компании; `/bank/*` — только `BANK_OFFICER`.
 - Деньги — целые рубли (`number`), ставки — проценты годовых (`number`, `22.5`), сроки — месяцы. Даты — ISO 8601 (`2026-10-20`, `2026-10-20T15:57:00Z`).
-- Оптимистичная блокировка: заявка возвращает `version`, изменения передают её в заголовке `If-Match`. Несовпадение → `412`.
-- Идемпотентность: команды с побочным эффектом (`submit`, `sign`, `disburse`, `decision`) принимают заголовок `Idempotency-Key`.
+- Оптимистичная блокировка: заявка возвращает `version`, изменения передают её в заголовке `If-Match`. Несовпадение → `412`. Денежные команды по кредиту (`repayments`, `early-repayments`, `close`) передают в `If-Match` финансовую `version` кредита (Уточн. 22.10.2026, [servicing.md](servicing.md)).
+- Идемпотентность: команды с побочным эффектом (`submit`, `sign`, `disburse`, `decision`) принимают заголовок `Idempotency-Key`. Для денежных команд и расчёта досрочного погашения он обязателен; тот же ключ с другим телом → `400`.
 - Пагинация: `?page=1&size=20` → `{ "items": [], "page": 1, "size": 20, "total": 134 }`.
 
 ### Формат ошибки
@@ -229,11 +229,15 @@ Identity ──► Origination ◄── Catalog
 `number` присваивается при отправке, у черновика — `null`.
 
 #### `GET /loans/summary`
-Есть ли выданные кредиты и ближайший платёж — для перехода в «Мои кредиты».
+Есть ли выданные кредиты и ближайший платёж — для перехода в «Мои кредиты». Считается по всей компании (Уточн. 22.10.2026: добавлены `closedLoans`, `totalLoans`, `totalPrincipalBalance`, `overdue`).
 
 Ответ `200`:
 ```json
-{ "activeLoans": 1, "nextPayment": { "date": "2026-11-15", "amount": 77800 } }
+{
+  "activeLoans": 1, "closedLoans": 0, "totalLoans": 1, "totalPrincipalBalance": 1200000,
+  "nextPayment": { "date": "2026-11-15", "amount": 77800 },
+  "overdue": { "loans": 0, "payments": 0, "amount": 0 }
+}
 ```
 
 ### 4.4 Каталог продуктов — `/products`
@@ -759,6 +763,25 @@ Identity ──► Origination ◄── Catalog
 }
 ```
 
+#### Обслуживание кредита (Уточн. 22.10.2026)
+Полный контракт, примеры и демо-политика расчётов `policy-1` — [servicing.md](servicing.md). Кратко:
+
+| Метод и путь | Что делает |
+|---|---|
+| `GET /loans/page?page=1&size=20&status=ACTIVE` | Кредиты страницами: `{ items, page, size, total }`; `GET /loans` сохранён для совместимости |
+| `GET /loans/{id}/repayment-accounts` | Счета компании в АБС для списания: `id`, `maskedNumber`, `currency`, `available`, `availableBalance` |
+| `POST /loans/{id}/repayments` | Обычная оплата `{ accountId, amount }` → `202` операция `PENDING`; `If-Match` + `Idempotency-Key` |
+| `GET /loans/{id}/repayments/{repaymentId}` | Статус операции (`PENDING` / `PROCESSING` / `SUCCEEDED` / `FAILED`) и распределение суммы |
+| `GET /loans/{id}/repayments?page=1&size=20` | История операций кредита |
+| `POST /loans/{id}/early-repayment-quotes` | Расчёт досрочного погашения `{ type: PARTIAL/FULL, amount?, strategy? }` → `201`, действует 15 минут |
+| `POST /loans/{id}/early-repayments` | Подтверждение расчёта `{ quoteId, accountId }` → `202`; `If-Match` + `Idempotency-Key` |
+| `GET /loans/{id}/early-repayments/{requestId}` | Статус досрочного погашения |
+| `GET /loans/{id}/debt` | Полная задолженность: основной долг, проценты, пени, комиссии, просрочка, итог, дата расчёта |
+| `POST /loans/{id}/close` | Закрыть овердрафт с нулевой задолженностью; `If-Match` + `Idempotency-Key` |
+| `GET /loans/{id}/schedule/document?format=pdf` | PDF полного графика с оплаченными и оставшимися суммами |
+
+Долг уменьшается только после подтверждения списания банком (опрос АБС через Integrations). Строки графика в `GET /loans/{id}` дополнены `id`, `paidPrincipal`, `paidInterest`, `remainingPrincipal`, `remainingInterest`, `remainingTotal`, `early`; у кредита — `version`, `scheduleVersion`, `revolving`, `closedAt`, `closeReason`. Связанная заявка после закрытия кредита остаётся `ISSUED`.
+
 ### 4.9 Платёжный календарь — `/credits/calendar`
 Зона: Servicing. Доп. Напоминания — через `/notifications`.
 
@@ -775,6 +798,8 @@ Identity ──► Origination ◄── Catalog
 
 #### `GET /loans/schedule/upcoming?limit=3`
 Ближайшие платежи. Формат элементов тот же.
+
+`amount` в календаре — остаток к оплате строки, у оплаченной строки — её сумма (Уточн. 22.10.2026).
 
 ### 4.10 Поддержка — `/support`
 Зона: Support. Доп.
@@ -1016,6 +1041,9 @@ Identity ──► Origination ◄── Catalog
 | `GET /mock/girbo/{inn}` | ГИР БО (только ООО) | Доп. | `{ year, revenue, netProfit }` |
 | `GET /mock/courts/{inn}` | КАД / ФССП / ЕФРСБ | Доп. | `{ arbitration[{ caseNumber, role, amount }], enforcement[{ number, amount }], bankruptcy }`; `role`: `DEFENDANT` / `PLAINTIFF` |
 | `GET /mock/mchd/{number}` | Реестр МЧД (номер берётся из АБС, не от пользователя) | Доп. | `{ valid, principalInn, representative{ fullName, inn }, validUntil, powers[] }` |
+| `GET /mock/core-banking/accounts/{inn}` | АБС банка: счета клиента | Доп. | `[{ id, number, currency, status: ACTIVE/BLOCKED, balance }]` |
+| `POST /mock/core-banking/debits` | АБС банка: поручение на списание | Доп. | запрос `{ requestId, inn, accountId, amount }` → `{ debitId, status: PROCESSING }`; повтор с тем же `requestId` — то же поручение |
+| `GET /mock/core-banking/debits/{debitId}` | АБС банка: результат списания | Доп. | `{ debitId, requestId, status: PROCESSING/SUCCEEDED/FAILED, amount, postedAmount?, postedAt?, reason? }`; первый опрос завершает поручение |
 
 Неизвестный мокам ИНН или номер МЧД, а также ГИР БО для ИП — `404 { code: "NOT_FOUND", message }` (Доп.).
 
@@ -1059,7 +1087,9 @@ Identity ──► Origination ◄── Catalog
 | `Decision` | id, applicationId, type, amount, term, productCode, rate, reason, mode (AUTO/MANUAL), officerId | Scoring / Underwriting |
 | `InfoRequest` | id, applicationId, items[], comment, status, answers[] | Underwriting |
 | `Offer` / `Contract` | applicationId, terms, validUntil, acceptedAt, signedAt, disbursedAt | Offer |
-| `Loan` / `ScheduleItem` | loanId, date, principal, interest, total, status | Servicing |
+| `Loan` / `ScheduleItem` | Loan: id, applicationId, companyId, terms, revolving, status (ACTIVE/CLOSED), version, scheduleVersion, closedAt, closeReason, penaltiesPaid. ScheduleItem: loanId, n, date, principal, interest, total, paidPrincipal, paidInterest, early, status; заменённые перерасчётом строки — в архиве версий | Servicing |
+| `RepaymentOperation` / `Posting` | id, loanId, type (REGULAR/EARLY), accountId, requestedAmount, status, idempotencyKey, externalTransactionId, postedAmount, allocation, unappliedAmount, quoteId; проводки по строкам и компонентам | Servicing |
+| `EarlyRepaymentQuote` | id, loanId, type, strategy, amountToDebit, allocation, schedulePreview, loanVersion, validUntil, usedAt | Servicing |
 | `StatusEvent` / `AuditLog` | applicationId, from, to, actor, action, at, comment | Сквозное |
 | `Notification` | id, userId, type, title, text, link, read | Сквозное |
 | `Ticket` | id, userId, applicationId?, subject, text, status, reply | Support |

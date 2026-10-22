@@ -23,16 +23,14 @@ type loanState struct {
 	next    *paymentRow // nil — платежей впереди нет
 }
 
-// stateOf считает состояние кредита по строкам графика. Остаток — сумма минус оплаченный основной долг;
-// ближайший платёж — первый неоплаченный не раньше today (просроченные показывает график).
+// stateOf считает состояние кредита по строкам графика. Остаток — сумма минус весь оплаченный основной долг,
+// включая частичные оплаты; ближайший платёж — первый неоплаченный не раньше today (просроченные показывает график).
 func stateOf(amount int64, schedule []paymentRow, today time.Time) loanState {
 	st := loanState{balance: amount}
 	for i := range schedule {
 		p := &schedule[i]
-		switch {
-		case p.Status == paymentPaid:
-			st.balance -= p.Principal
-		case st.next == nil && !p.DueDate.Before(today):
+		st.balance -= p.PaidPrincipal
+		if st.next == nil && p.Status != paymentPaid && !p.DueDate.Before(today) {
 			st.next = p
 		}
 	}

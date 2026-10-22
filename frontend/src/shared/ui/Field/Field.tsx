@@ -1,11 +1,11 @@
 import clsx from 'clsx';
-import { type InputHTMLAttributes, type ReactNode } from 'react';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import styles from './Field.module.scss';
 import { FieldMessages } from './FieldMessages';
 import { useFieldIds } from './useFieldIds';
 
-export interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface FieldProps extends ComponentPropsWithRef<'input'> {
 	label: ReactNode;
 	hint?: string;
 	error?: string;

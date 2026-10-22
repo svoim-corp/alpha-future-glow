@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 
+import { Select } from '../Select';
 import { Modal } from './Modal';
 
 const Host = () => {
@@ -60,5 +61,21 @@ describe('Modal', () => {
 		await userEvent.tab();
 
 		expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
+	});
+
+	it('Escape сначала закрывает меню выбора, затем само окно', async () => {
+		const close = vi.fn();
+		const user = userEvent.setup();
+		render(<Modal title="План" onClose={close}>
+			<Select aria-label="Состояние" value="ACTIVE" onChange={vi.fn()}
+				options={[{ value: 'ACTIVE', label: 'Активен' }]} />
+		</Modal>);
+		await user.click(screen.getByRole('combobox'));
+		expect(screen.getByRole('listbox')).toBeInTheDocument();
+		await user.keyboard('{Escape}');
+		expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+		expect(close).not.toHaveBeenCalled();
+		await user.keyboard('{Escape}');
+		expect(close).toHaveBeenCalledOnce();
 	});
 });

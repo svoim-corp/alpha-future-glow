@@ -14,6 +14,8 @@
 |---|---|---|---|
 | `GET /mock/core-banking/clients/{inn}` | Карточка клиента и его представители в АБС банка | Автоматизированная банковская система (внутренняя) | Уточн. ТЗ |
 | `GET /mock/core-banking/turnover/{inn}` | Обороты по счетам клиента в банке | АБС банка (внутренняя) | Уточн. ТЗ |
+| `GET /mock/core-banking/accounts/{inn}` | Расчётные счета клиента и остатки | АБС банка (внутренняя) | Доп. |
+| `POST /mock/core-banking/debits`, `GET /mock/core-banking/debits/{debitId}` | Поручение на списание в погашение кредита и его результат | АБС банка (внутренняя) | Доп. |
 | `GET /mock/egrul/{inn}` | Сведения о юрлице | ЕГРЮЛ, ФНС России | ТЗ, стр. 13 |
 | `GET /mock/egrip/{inn}` | Сведения об индивидуальном предпринимателе | ЕГРИП, ФНС России | ТЗ, стр. 13 |
 | `GET /mock/transparent-business/{inn}` | Массовый адрес и руководитель, налоговый режим, численность | Сервис «Прозрачный бизнес», ФНС России | ТЗ, стр. 13 |
@@ -40,6 +42,10 @@
 | `github.com/swaggo/gin-swagger` | v1.6.1 | MIT | Swagger UI в gin |
 | `github.com/swaggo/files` | v1.0.1 | MIT | Статика Swagger UI; внутри — Swagger UI (`swagger-api/swagger-ui`), Apache-2.0 |
 | `golang.org/x/crypto` | v0.45.0 | BSD-3-Clause | bcrypt для паролей |
+| `github.com/go-pdf/fpdf` | v0.9.0 | MIT | PDF графика платежей (`GET /loans/{id}/schedule/document`) |
+
+Шрифт DejaVu Sans Condensed (обычный и полужирный, `backend/internal/servicing/fonts`) встроен в сервер для кириллицы в PDF.
+Взят из поставки `go-pdf/fpdf`; лицензия — DejaVu Fonts License (свободная, на основе лицензии Bitstream Vera), https://dejavu-fonts.github.io/License.html.
 
 ## 3. Среда запуска (`deploy/docker-compose.yml`, `Dockerfile`)
 
@@ -54,6 +60,12 @@
 ## 4. Библиотеки клиента
 
 Зависимости клиента (`frontend/package.json`) дополняет команда фронтенда.
+
+| Компонент | Версия | Лицензия | Зачем |
+|---|---|---|---|
+| [`@daypicker/react`](https://daypicker.dev/) | 10.0.2 | MIT | Переиспользуемый выбор даты с русской локалью, клавиатурной навигацией и оформлением токенами проекта; заменяет браузерные поля даты в планере |
+
+Транзитивные зависимости календаря, включая совместимый пакет `react-day-picker`, зафиксированы в `frontend/package-lock.json`.
 
 ## 5. Локальный ассистент поддержки
 

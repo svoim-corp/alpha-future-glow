@@ -129,6 +129,15 @@ type mchdRecord struct {
 	Powers         []string    `json:"powers"`
 }
 
+// account — расчётный счёт клиента в АБС. Остаток меняется списаниями, поэтому счёт хранится по указателю.
+type account struct {
+	ID       string `json:"id"`
+	Number   string `json:"number"`
+	Currency string `json:"currency"`
+	Status   string `json:"status"`
+	Balance  int64  `json:"balance"`
+}
+
 // company — всё, что моки знают о компании. egrul — только у ООО, egrip и пустой girbo — у ИП.
 type company struct {
 	client   bankClient
@@ -140,6 +149,7 @@ type company struct {
 	fns      fnsDebts
 	girbo    *girboReport
 	courts   courts
+	accounts []*account
 }
 
 type dataset struct {
@@ -163,6 +173,16 @@ const (
 
 	// Доля исходящих платежей от поступлений в синтетических оборотах.
 	outcomeRatio = 0.88
+
+	accountActive  = "ACTIVE"
+	accountBlocked = "BLOCKED"
+	currencyRUB    = "RUB"
+
+	// Остаток основного счёта — три средних месячных оборота: хватает на платежи и досрочное погашение демо-кредита.
+	balanceMonths = 3
+	// У smirnov кроме основного — заблокированный счёт и счёт с малым остатком: для сценариев отказа в списании.
+	smallBalance = 10_000
+	innSmirnov   = "7712345678"
 )
 
 // Профили колебаний месячной выручки; среднее каждого — 1.
@@ -508,7 +528,24 @@ func newDataset() dataset {
 		},
 	}}
 	for _, c := range cs {
+		c.accounts = []*account{newAccount(c, 1, accountActive, c.turnover.AvgMonthlyIncome*balanceMonths)}
+		if c.client.INN == innSmirnov {
+			c.accounts = append(c.accounts, newAccount(c, 2, accountBlocked, 0), newAccount(c, 3, accountActive, smallBalance))
+		}
 		d.companies[c.client.INN] = c
 	}
 	return d
+}
+
+// newAccount — n-й рублёвый счёт компании. Номер — балансовый счёт ООО (40702) или ИП (40802), код рубля 810 и
+// последние 8 цифр ИНН с номером счёта: синтетический, но в формате 20 цифр.
+func newAccount(c *company, n int, status string, balance int64) *account {
+	prefix := "40702810"
+	if c.client.Type == "IE" {
+		prefix = "40802810"
+	}
+	return &account{
+		ID: fmt.Sprintf("acc-%s-%d", c.client.INN, n), Number: fmt.Sprintf("%s%s%04d", prefix, c.client.INN[len(c.client.INN)-8:], n),
+		Currency: currencyRUB, Status: status, Balance: balance,
+	}
 }

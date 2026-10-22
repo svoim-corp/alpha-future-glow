@@ -2116,6 +2116,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/loans/page": {
+            "get": {
+                "description": "Выданные кредиты компании страницами, новые первыми. total — с учётом фильтра.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Мои кредиты — страницами",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Страница с 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Размер 1–100",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ACTIVE или CLOSED; без фильтра — все",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.loansPage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/loans/schedule": {
             "get": {
                 "description": "Платежи всех кредитов компании за период, по датам. Период — не больше года.",
@@ -2215,7 +2269,7 @@ const docTemplate = `{
         },
         "/loans/summary": {
             "get": {
-                "description": "Сколько действующих кредитов и ближайший платёж: сумма всех платежей компании в ближайшую дату.",
+                "description": "Сводка по всей компании: число кредитов, остаток долга, ближайший платёж (сумма остатков всех кредитов\nв ближайшую дату) и просрочка с пенями.",
                 "produces": [
                     "application/json"
                 ],
@@ -2247,6 +2301,7 @@ const docTemplate = `{
         },
         "/loans/{id}": {
             "get": {
+                "description": "Условия договора, версии и действующий график с оплаченными и оставшимися суммами строк.",
                 "produces": [
                     "application/json"
                 ],
@@ -2268,6 +2323,651 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/servicing.loanDetailsDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/close": {
+            "post": {
+                "description": "Закрытие возобновляемого лимита с нулевой задолженностью. Обычный кредит закрывается сам после погашения.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Закрыть овердрафт",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Версия кредита",
+                        "name": "If-Match",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ команды",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.loanDetailsDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "Precondition Failed",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/debt": {
+            "get": {
+                "description": "Основной долг, проценты, пени, комиссии и просрочка на момент расчёта по policy-1. Просрочка — часть итога.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Полная задолженность",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.debtDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/early-repayment-quotes": {
+            "post": {
+                "description": "Расчёт на сегодня по policy-1: сумма списания, распределение и новый график. Денег не списывает.\nДействует 15 минут и до изменения кредита.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Рассчитать досрочное погашение",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ расчёта",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Тип, сумма и стратегия",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/servicing.quoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.quoteDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/early-repayments": {
+            "post": {
+                "description": "Подтверждение расчёта и запрос списания. Новый график применяется после подтверждения банком.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Подтвердить досрочное погашение",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Версия кредита",
+                        "name": "If-Match",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ команды",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Расчёт и счёт",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/servicing.earlyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.operationDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "Precondition Failed",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/early-repayments/{opId}": {
+            "get": {
+                "description": "Статус досрочного погашения и итоговые версии кредита и графика.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Досрочное погашение: статус",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID операции",
+                        "name": "opId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.operationDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/repayment-accounts": {
+            "get": {
+                "description": "Счета компании в АБС банка. available — активный рублёвый счёт, с которого можно списать.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Счета для оплаты кредита",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/servicing.repaymentAccountDTO"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/repayments": {
+            "get": {
+                "description": "Обычные и досрочные операции, новые первыми.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "История операций по кредиту",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Страница с 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Размер 1–100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.operationsPage"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Запрос на списание со счёта компании. Долг уменьшится после подтверждения банком: статус — через GET операции.\nСумма — не больше просрочки, пеней и остатка ближайшего платежа.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Оплатить кредит",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Версия кредита",
+                        "name": "If-Match",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ команды",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Счёт и сумма",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/servicing.repaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.operationDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "Precondition Failed",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/repayments/{opId}": {
+            "get": {
+                "description": "Статус операции. Незавершённую сервер сначала сверяет с банком.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "Операция по кредиту",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID операции",
+                        "name": "opId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/servicing.operationDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/loans/{id}/schedule/document": {
+            "get": {
+                "description": "Условия договора, все строки действующего графика с оплаченными и оставшимися суммами, итоги и версии.\nОшибки — JSON.",
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "loans"
+                ],
+                "summary": "PDF полного графика",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID кредита",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "pdf",
+                        "description": "Только pdf",
+                        "name": "format",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
                         }
                     },
                     "403": {
@@ -5115,6 +5815,124 @@ const docTemplate = `{
                 }
             }
         },
+        "servicing.accountRefDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "acc-7712345678-1"
+                },
+                "maskedNumber": {
+                    "type": "string",
+                    "example": "•••• 0001"
+                }
+            }
+        },
+        "servicing.allocationDTO": {
+            "type": "object",
+            "properties": {
+                "fees": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "interest": {
+                    "type": "integer",
+                    "example": 20000
+                },
+                "penalties": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "principal": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
+        "servicing.debtDTO": {
+            "type": "object",
+            "properties": {
+                "asOf": {
+                    "type": "string",
+                    "example": "2026-12-25T10:00:00Z"
+                },
+                "businessDate": {
+                    "type": "string",
+                    "example": "2026-12-25"
+                },
+                "calculationPolicyVersion": {
+                    "type": "string",
+                    "example": "policy-1"
+                },
+                "feesOutstanding": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "interestOutstanding": {
+                    "type": "integer",
+                    "example": 24004
+                },
+                "loanId": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "loanVersion": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "overdue": {
+                    "$ref": "#/definitions/servicing.overdueDTO"
+                },
+                "penaltiesOutstanding": {
+                    "type": "integer",
+                    "example": 310
+                },
+                "prepaidInterest": {
+                    "description": "оплачено заранее сверх начисленного; учитывается при досрочном погашении",
+                    "type": "integer",
+                    "example": 0
+                },
+                "principalOutstanding": {
+                    "type": "integer",
+                    "example": 1200000
+                },
+                "scheduleVersion": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "timeZone": {
+                    "type": "string",
+                    "example": "UTC"
+                },
+                "totalOutstanding": {
+                    "type": "integer",
+                    "example": 1224314
+                },
+                "unappliedFunds": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
+        "servicing.earlyRequest": {
+            "type": "object",
+            "required": [
+                "accountId",
+                "quoteId"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "acc-7712345678-1"
+                },
+                "quoteId": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "eq-101"
+                }
+            }
+        },
         "servicing.loanDTO": {
             "type": "object",
             "properties": {
@@ -5170,6 +5988,14 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1200000
                 },
+                "closeReason": {
+                    "description": "SCHEDULE_COMPLETED, EARLY_REPAYMENT, LIMIT_CLOSED",
+                    "type": "string",
+                    "example": "EARLY_REPAYMENT"
+                },
+                "closedAt": {
+                    "type": "string"
+                },
                 "contractNumber": {
                     "type": "string",
                     "example": "КД-2026-0055"
@@ -5191,12 +6017,24 @@ const docTemplate = `{
                 "product": {
                     "$ref": "#/definitions/servicing.productRefDTO"
                 },
+                "revolving": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "scheduleVersion": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "status": {
                     "type": "string",
                     "example": "ACTIVE"
                 },
                 "terms": {
                     "$ref": "#/definitions/servicing.loanTermsDTO"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -5225,6 +6063,177 @@ const docTemplate = `{
                 }
             }
         },
+        "servicing.loansPage": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/servicing.loanDTO"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 135
+                }
+            }
+        },
+        "servicing.operationDTO": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/servicing.accountRefDTO"
+                },
+                "allocation": {
+                    "$ref": "#/definitions/servicing.allocationDTO"
+                },
+                "externalTransactionId": {
+                    "type": "string",
+                    "example": "dbt-rp-501"
+                },
+                "failureReason": {
+                    "type": "string",
+                    "example": "Недостаточно средств на счёте"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "rp-501"
+                },
+                "loanId": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "loanStatus": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                },
+                "loanVersion": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "postedAmount": {
+                    "type": "integer",
+                    "example": 20000
+                },
+                "postedAt": {
+                    "type": "string",
+                    "example": "2026-10-21T10:00:05Z"
+                },
+                "quoteId": {
+                    "type": "string",
+                    "example": "eq-101"
+                },
+                "requestedAmount": {
+                    "type": "integer",
+                    "example": 20000
+                },
+                "requestedAt": {
+                    "type": "string",
+                    "example": "2026-10-21T10:00:00Z"
+                },
+                "scheduleVersion": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "status": {
+                    "description": "PENDING, PROCESSING, SUCCEEDED, FAILED",
+                    "type": "string",
+                    "example": "PENDING"
+                },
+                "type": {
+                    "description": "REGULAR, EARLY",
+                    "type": "string",
+                    "example": "REGULAR"
+                },
+                "unappliedAmount": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
+        "servicing.operationsPage": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/servicing.operationDTO"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "servicing.overdueDTO": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "example": 35
+                },
+                "fees": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "interest": {
+                    "type": "integer",
+                    "example": 21500
+                },
+                "penalties": {
+                    "type": "integer",
+                    "example": 310
+                },
+                "principal": {
+                    "type": "integer",
+                    "example": 40458
+                },
+                "since": {
+                    "description": "null — просрочки нет",
+                    "type": "string",
+                    "example": "2026-11-21"
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 62268
+                }
+            }
+        },
+        "servicing.overdueSummaryDTO": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "просроченная задолженность с пенями, как overdue.total в /debt",
+                    "type": "integer",
+                    "example": 0
+                },
+                "loans": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "payments": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
         "servicing.paymentDTO": {
             "type": "object",
             "properties": {
@@ -5232,13 +6241,42 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2026-11-20"
                 },
+                "early": {
+                    "description": "строка досрочного погашения",
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "type": "string",
+                    "example": "sp-55-1"
+                },
                 "interest": {
                     "type": "integer",
                     "example": 21500
                 },
+                "paidInterest": {
+                    "type": "integer",
+                    "example": 20000
+                },
+                "paidPrincipal": {
+                    "type": "integer",
+                    "example": 0
+                },
                 "principal": {
                     "type": "integer",
                     "example": 40458
+                },
+                "remainingInterest": {
+                    "type": "integer",
+                    "example": 1500
+                },
+                "remainingPrincipal": {
+                    "type": "integer",
+                    "example": 40458
+                },
+                "remainingTotal": {
+                    "type": "integer",
+                    "example": 41958
                 },
                 "status": {
                     "description": "PLANNED, PAID, OVERDUE",
@@ -5264,6 +6302,27 @@ const docTemplate = `{
                 }
             }
         },
+        "servicing.previewDTO": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2026-11-20"
+                },
+                "interest": {
+                    "type": "integer",
+                    "example": 17913
+                },
+                "principal": {
+                    "type": "integer",
+                    "example": 44045
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 61958
+                }
+            }
+        },
         "servicing.productRefDTO": {
             "type": "object",
             "properties": {
@@ -5274,6 +6333,167 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Оборотный кредит"
+                }
+            }
+        },
+        "servicing.quoteDTO": {
+            "type": "object",
+            "properties": {
+                "allocation": {
+                    "$ref": "#/definitions/servicing.allocationDTO"
+                },
+                "amountToDebit": {
+                    "type": "integer",
+                    "example": 200000
+                },
+                "calculatedAt": {
+                    "type": "string",
+                    "example": "2026-10-21T10:00:00Z"
+                },
+                "calculationPolicyVersion": {
+                    "type": "string",
+                    "example": "policy-1"
+                },
+                "effectiveDate": {
+                    "type": "string",
+                    "example": "2026-10-21"
+                },
+                "expectedCloseDate": {
+                    "type": "string",
+                    "example": "2028-06-20"
+                },
+                "loanId": {
+                    "type": "string",
+                    "example": "l-55"
+                },
+                "loanVersion": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "monthlyPaymentAfter": {
+                    "type": "integer",
+                    "example": 61958
+                },
+                "prepaidInterestCredit": {
+                    "description": "переплаченные проценты, засчитанные в основной долг",
+                    "type": "integer",
+                    "example": 0
+                },
+                "principalAfter": {
+                    "type": "integer",
+                    "example": 1000707
+                },
+                "quoteId": {
+                    "type": "string",
+                    "example": "eq-101"
+                },
+                "remainingPaymentsAfter": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "schedulePreview": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/servicing.previewDTO"
+                    }
+                },
+                "scheduleVersion": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "strategy": {
+                    "type": "string",
+                    "example": "REDUCE_TERM"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "PARTIAL"
+                },
+                "validUntil": {
+                    "type": "string",
+                    "example": "2026-10-21T10:15:00Z"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "servicing.quoteRequest": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 200000
+                },
+                "effectiveDate": {
+                    "type": "string",
+                    "example": "2026-10-21"
+                },
+                "strategy": {
+                    "type": "string",
+                    "enum": [
+                        "REDUCE_TERM",
+                        "REDUCE_PAYMENT"
+                    ],
+                    "example": "REDUCE_TERM"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "PARTIAL",
+                        "FULL"
+                    ],
+                    "example": "PARTIAL"
+                }
+            }
+        },
+        "servicing.repaymentAccountDTO": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "availableBalance": {
+                    "description": "null — АБС остаток не отдаёт",
+                    "type": "integer",
+                    "example": 4800000
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "RUB"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "acc-7712345678-1"
+                },
+                "maskedNumber": {
+                    "type": "string",
+                    "example": "•••• 0001"
+                }
+            }
+        },
+        "servicing.repaymentRequest": {
+            "type": "object",
+            "required": [
+                "accountId",
+                "amount"
+            ],
+            "properties": {
+                "accountId": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "example": "acc-7712345678-1"
+                },
+                "amount": {
+                    "type": "integer",
+                    "example": 20000
                 }
             }
         },
@@ -5310,6 +6530,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "closedLoans": {
+                    "type": "integer",
+                    "example": 0
+                },
                 "nextPayment": {
                     "description": "null — платежей впереди нет",
                     "allOf": [
@@ -5317,6 +6541,17 @@ const docTemplate = `{
                             "$ref": "#/definitions/servicing.paymentRefDTO"
                         }
                     ]
+                },
+                "overdue": {
+                    "$ref": "#/definitions/servicing.overdueSummaryDTO"
+                },
+                "totalLoans": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "totalPrincipalBalance": {
+                    "type": "integer",
+                    "example": 1200000
                 }
             }
         },

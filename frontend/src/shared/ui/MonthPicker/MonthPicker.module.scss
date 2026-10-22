@@ -1,0 +1,7 @@
+.picker {
+	display: grid;
+	grid-template-columns: minmax(120px, 1fr) minmax(92px, .7fr);
+	gap: 12px;
+	margin-bottom: 18px;
+	max-width: 380px;
+}

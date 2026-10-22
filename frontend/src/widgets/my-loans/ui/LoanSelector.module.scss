@@ -1,0 +1,125 @@
+.root {
+	display: grid;
+	gap: 12px;
+	min-width: 0;
+}
+
+.heading {
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.counter {
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--color-text-muted);
+}
+
+.track {
+	display: flex;
+	gap: 12px;
+	min-width: 0;
+	padding: 4px 4px 12px;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scroll-snap-type: x proximity;
+	scrollbar-color: var(--color-control-border) transparent;
+	scrollbar-width: thin;
+}
+
+.card {
+	display: flex;
+	flex: 0 0 252px;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px;
+	font: inherit;
+	color: var(--color-text);
+	text-align: left;
+	cursor: pointer;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 16px;
+	scroll-snap-align: start;
+	transition: border-color var(--duration), background-color var(--duration);
+
+	&:hover {
+		border-color: var(--color-control-border);
+	}
+
+	&[aria-pressed='true'] {
+		background: var(--color-primary-soft);
+		border-color: var(--color-primary);
+
+		.marker {
+			color: var(--color-on-primary);
+			background: var(--color-primary);
+			border-color: var(--color-primary);
+		}
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+}
+
+.top {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.title {
+	display: -webkit-box;
+	flex: 1;
+	min-height: 44px;
+	overflow: hidden;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 22px;
+	overflow-wrap: anywhere;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+
+.marker {
+	display: grid;
+	flex-shrink: 0;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	border: 1px solid var(--color-control-border);
+	border-radius: 50%;
+}
+
+.caption {
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--color-text-muted);
+	overflow-wrap: anywhere;
+}
+
+.amount {
+	margin-top: auto;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 24px;
+	font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+	.card {
+		flex-basis: 224px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.card {
+		transition: none;
+	}
+}

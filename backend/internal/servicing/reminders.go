@@ -17,20 +17,36 @@ const (
 	calendarLink   = "/credits/calendar"
 )
 
-// Run — фоновые напоминания о платежах, один воркер на процесс. Проверяет сразу и затем раз в час;
-// возвращается после отмены ctx. Сбой одного прохода логируется, следующий проход его повторит.
+// Run — фоновые задачи зоны, один воркер на процесс: напоминания о платежах (сразу и затем раз в час) и сверка
+// незавершённых операций с банком (сразу и затем каждые reconcileInterval). Возвращается после отмены ctx.
+// Сбой одного прохода логируется, следующий проход его повторит.
 func (m *Module) Run(ctx context.Context) {
-	t := time.NewTicker(remindInterval)
-	defer t.Stop()
+	remind, reconcile := time.NewTicker(remindInterval), time.NewTicker(reconcileInterval)
+	defer remind.Stop()
+	defer reconcile.Stop()
+	m.remindPass(ctx)
+	m.reconcilePass(ctx)
 	for {
-		if err := m.remindDue(ctx); err != nil && ctx.Err() == nil {
-			slog.Error("payment reminders", "err", err)
-		}
 		select {
 		case <-ctx.Done():
 			return
-		case <-t.C:
+		case <-remind.C:
+			m.remindPass(ctx)
+		case <-reconcile.C:
+			m.reconcilePass(ctx)
 		}
+	}
+}
+
+func (m *Module) remindPass(ctx context.Context) {
+	if err := m.remindDue(ctx); err != nil && ctx.Err() == nil {
+		slog.Error("payment reminders", "err", err)
+	}
+}
+
+func (m *Module) reconcilePass(ctx context.Context) {
+	if err := m.reconcileOpen(ctx); err != nil && ctx.Err() == nil {
+		slog.Error("reconcile operations", "err", err)
 	}
 }
 
@@ -54,7 +70,7 @@ func (m *Module) remindDue(ctx context.Context) error {
 		n := shared.Notification{
 			Type:  shared.NotifyPaymentDue,
 			Title: "Платёж по кредиту " + p.DueDate.Format(humanDate),
-			Text:  finance.Rub(p.Total) + " по договору " + p.ContractNumber + " («" + p.ProductName + "»)",
+			Text:  finance.Rub(p.remaining()) + " по договору " + p.ContractNumber + " («" + p.ProductName + "»)",
 			Link:  calendarLink,
 		}
 		if err := m.ports.Notifier.Notify(ctx, p.ApplicantID, n); err != nil {

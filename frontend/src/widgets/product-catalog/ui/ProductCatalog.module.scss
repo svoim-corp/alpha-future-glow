@@ -10,8 +10,8 @@
 	min-height: 200px;
 	padding: 36px 40px;
 	overflow: hidden;
-	color: #fff;
-	background: linear-gradient(120deg, #cf3a32, #a21c1c 60%, #8c1818);
+	color: var(--color-on-primary);
+	background: var(--card-background);
 	border-radius: 24px;
 
 	h2 {
@@ -24,12 +24,12 @@
 
 	p {
 		margin: 0;
-		font-size: 12px;
+		font-size: 14px;
 	}
 }
 
 .bannerLabel {
-	font-size: 9px;
+	font-size: 11px;
 	letter-spacing: 0.11em;
 	opacity: 0.85;
 }
@@ -66,9 +66,10 @@
 }
 
 .chip {
+	min-height: 44px;
 	padding: 10px 18px;
 	font-family: inherit;
-	font-size: 11px;
+	font-size: 13px;
 	color: var(--color-text);
 	cursor: pointer;
 	background: var(--color-surface);
@@ -77,6 +78,11 @@
 
 	&:hover {
 		border-color: var(--color-primary);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 4px;
 	}
 }
 
@@ -87,8 +93,8 @@
 }
 
 .fitLine {
-	margin: -12px 0 0;
-	font-size: 12px;
+	margin: 0;
+	font-size: 14px;
 	color: var(--color-text-muted);
 }
 

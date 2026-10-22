@@ -1,11 +1,11 @@
-import { formatMoney, formatRateRange } from '@shared/lib/format';
+import { formatMoney, formatRateRange, formatTerm } from '@shared/lib/format';
 import { type KeyValueItem } from '@shared/ui';
 
 import { type Goal, type ProductDetails, type Range } from './types';
 
 const formatMoneyBounds = ({ min, max }: Range): string => `${formatMoney(min)} – ${formatMoney(max)}`;
 
-const formatMonthsBounds = ({ min, max }: Range): string => `${min}–${max} мес.`;
+const formatMonthsBounds = ({ min, max }: Range): string => min === max ? formatTerm(min) : `${min}–${max} мес.`;
 
 const requirementsText = (details: ProductDetails): string => {
 	const parts: string[] = [];
@@ -27,17 +27,17 @@ export const buildConditionRows = (details: ProductDetails, goals: Goal[]): KeyV
 	const goalNames = details.goals.map((code) => goals.find((goal) => goal.code === code)?.name ?? code);
 	const rows: KeyValueItem[] = [
 		{ label: 'Цели', value: goalNames.join(', ') || '—' },
-		{ label: details.term ? 'Сумма' : 'Лимит', value: formatMoneyBounds(details.amount) },
+		{ label: details.code === 'OVERDRAFT' ? 'Размер лимита' : 'Сумма', value: formatMoneyBounds(details.amount) },
 	];
 
 	if (details.term) {
-		rows.push({ label: 'Срок', value: formatMonthsBounds(details.term) });
+		rows.push({ label: details.code === 'OVERDRAFT' ? 'Срок действия лимита' : 'Срок', value: formatMonthsBounds(details.term) });
 	}
 
 	rows.push({ label: 'Ставка', value: formatRateRange(details.rate.min, details.rate.max) });
 	rows.push({ label: 'Требования', value: requirementsText(details) });
 	if (details.limitRule) {
-		rows.push({ label: 'Лимит', value: details.limitRule });
+		rows.push({ label: 'Правило определения лимита', value: details.limitRule });
 	}
 
 	if (details.graceMaxMonths) {

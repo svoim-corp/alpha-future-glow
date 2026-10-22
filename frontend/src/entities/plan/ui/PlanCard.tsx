@@ -34,10 +34,11 @@ interface PlanCardProps {
 	plan: BusinessPlan;
 	goalName?: string;
 	actions?: ReactNode;
+	onOpen?: () => void;
 }
 
 /** Карточка плана в списках «Все планы» и «Идеи без даты» (макет planner.html) */
-export const PlanCard = ({ plan, goalName, actions }: PlanCardProps) => (
+export const PlanCard = ({ plan, goalName, actions, onOpen }: PlanCardProps) => (
 	<article className={styles.card} aria-label={plan.title}>
 		<div className={styles.head}>
 			<span className={styles.icon}><Icon name={planIcon(plan)} size={20} /></span>
@@ -53,5 +54,6 @@ export const PlanCard = ({ plan, goalName, actions }: PlanCardProps) => (
 			<p className={styles.match}>{`Подходит: ${plan.recommendation.productName}. ${plan.recommendation.reason}.`}</p>
 		)}
 		{actions && <div className={styles.actions}>{actions}</div>}
+		{onOpen && <button type="button" className={styles.open} aria-label={`Открыть план: ${plan.title}`} aria-haspopup="dialog" onClick={onOpen} />}
 	</article>
 );

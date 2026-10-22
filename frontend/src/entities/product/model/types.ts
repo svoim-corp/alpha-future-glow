@@ -10,7 +10,7 @@ export interface ProductSummary {
 	shortText: string;
 	goals: string[];
 	amount: Range;
-	/** У овердрафта срока кредита нет */
+	/** Сервер возвращает диапазон; у овердрафта min = max = 12. */
 	term?: Range | null;
 	rate: Range;
 }

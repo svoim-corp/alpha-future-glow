@@ -30,7 +30,7 @@ export const applicationApi = baseApi.injectEndpoints({
 				body,
 				headers: { 'If-Match': String(version) },
 			}),
-			onQueryStarted: async ({ id }, { dispatch, queryFulfilled }) => {
+			onQueryStarted: async ({ id, body }, { dispatch, queryFulfilled }) => {
 				try {
 					const { data } = await queryFulfilled;
 					dispatch(applicationApi.util.updateQueryData('getApplication', id, (draft) => {
@@ -38,8 +38,8 @@ export const applicationApi = baseApi.injectEndpoints({
 						draft.savedAt = data.savedAt;
 					}));
 
-					if (data.prelimInvalidated) {
-						// сумма, срок или продукт изменились — результат этапа 1 устарел, берём состояние с сервера
+					if (data.prelimInvalidated || body.stage2?.guarantor) {
+						// Перечитываем состояние этапов, поручителя и его согласия, вычисляемое сервером.
 						dispatch(applicationApi.util.invalidateTags([{ type: 'Application', id }]));
 					}
 				} catch {

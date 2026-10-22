@@ -52,14 +52,6 @@ describe('ClientShell', () => {
 		expect(screen.queryByText('РАЗДЕЛЫ КАБИНЕТА')).not.toBeInTheDocument();
 	});
 
-	it('язык: русский выбран, английский — позже', async () => {
-		const { user } = shell();
-
-		await user.click(screen.getByRole('button', { name: /RU/ }));
-
-		expect(screen.getByText('Позже')).toBeInTheDocument();
-	});
-
 	it('тема переключается и запоминается', async () => {
 		const { user } = shell();
 

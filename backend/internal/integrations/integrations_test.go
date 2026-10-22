@@ -35,6 +35,12 @@ var fixtures = map[string]string{
 	"/mock/mchd/m-1":                           `{"valid":true,"principalInn":"7712345678","representative":{"fullName":"Петрова Анна Сергеевна","inn":"771298765432"},"validUntil":"2027-03-01","powers":["CREDIT_APPLICATION","BKI_CONSENT"]}`,
 	"/mock/courts/broken":                      `{"arbitration":`,
 	"/mock/core-banking/clients/bad-date-0000": `{"inn":"0","clientSince":"01.02.2016"}`,
+	"/mock/core-banking/accounts/7712345678": `[{"id":"acc-1","number":"40702810123456780001","currency":"RUB","status":"ACTIVE","balance":5520000},
+		{"id":"acc-2","number":"40702810123456780002","currency":"RUB","status":"BLOCKED"}]`,
+	"/mock/core-banking/debits":         `{"debitId":"dbt-1","status":"PROCESSING"}`,
+	"/mock/core-banking/debits/dbt-1":   `{"debitId":"dbt-1","requestId":"rp-1","status":"SUCCEEDED","amount":20000,"postedAmount":20000,"postedAt":"2026-10-21T10:00:05Z"}`,
+	"/mock/core-banking/debits/dbt-2":   `{"debitId":"dbt-2","requestId":"rp-2","status":"FAILED","amount":20000,"reason":"Недостаточно средств на счёте"}`,
+	"/mock/core-banking/debits/dbt-bad": `{"debitId":"dbt-bad","status":"SUCCEEDED"}`,
 }
 
 // mockServer отдаёт fixtures; failing — пути, на которых мок «падает» с 500. hits считает запросы к пути.
@@ -98,6 +104,38 @@ func TestClient(t *testing.T) {
 	m, err := c.MCHD(ctx, "m-1")
 	if err != nil || !m.Valid || m.ValidUntil.Format(dateLayout) != "2027-03-01" || m.Representative.INN != "771298765432" {
 		t.Fatalf("MCHD: %+v %v", m, err)
+	}
+}
+
+func TestDebits(t *testing.T) {
+	srv, _ := mockServer(t)
+	c := newClient(srv.URL, time.Second)
+	ctx := context.Background()
+
+	accs, err := c.Accounts(ctx, "7712345678")
+	if err != nil || len(accs) != 2 || !accs[0].Active || *accs[0].Balance != 5_520_000 || accs[1].Active || accs[1].Balance != nil {
+		t.Fatalf("Accounts: %+v %v", accs, err)
+	}
+	if accs, err := c.Accounts(ctx, "0000000000"); err != nil || accs == nil || len(accs) != 0 {
+		t.Fatalf("404 должен давать пустой список: %v %v", accs, err)
+	}
+
+	id, err := c.Debit(ctx, shared.DebitRequest{RequestID: "rp-1", INN: "7712345678", AccountID: "acc-1", Amount: 20_000})
+	if err != nil || id != "dbt-1" {
+		t.Fatalf("Debit: %q %v", id, err)
+	}
+	r, err := c.DebitStatus(ctx, "dbt-1")
+	if err != nil || r.Status != shared.DebitSucceeded || r.PostedAmount != 20_000 || !r.PostedAt.Equal(now.Add(5*time.Second)) {
+		t.Fatalf("DebitStatus SUCCEEDED: %+v %v", r, err)
+	}
+	if r, err := c.DebitStatus(ctx, "dbt-2"); err != nil || r.Status != shared.DebitFailed || r.Reason == "" {
+		t.Fatalf("DebitStatus FAILED: %+v %v", r, err)
+	}
+	if r, err := c.DebitStatus(ctx, "dbt-404"); r != nil || err != nil {
+		t.Fatalf("неизвестное поручение должно давать (nil, nil): %+v %v", r, err)
+	}
+	if _, err := c.DebitStatus(ctx, "dbt-bad"); !isUpstream(err) {
+		t.Fatalf("SUCCEEDED без проводки должен давать UPSTREAM_UNAVAILABLE: %v", err)
 	}
 }
 

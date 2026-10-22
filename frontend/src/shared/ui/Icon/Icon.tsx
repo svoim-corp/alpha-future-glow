@@ -1,6 +1,7 @@
 import { type ReactNode, type SVGProps } from 'react';
 
 export type IconName =
+	| 'info'
 	| 'home'
 	| 'calendar'
 	| 'applications'
@@ -25,6 +26,7 @@ export type IconName =
 
 /** Контуры иконок из макетов (docs/designs/shell.html), сетка 24×24 */
 const SHAPES: Record<IconName, ReactNode> = {
+	'info': <><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></>,
 	'home': <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>,
 	'calendar': <><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2m-8 3h2"/></>,
 	'applications': <><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6m-6 4h6m-6 4h3"/></>,

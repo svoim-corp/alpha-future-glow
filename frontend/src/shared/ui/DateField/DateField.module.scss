@@ -1,0 +1,86 @@
+.root {
+	min-width: 0;
+}
+
+.input {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 48px;
+	align-items: start;
+	gap: 8px;
+}
+
+.trigger {
+	display: grid;
+	place-items: center;
+	height: 48px;
+	margin-top: 29px;
+	border: 1px solid var(--color-control-border);
+	border-radius: var(--radius-control);
+	background: var(--color-primary-soft);
+	color: var(--color-primary-text);
+	cursor: pointer;
+	&:focus-visible {
+		outline: 3px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+	&:disabled {
+		background: var(--color-raised);
+		color: var(--color-disabled-text);
+		cursor: not-allowed;
+	}
+}
+
+.panel {
+	width: 100%;
+	min-width: 0;
+}
+
+.calendar {
+	--rdp-accent-color: var(--color-primary);
+	--rdp-accent-background-color: var(--color-primary-soft);
+	--rdp-day-height: 40px;
+	--rdp-day-width: 40px;
+	--rdp-day_button-height: 38px;
+	--rdp-day_button-width: 38px;
+	--rdp-day_button-border-radius: 10px;
+	--rdp-today-color: var(--color-primary-text);
+	width: 100%;
+	font: inherit;
+	:global(.rdp-months), :global(.rdp-month) {
+		width: 100%;
+	}
+	:global(.rdp-month_caption) {
+		display: none;
+	}
+	:global(.rdp-month_grid) {
+		width: 100%;
+	}
+	:global(.rdp-day_button) {
+		font-size: 13px;
+		&:hover {
+			background: var(--color-raised);
+		}
+		&:focus-visible {
+			outline: 2px solid var(--color-focus);
+			outline-offset: 1px;
+		}
+	}
+	:global(.rdp-selected .rdp-day_button) {
+		background: var(--color-primary);
+		color: var(--color-on-primary);
+	}
+	:global(.rdp-weekday) {
+		color: var(--color-text-muted);
+		font-size: 11px;
+		font-weight: 500;
+	}
+}
+
+@media (max-width: 420px) {
+	.calendar {
+		--rdp-day-height: 36px;
+		--rdp-day-width: 36px;
+		--rdp-day_button-height: 34px;
+		--rdp-day_button-width: 34px;
+	}
+}

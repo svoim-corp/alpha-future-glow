@@ -1,9 +1,19 @@
-export { planApi, useGetPlanRecommendationsQuery, useGetPlansQuery } from './api/planApi';
+export {
+	planApi,
+	useCreatePlanMutation,
+	useDeletePlanMutation,
+	useGetPlanRecommendationsQuery,
+	useGetPlansQuery,
+	useUpdatePlanMutation,
+} from './api/planApi';
+export { moscowToday, PLAN_STATE_LABELS, planPhase, plansOnDate } from './model/calendar';
 export { formatPeriodLong, formatPlanStart, planCoversDate } from './model/period';
 export type {
 	BusinessPlan,
+	CreatePlanArgs,
 	DateMode,
 	PlanHomeRecommendation,
+	PlanPatch,
 	PlanRecommendation,
 	PlansResponse,
 	PlanState,

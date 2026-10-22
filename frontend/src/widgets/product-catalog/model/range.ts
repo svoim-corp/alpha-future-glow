@@ -9,5 +9,3 @@ export const fillPercent = (value: number, range: Range) => (
 
 export const DEFAULT_AMOUNT = 1500000;
 export const DEFAULT_TERM = 24;
-/** Овердрафт не имеет срока кредита: подбор считаем на год, как лимит в макете */
-export const OVERDRAFT_TERM = 12;

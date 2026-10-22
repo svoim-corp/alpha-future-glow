@@ -4,7 +4,6 @@ import {
 	type Offer,
 	type Timeline,
 } from '@entities/application';
-import { type BusinessPlan, type PlansResponse } from '@entities/plan';
 import { env } from '@shared/config';
 import { http, HttpResponse } from 'msw';
 
@@ -29,6 +28,7 @@ import {
 } from './fixtures/products';
 import { clientLogin, officerLogin } from './fixtures/session';
 import { faqFixture } from './fixtures/support';
+import { plannerHandlers } from './planner';
 
 const url = (path: string) => `${env.apiBaseUrl}${path}`;
 
@@ -86,16 +86,6 @@ const merge = <T extends object>(target: T, patch: Partial<T>) => {
 		}
 	}
 };
-
-const plansResponse = (): PlansResponse => ({
-	items: db.plans,
-	summary: {
-		total: db.plans.length,
-		withPeriod: db.plans.filter((plan) => plan.dateMode !== 'UNSCHEDULED').length,
-		unscheduled: db.plans.filter((plan) => plan.dateMode === 'UNSCHEDULED').length,
-		budgetRub: db.plans.reduce((sum, plan) => sum + plan.budgetRub, 0),
-	},
-});
 
 const productDetails = (code: string) => [workingDetails, investDetails, overdraftDetails]
 	.find((item) => item.code === code);
@@ -608,44 +598,7 @@ export const handlers = [
 		`Печатная форма ${String(params.docId)} (демо)`,
 		{ headers: { 'content-type': 'text/plain; charset=utf-8' } },
 	)),
-	http.get(url('/plans/recommendations'), () => HttpResponse.json(
-		db.plans
-			.filter((plan) => plan.dateMode === 'UNSCHEDULED' || plan.recommendation)
-			.map((plan) => ({
-				planId: plan.id,
-				planTitle: plan.title,
-				budgetRub: plan.budgetRub,
-				productCode: plan.recommendation?.productCode ?? 'WORKING',
-				productName: plan.recommendation?.productName ?? 'Оборотный кредит',
-				reason: plan.recommendation?.reason ?? 'Подходит по цели и бюджету',
-			})),
-	)),
-	http.get(url('/plans'), () => HttpResponse.json(plansResponse())),
-	http.post(url('/plans'), async ({ request }) => {
-		const body = await request.json() as Partial<BusinessPlan>;
-		const plan: BusinessPlan = {
-			id: nextId('p'),
-			title: String(body.title),
-			note: body.note ?? null,
-			goal: body.goal ?? null,
-			budgetRub: Number(body.budgetRub),
-			dateMode: body.dateMode ?? 'UNSCHEDULED',
-			startDate: body.startDate ?? null,
-			endDate: body.endDate ?? null,
-			state: 'ACTIVE',
-			notifications: body.notifications ?? { inApp: true, email: false },
-			recommendation: null,
-			createdAt: nowIso(),
-		};
-		db.plans.unshift(plan);
-
-		return HttpResponse.json(plan, { status: 201 });
-	}),
-	http.delete(url('/plans/:id'), ({ params }) => {
-		db.plans = db.plans.filter((plan) => plan.id !== params.id);
-
-		return new HttpResponse(null, { status: 204 });
-	}),
+	...plannerHandlers,
 
 	// ── рабочее место банка ────────────────────────────────
 	http.get(url('/bank/applications/stats'), () => {

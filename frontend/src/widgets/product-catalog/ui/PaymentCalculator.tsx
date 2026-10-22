@@ -2,7 +2,7 @@ import { type ProductSummary } from '@entities/product';
 import { PaymentEstimate } from '@features/calculate-payment';
 import { StartApplicationButton } from '@features/start-application';
 import { formatCompactMoney, formatMoney, formatTerm } from '@shared/lib/format';
-import { Icon,Select } from '@shared/ui';
+import { Alert, Icon, Select } from '@shared/ui';
 
 import { estimateParams } from '../model/estimate';
 import styles from './PaymentCalculator.module.scss';
@@ -12,9 +12,9 @@ interface PaymentCalculatorProps {
 	products: ProductSummary[];
 	product: ProductSummary;
 	amount: number;
-	/** null у продуктов без срока (овердрафт) */
 	term: number | null;
 	goal: string | null;
+	adjustment: string | null;
 	onProductChange: (code: string) => void;
 	onAmountChange: (amount: number) => void;
 	onTermChange: (term: number) => void;
@@ -29,6 +29,7 @@ export const PaymentCalculator = ({
 	amount,
 	term,
 	goal,
+	adjustment,
 	onProductChange,
 	onAmountChange,
 	onTermChange,
@@ -45,7 +46,7 @@ export const PaymentCalculator = ({
 		<div className={styles.grid}>
 			<div className={styles.controls}>
 				<RangeField
-					label={product.term ? 'Сумма кредита' : 'Лимит'}
+					label={product.code === 'OVERDRAFT' ? 'Лимит' : 'Сумма кредита'}
 					display={formatMoney(amount)}
 					value={amount}
 					range={product.amount}
@@ -54,7 +55,7 @@ export const PaymentCalculator = ({
 					maxLabel={formatCompactMoney(product.amount.max)}
 					onChange={onAmountChange}
 				/>
-				{product.term && term !== null && (
+				{product.term && product.term.min !== product.term.max && term !== null && (
 					<RangeField
 						label="Срок"
 						display={formatTerm(term)}
@@ -66,6 +67,14 @@ export const PaymentCalculator = ({
 						onChange={onTermChange}
 					/>
 				)}
+				{product.term && product.term.min === product.term.max && (
+					<p className={styles.hint}>
+						{product.code === 'OVERDRAFT'
+							? 'Срок действия лимита'
+							: 'Фиксированный срок'}
+						: {formatTerm(product.term.min)}.
+					</p>
+				)}
 				<div className={styles.select}>
 					<span id="calc-product-label">Продукт</span>
 					<Select
@@ -76,16 +85,22 @@ export const PaymentCalculator = ({
 						onChange={onProductChange}
 					/>
 				</div>
+				{adjustment && <Alert title="Параметры скорректированы">{adjustment}</Alert>}
 			</div>
 			<div className={styles.result}>
 				<span>Примерный ежемесячный платёж</span>
 				<div className={styles.payment} aria-live="polite">
-					{product.term ? (
-						<PaymentEstimate params={estimateParams(product.code, amount, term)} />
-					) : (
-						<p className={styles.hint}>Проценты только за дни в минусе</p>
-					)}
+					<PaymentEstimate
+						params={estimateParams(product.code, amount, term)}
+						showTotals
+					/>
 				</div>
+				{product.code === 'OVERDRAFT' && (
+					<p className={styles.hint}>
+						Показан предварительный расчёт сервера на срок действия лимита. Фактические
+						платежи зависят от использования лимита и условий договора.
+					</p>
+				)}
 				<StartApplicationButton
 					productCode={product.code}
 					amount={amount}
@@ -95,8 +110,8 @@ export const PaymentCalculator = ({
 			</div>
 		</div>
 		<p className={styles.note}>
-			Расчёт по ставке продукта, без комиссий и дополнительных услуг. Это не окончательные условия и не полная
-			стоимость кредита. Итог определится после рассмотрения заявки.
+			Расчёт по ставке продукта, без комиссий и дополнительных услуг. Это не окончательные
+			условия и не полная стоимость кредита. Итог определится после рассмотрения заявки.
 		</p>
 	</section>
 );

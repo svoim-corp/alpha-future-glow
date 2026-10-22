@@ -8,7 +8,11 @@ import (
 func TestStateOf(t *testing.T) {
 	day := func(d int) time.Time { return time.Date(2026, 11, d, 0, 0, 0, 0, time.UTC) }
 	row := func(d int, principal int64, status string) paymentRow {
-		return paymentRow{payment: payment{DueDate: day(d), Principal: principal, Total: principal + 100}, Status: status}
+		p := paymentRow{payment: payment{DueDate: day(d), Principal: principal, Interest: 100, Total: principal + 100, Status: status}}
+		if status == paymentPaid {
+			p.PaidPrincipal, p.PaidInterest = p.Principal, p.Interest
+		}
+		return p
 	}
 	schedule := []paymentRow{row(1, 300, paymentPaid), row(10, 300, paymentPlanned), row(20, 300, paymentPlanned), row(30, 100, paymentPlanned)}
 

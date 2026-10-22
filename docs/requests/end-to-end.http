@@ -246,6 +246,66 @@ GET {{api}}/loans/schedule?from=2026-11-01&to=2027-01-31
 ### Ближайшие платежи
 GET {{api}}/loans/schedule/upcoming?limit=3
 
+### Кредиты страницами
+GET {{api}}/loans/page?page=1&size=20&status=ACTIVE
+
+### Полная задолженность
+GET {{api}}/loans/{{loanId}}/debt
+
+### Счета для оплаты
+GET {{api}}/loans/{{loanId}}/repayment-accounts
+
+> {% client.global.set("accountId", response.body[0].id); %}
+
+### Версия кредита для If-Match
+GET {{api}}/loans/{{loanId}}
+
+> {% client.global.set("loanVersion", response.body.version); %}
+
+### Частичная оплата: 202, долг уменьшится после подтверждения банком
+POST {{api}}/loans/{{loanId}}/repayments
+If-Match: "{{loanVersion}}"
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{ "accountId": "{{accountId}}", "amount": 20000 }
+
+> {% client.global.set("repaymentId", response.body.id); %}
+
+### Результат оплаты: SUCCEEDED и распределение
+GET {{api}}/loans/{{loanId}}/repayments/{{repaymentId}}
+
+### История операций
+GET {{api}}/loans/{{loanId}}/repayments?page=1&size=20
+
+### Расчёт полного досрочного погашения
+POST {{api}}/loans/{{loanId}}/early-repayment-quotes
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{ "type": "FULL" }
+
+> {% client.global.set("quoteId", response.body.quoteId); client.global.set("loanVersion", response.body.loanVersion); %}
+
+### Подтверждение досрочного погашения
+POST {{api}}/loans/{{loanId}}/early-repayments
+If-Match: "{{loanVersion}}"
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{ "quoteId": "{{quoteId}}", "accountId": "{{accountId}}" }
+
+> {% client.global.set("earlyId", response.body.id); %}
+
+### Результат досрочного погашения: кредит закрыт
+GET {{api}}/loans/{{loanId}}/early-repayments/{{earlyId}}
+
+### Закрытые кредиты
+GET {{api}}/loans/page?status=CLOSED
+
+### PDF полного графика
+GET {{api}}/loans/{{loanId}}/schedule/document?format=pdf
+
 ###############################################################################
 # 12. Поддержка
 ###############################################################################
