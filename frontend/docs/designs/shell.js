@@ -21,7 +21,7 @@
     try { localStorage.setItem('credit-ui-theme', value); } catch {}
   });
   darkOS.addEventListener('change', e => { if (!manual) setTheme(e.matches ? 'dark' : 'light'); });
-  const triggers = ['language', 'profile'].map(id => document.getElementById(id)).filter(Boolean);
+  const triggers = ['profile'].map(id => document.getElementById(id)).filter(Boolean);
   function closePopovers() {
     triggers.forEach(button => { button.setAttribute('aria-expanded', 'false'); document.getElementById(button.getAttribute('aria-controls')).hidden = true; });
     const search = document.querySelector('#search');

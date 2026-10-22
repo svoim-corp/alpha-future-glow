@@ -296,24 +296,6 @@
 	position: relative;
 }
 
-.language {
-	display: flex;
-	gap: 8px;
-	align-items: center;
-	min-height: 44px;
-	padding: 0 4px;
-	font-size: 12px;
-	color: var(--color-text-muted);
-	cursor: pointer;
-	background: transparent;
-	border: 0;
-	border-radius: 8px;
-
-	&:hover {
-		color: var(--color-primary-text);
-	}
-}
-
 .profile {
 	display: flex;
 	gap: 12px;
@@ -427,41 +409,6 @@
 .hint {
 	margin: 0;
 	font-size: 12px;
-}
-
-.languagePanel {
-	width: 250px;
-}
-
-.option {
-	display: flex;
-	gap: 10px;
-	align-items: center;
-	padding: 12px 0;
-	font-size: 13px;
-}
-
-.muted {
-	color: var(--color-text-muted);
-}
-
-.check {
-	margin-left: auto;
-	color: var(--color-success);
-}
-
-.tag {
-	padding: 3px 6px;
-	font-size: 10px;
-	color: var(--color-text-muted);
-	background: var(--color-raised);
-	border-radius: 5px;
-}
-
-.later {
-	margin-left: auto;
-	font-size: 10px;
-	color: var(--color-text-muted);
 }
 
 .profilePanel {
@@ -598,10 +545,6 @@
 		background: transparent;
 	}
 
-	.language > svg:first-child {
-		display: none;
-	}
-
 	.profile {
 		gap: 0;
 		min-height: 44px;
@@ -652,10 +595,6 @@
 	.profilePanel {
 		right: -36px;
 		width: min(310px, calc(100vw - 40px));
-	}
-
-	.languagePanel {
-		right: -70px;
 	}
 
 	.searchPanel {

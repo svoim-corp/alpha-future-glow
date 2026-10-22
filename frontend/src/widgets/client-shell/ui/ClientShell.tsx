@@ -48,7 +48,7 @@ const companyInitials = (name: string) => companyTitle(name)
 	.map((word) => word[0]?.toUpperCase())
 	.join('');
 
-type Popover = 'language' | 'profile' | 'search' | null;
+type Popover = 'profile' | 'search' | null;
 
 export interface ClientShellProps {
 	/** Содержимое страницы (слот, чтобы оболочка не зависела от роутера) */
@@ -202,32 +202,6 @@ export const ClientShell = ({ children }: ClientShellProps) => {
 						>
 							<Icon name={theme === 'dark' ? 'sun' : 'moon'} />
 						</button>
-						<span className={styles.divider} />
-						<div className={styles.dropdown}>
-							<button
-								type="button"
-								className={styles.language}
-								aria-expanded={popover === 'language'}
-								aria-controls="language-panel"
-								onClick={() => togglePopover('language')}
-							>
-								<Icon name="globe" size={20} />
-								<span>RU</span>
-								<Icon name="chevron" size={16} />
-							</button>
-							{popover === 'language' && (
-								<div id="language-panel" className={clsx(styles.popover, styles.languagePanel)}>
-									<span className={styles.caption2}>ЯЗЫК ИНТЕРФЕЙСА</span>
-									<div className={styles.option}>
-										Русский <span className={styles.tag}>RU</span>
-										<Icon name="check" size={17} className={styles.check} />
-									</div>
-									<div className={clsx(styles.option, styles.muted)}>
-										English <span className={styles.later}>Позже</span>
-									</div>
-								</div>
-							)}
-						</div>
 						<span className={styles.divider} />
 						{user && (
 							<div className={styles.dropdown}>
