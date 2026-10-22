@@ -21,6 +21,7 @@ export const baseApi = createApi({
 		'Ticket',
 		'BankApplication',
 		'Plan',
+		'Dashboard',
 	],
 	endpoints: () => ({}),
 });

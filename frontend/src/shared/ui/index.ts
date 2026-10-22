@@ -48,3 +48,4 @@ export type { SearchFieldProps, SelectFilterProps } from './Toolbar';
 export { FilterToolbar, ListToolbar, SearchField, SelectFilter } from './Toolbar';
 export type { TooltipProps } from './Tooltip';
 export { Tooltip } from './Tooltip';
+export { TileGrid } from './TileGrid';

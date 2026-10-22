@@ -11,6 +11,12 @@ interface LoanConditionsDialogProps {
 	onClose: () => void;
 }
 
+const closeReasons = {
+	SCHEDULE_COMPLETED: 'Погашен по графику',
+	EARLY_REPAYMENT: 'Погашен досрочно',
+	LIMIT_CLOSED: 'Кредитный лимит закрыт',
+};
+
 export const LoanConditionsDialog = ({ loan, details, onClose }: LoanConditionsDialogProps) => {
 	const contract = useGetContractQuery(details.applicationId);
 	return (
@@ -21,6 +27,8 @@ export const LoanConditionsDialog = ({ loan, details, onClose }: LoanConditionsD
 					<KeyValueList items={[
 						{ label: 'Договор', value: details.contractNumber },
 						{ label: 'Статус', value: loan.status === 'CLOSED' ? 'Закрыт' : 'Действует' },
+						...(details.closedAt ? [{ label: 'Дата закрытия', value: formatDate(details.closedAt.slice(0, 10)) }] : []),
+						...(details.closeReason ? [{ label: 'Причина закрытия', value: closeReasons[details.closeReason] }] : []),
 						{ label: 'Дата выдачи', value: formatDate(details.issuedAt ?? loan.issuedAt) },
 						{ label: 'Сумма', value: formatMoney(details.terms.amount) },
 						{ label: 'Остаток основного долга', value: formatMoney(loan.balance) },

@@ -1,27 +1,12 @@
 import { isExpiredOffer, type PendingOffer } from '@entities/application';
-import { type Loan, type LoanPayment } from '@entities/loan';
+import { type Loan, type LoanPayment, paymentAmounts } from '@entities/loan';
 import { formatDate } from '@shared/lib/format';
 
 /** Сколько ближайших платежей показываем на графике и в таблице (макет loans.html) */
 export const UPCOMING_COUNT = 6;
 
-const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
-
 export const pendingOfferTotal = (offers: PendingOffer[], today: string) =>
 	offers.reduce((total, entry) => total + (isExpiredOffer(entry, today) ? 0 : entry.offer?.offered.amount ?? 0), 0);
-
-/** Основной долг по всем действующим кредитам */
-export const totalBalance = (loans: Loan[]) => sum(loans.map((loan) => loan.balance));
-
-/** Сумма только в ближайшую дату: платежи других дней сюда не входят. */
-export const totalMonthly = (loans: Loan[]) => {
-	const date = earliestPaymentDate(loans);
-	return sum(loans.filter((loan) => loan.nextPayment?.date === date).map((loan) => loan.nextPayment?.amount ?? 0));
-};
-
-/** Дата ближайшего платежа среди всех кредитов */
-export const earliestPaymentDate = (loans: Loan[]) =>
-	loans.flatMap((loan) => (loan.nextPayment ? [loan.nextPayment.date] : [])).sort()[0] ?? null;
 
 /** Доля погашенного основного долга, % */
 export const repaidPercent = (loan: Loan) =>
@@ -58,7 +43,7 @@ export const thousands = (value: number) => `${new Intl.NumberFormat('ru-RU', { 
 export const scheduleCsv = (payments: LoanPayment[]) => {
 	const labels = { PLANNED: 'Запланирован', PAID: 'Оплачен', OVERDUE: 'Просрочен' };
 	return '\uFEFF' + [
-		'Дата;Основной долг, ₽;Проценты, ₽;Всего, ₽;Статус',
-		...payments.map((payment) => [formatDate(payment.date), payment.principal, payment.interest, payment.total, labels[payment.status]].join(';')),
+		'Дата;Основной долг по графику, ₽;Проценты по графику, ₽;Всего по графику, ₽;Оплачено, ₽;Осталось, ₽;Статус;Досрочное погашение',
+		...payments.map((payment) => [formatDate(payment.date), payment.principal, payment.interest, payment.total, paymentAmounts(payment).paid, paymentAmounts(payment).remaining, labels[payment.status], payment.early ? 'Да' : 'Нет'].join(';')),
 	].join('\r\n');
 };

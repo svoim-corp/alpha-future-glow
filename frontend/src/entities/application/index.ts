@@ -1,6 +1,7 @@
 export {
 	applicationApi,
 	useGetApplicationQuery,
+	useGetAllMyApplicationsQuery,
 	useGetCompanyProfileQuery,
 	useGetMyApplicationsQuery,
 	usePatchApplicationMutation,

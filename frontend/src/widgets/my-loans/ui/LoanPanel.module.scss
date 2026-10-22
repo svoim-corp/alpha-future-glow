@@ -21,6 +21,41 @@
 	gap: var(--space-3);
 }
 
+.pagination {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 20px;
+	font-size: 14px;
+	color: var(--color-text-muted);
+}
+
+.operationDetails {
+	min-width: 220px;
+	max-width: 340px;
+	white-space: normal;
+
+	summary {
+		padding: 8px 0;
+		color: var(--color-primary-text);
+		cursor: pointer;
+
+		&:focus-visible {
+			outline: 2px solid var(--color-focus);
+			outline-offset: 4px;
+		}
+	}
+}
+
+.paymentDate {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: flex-start;
+}
+
 .card {
 	min-width: 0;
 	padding: 24px;

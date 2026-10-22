@@ -1,3 +1,4 @@
+import { dashboardCustomizationSlice } from '@features/customize-dashboard';
 import { combineSlices, configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { baseApi } from '@shared/api';
@@ -6,7 +7,7 @@ import { baseApi } from '@shared/api';
  * Корневой редьюсер. Новый слайс (entities/features) регистрируется здесь —
  * импортом из public API слайса: combineSlices(baseApi, someSlice, ...).
  */
-export const rootReducer = combineSlices(baseApi);
+export const rootReducer = combineSlices(baseApi, dashboardCustomizationSlice);
 
 export type AppRootState = ReturnType<typeof rootReducer>;
 

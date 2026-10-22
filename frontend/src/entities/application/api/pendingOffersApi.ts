@@ -1,29 +1,21 @@
-import { baseApi, getErrorMessage, type Paginated } from '@shared/api';
+import { baseApi, getErrorMessage } from '@shared/api';
 
 import { isPendingOffer, type PendingOffer } from '../model/pendingOffer';
 import { type Offer } from '../model/tracking';
-import { type ApplicationShort } from '../model/types';
+import { applicationApi } from './applicationApi';
 
 /** У сервера нет отдельного списка офферов: собираем его из всех страниц заявок компании. */
 export const pendingOffersApi = baseApi.injectEndpoints({
 	endpoints: (build) => ({
 		getPendingOffers: build.query<PendingOffer[], void>({
-			queryFn: async (_arg, _api, _options, baseQuery) => {
-				const applications = new Map<string, ApplicationShort>();
-				let page = 1;
-				let pages = 1;
-				do {
-					const result = await baseQuery(`/applications?mine=true&page=${page}&size=100`);
-					if (result.error) return { error: result.error };
-					const response = result.data as Paginated<ApplicationShort>;
-					for (const application of response.items) {
-						if (isPendingOffer(application)) applications.set(application.id, application);
-					}
-					pages = Math.ceil(response.total / response.size);
-					page += 1;
-				} while (page <= pages);
-
-				const entries = [...applications.values()];
+			queryFn: async (_arg, api, _options, baseQuery) => {
+				const result = await api.dispatch(applicationApi.endpoints.getAllMyApplications.initiate(undefined, {
+					subscribe: false, forceRefetch: true,
+				}));
+				if (result.isError || !result.data) return {
+					error: { status: 'CUSTOM_ERROR', error: getErrorMessage(result.error, 'Не удалось загрузить полный список заявок.') },
+				};
+				const entries = result.data.filter(isPendingOffer);
 				const data: PendingOffer[] = [];
 				// Ограничиваем число одновременных запросов условий.
 				for (let index = 0; index < entries.length; index += 5) {

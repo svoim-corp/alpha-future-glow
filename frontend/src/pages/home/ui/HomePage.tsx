@@ -1,6 +1,7 @@
 import { useGetMeQuery } from '@entities/session';
-import { firstName, greeting, HomeDashboard } from '@widgets/home-dashboard';
+import { HomeDashboard } from '@widgets/home-dashboard';
 
+import { firstName, greeting } from '../model/greeting';
 import styles from './HomePage.module.scss';
 
 const todayFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
