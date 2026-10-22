@@ -17,6 +17,7 @@ export {
 	useGetScoreQuery,
 	useRefreshChecksMutation,
 } from './api/bankApi';
+export { useGetPendingOffersQuery } from './api/pendingOffersApi';
 export { trackingApi, useGetInfoRequestsQuery, useGetOfferQuery, useGetTimelineQuery } from './api/trackingApi';
 export type {
 	Assignee,
@@ -35,6 +36,8 @@ export type {
 	ScoreFactor,
 } from './model/bank';
 export { companyStateLabel, isCompanyActive } from './model/companyState';
+export { isExpiredOffer } from './model/pendingOffer';
+export type { PendingOffer } from './model/pendingOffer';
 export { applicationHref, BANK_STATUS_LABEL, STATUS_VIEW } from './model/status';
 export type {
 	Actor,

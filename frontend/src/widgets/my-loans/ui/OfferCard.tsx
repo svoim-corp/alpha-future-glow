@@ -1,34 +1,57 @@
-import { applicationHref, type ApplicationShort, useGetOfferQuery } from '@entities/application';
+import { applicationHref, isExpiredOffer, type PendingOffer } from '@entities/application';
+import { useGetProductQuery } from '@entities/product';
+import { paths } from '@shared/config';
 import { formatDate, formatMoney, formatRate, formatTerm } from '@shared/lib/format';
-import { Badge, Icon } from '@shared/ui';
-import { Link } from 'react-router';
+import { Alert, Badge, Button, ButtonLink, Icon } from '@shared/ui';
 
 import styles from './OfferCard.module.scss';
 
-/** Одобренная, но ещё не оформленная заявка: условия банка и срок действия предложения */
-export const OfferCard = ({ application }: { application: ApplicationShort }) => {
-	const { data } = useGetOfferQuery(application.id);
-	const offer = data && data.decision !== 'REJECTED' ? data.offered : null;
-	const validUntil = data && data.decision !== 'REJECTED' ? data.validUntil : null;
-	const title = application.status === 'COUNTER_OFFER' ? 'Банк предложил новые условия' : `${application.product.name} одобрен`;
+interface OfferCardProps {
+	entry: PendingOffer;
+	today: string;
+	onRetry: () => void;
+	refreshing: boolean;
+}
+
+export const OfferCard = ({ entry, today, onRetry, refreshing }: OfferCardProps) => {
+	const { application, offer } = entry;
+	const product = useGetProductQuery(offer?.offered.productCode ?? '', { skip: !offer });
+	const signing = application.status === 'SIGNING';
+	const expired = isExpiredOffer(entry, today);
+	const title = signing ? 'Оформление кредита' : offer?.decision === 'COUNTER_OFFER'
+		? 'Банк предложил другие условия' : 'Кредит одобрен';
 
 	return (
 		<section className={styles.card} aria-label={title}>
 			<div className={styles.illustration}><Icon name="check" size={40} /></div>
 			<div className={styles.body}>
-				<span className={styles.eyebrow}>ПРЕДЛОЖЕНИЕ ПО ЗАЯВКЕ {application.number}</span>
+				<span className={styles.eyebrow}>ПО ЗАЯВКЕ {application.number ?? 'без номера'}</span>
 				<h2>{title}</h2>
-				<p>Это предложение банка. Кредит ещё не оформлен и деньги не выданы.</p>
-				<dl className={styles.terms}>
-					<div><dt>Сумма</dt><dd>{formatMoney(offer?.amount ?? application.amount)}</dd></div>
-					<div><dt>Срок</dt><dd>{formatTerm(offer?.term ?? application.term)}</dd></div>
-					{offer && <div><dt>Ставка</dt><dd>{formatRate(offer.rate)}</dd></div>}
-				</dl>
-				{validUntil && <Badge tone="warning">Предложение до {formatDate(validUntil)}</Badge>}
+				<p>{signing ? 'Предложение принято. Продолжите оформление договора; деньги ещё не выданы.' : 'Это предложение банка. Кредит ещё не выдан.'}</p>
+				{offer ? (
+					<>
+						{product.data && <h3>{product.data.name}</h3>}
+						<dl className={styles.terms}>
+							<div><dt>Сумма</dt><dd>{formatMoney(offer.offered.amount)}</dd></div>
+							<div><dt>Срок</dt><dd>{formatTerm(offer.offered.term)}</dd></div>
+							<div><dt>Ставка</dt><dd>{formatRate(offer.offered.rate)}</dd></div>
+							<div><dt>Платёж в месяц</dt><dd>{formatMoney(offer.offered.monthlyPayment)}</dd></div>
+						</dl>
+						{offer.explanation && <p>{offer.explanation}</p>}
+						{!signing && <Badge tone={expired ? 'danger' : 'warning'}>
+							{expired ? `Срок предложения истёк ${formatDate(offer.validUntil)}` : `Предложение до ${formatDate(offer.validUntil)}`}
+						</Badge>}
+					</>
+				) : (
+					<Alert tone="danger" title={entry.error ?? 'Условия банка недоступны.'}
+						actions={<Button variant="secondary" compact disabled={refreshing} onClick={onRetry}>Повторить загрузку условий</Button>}>
+						Запрошенные сумма и срок не подставляются вместо условий банка.
+					</Alert>
+				)}
 				<div className={styles.actions}>
-					<Link to={applicationHref(application)} className={styles.button}>
-						Посмотреть условия <Icon name="arrow" size={17} />
-					</Link>
+					<ButtonLink to={signing ? paths.applicationSign(application.id) : applicationHref(application)}>
+						{signing ? 'Продолжить оформление' : 'Открыть заявку'} <Icon name="arrow" size={17} />
+					</ButtonLink>
 				</div>
 			</div>
 		</section>

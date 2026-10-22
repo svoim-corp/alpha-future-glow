@@ -1,11 +1,25 @@
 .root {
 	display: grid;
 	gap: 28px;
+	min-width: 0;
 }
 
 .panel {
 	display: grid;
 	gap: 24px;
+	min-width: 0;
+
+	> * {
+		min-width: 0;
+	}
+}
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	align-items: center;
+	justify-content: space-between;
 }
 
 .empty {

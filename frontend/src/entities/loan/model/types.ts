@@ -44,6 +44,7 @@ export interface LoanTerms {
 	term: number;
 	rate: number;
 	monthlyPayment: number;
+	graceMonths?: number;
 }
 
 /** GET /loans/{id} */
@@ -51,6 +52,10 @@ export interface LoanDetails {
 	id: string;
 	applicationId: string;
 	contractNumber: string;
+	product?: LoanProductRef;
+	balance?: number;
+	issuedAt?: string;
+	status?: LoanStatus;
 	terms: LoanTerms;
 	payments: LoanPayment[];
 }
