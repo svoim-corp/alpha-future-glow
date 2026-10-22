@@ -33,6 +33,14 @@ func TestDelete(t *testing.T) {
 	if v, _ := e.m.Applications().Application(context.Background(), id); v == nil || v.Status != shared.StatusClosed {
 		t.Fatalf("удалённый черновик для зон: %+v", v)
 	}
+	batch, err := e.m.Assistant().Find(context.Background(), "c-1", []string{id, "missing"})
+	if err != nil || len(batch) != 1 || batch[0].ID != id || batch[0].Status != shared.StatusClosed {
+		t.Fatalf("пакет истории должен содержать только запрошенный удалённый черновик: %+v %v", batch, err)
+	}
+	foreign, err := e.m.Assistant().Find(context.Background(), "c-3", []string{id, keep})
+	if err != nil || len(foreign) != 0 {
+		t.Fatalf("пакет истории раскрыл чужие данные: %+v %v", foreign, err)
+	}
 	if evs, _ := e.m.store.Events(context.Background(), id); len(evs) != 1 || evs[0].Action != actionDeleteDraft {
 		t.Fatalf("история удаления: %+v", evs)
 	}

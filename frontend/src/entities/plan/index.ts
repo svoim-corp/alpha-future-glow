@@ -18,5 +18,6 @@ export type {
 	PlansResponse,
 	PlanState,
 } from './model/types';
+export { AssistantPlanCard } from './ui/AssistantPlanCard';
 export { formatPeriod, PlanCard, planIcon } from './ui/PlanCard';
 export { PlanRecommendations } from './ui/PlanRecommendations';

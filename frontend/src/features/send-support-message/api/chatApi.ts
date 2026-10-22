@@ -12,7 +12,9 @@ export const chatApi = baseApi.injectEndpoints({
 				url: `/support/conversations/${encodeURIComponent(conversationId)}/messages`,
 				method: 'POST', body: { text }, headers: { 'Idempotency-Key': key },
 			}),
-			invalidatesTags: (_result, _error, { conversationId }) => [{ type: 'SupportChat', id: conversationId }],
+			invalidatesTags: (_result, _error, { conversationId }) => [
+				{ type: 'SupportChat', id: conversationId }, { type: 'SupportChat', id: 'LIST' },
+			],
 		}),
 	}),
 });

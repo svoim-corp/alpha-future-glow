@@ -72,6 +72,13 @@ def main():
     applications = request("/applications?size=100")
     assert any(a["id"] == result["resultId"] for a in applications["items"])
     ask("Покажи мои заявки.", "application")
+    for greeting in ("Привет", "Привет!", "Добрый день"):
+        reply = ask(greeting)
+        assert not reply["blocks"] and not reply["sources"], "Приветствие продолжило прежнюю задачу"
+        assert "Здравствуйте" in reply["text"], "Нет ответа на приветствие"
+    theory = ask("Чем отличается овердрафт?")
+    assert theory["sources"] and not theory["blocks"], "Справочный вопрос продолжил работу с заявками"
+    ask("Подбери кредит на оборудование: 2 миллиона рублей на 24 месяца.", "product")
     ask("Покажи ближайшие платежи по моим кредитам.")
     ticket = ask("Подготовь обращение: в карточке компании указан старый фактический адрес склада. Нужно проверить адрес.", "action")
     result = confirm(ticket)

@@ -3,13 +3,15 @@ package support
 import (
 	"database/sql"
 	"errors"
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
+
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
-	"net/http"
-	"strings"
 )
 
 func (m *Module) registerChat(r httpx.Routes) {
@@ -145,6 +147,10 @@ func (m *Module) listMessages(c *gin.Context) {
 			}
 		}
 	}
+	if err := m.refreshApplications(c.Request.Context(), v.CompanyID, out); err != nil {
+		httpx.Fail(c, err)
+		return
+	}
 	httpx.JSON(c, http.StatusOK, out)
 }
 
@@ -164,7 +170,7 @@ type messageRequest struct {
 // @Failure 409 {object} httpx.ErrorBody
 // @Router /support/conversations/{id}/messages [post]
 func (m *Module) sendMessage(c *gin.Context) {
-	v, _, err := m.conversationFrom(c)
+	v, u, err := m.conversationFrom(c)
 	if err != nil {
 		httpx.Fail(c, err)
 		return
@@ -183,7 +189,7 @@ func (m *Module) sendMessage(c *gin.Context) {
 		httpx.Fail(c, httpx.Upstream("Ассистент сейчас недоступен. Частые вопросы и обращения продолжают работать."))
 		return
 	}
-	out, err := m.store.enqueue(c.Request.Context(), v.ID, in.Text, key)
+	out, err := m.store.enqueue(c.Request.Context(), v.ID, in.Text, key, viewerContext{Name: u.FullName, Position: u.Position})
 	if err != nil {
 		httpx.Fail(c, err)
 		return
@@ -256,6 +262,19 @@ func (m *Module) confirmAction(c *gin.Context) {
 		}
 		out.Title = "Обращение отправлено"
 		out.ResultID = t.ID
+	case "plan":
+		if p.PlanChange == nil || m.ports.Planner == nil {
+			httpx.Fail(c, httpx.Validation("Нет параметров плана"))
+			return
+		}
+		plan, err := m.ports.Planner.Apply(ctx, shared.DraftApplicant{UserID: u.ID, CompanyID: *u.CompanyID}, *p.PlanChange, id)
+		if err != nil {
+			httpx.Fail(c, err)
+			return
+		}
+		out.Title = "План сохранён"
+		out.Plan = plan
+		out.ResultID = plan.ID
 	default:
 		httpx.Fail(c, httpx.Validation("Недоступное действие"))
 		return

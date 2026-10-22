@@ -129,7 +129,7 @@ func run(log *slog.Logger) error {
 		Notifier: notificationsMod.Notifier(), Products: catalogMod.Products(), Debits: integrationsMod.Debits(),
 		Companies: companyMod.Companies(), Authorities: companyMod.Authorities(),
 	})
-	supportMod.Wire(support.Ports{Applications: originationMod.Applications(), Catalog: catalogMod.Assistant(), Drafts: originationMod.Assistant(), Payments: servicingMod.Assistant()})
+	supportMod.Wire(support.Ports{Applications: originationMod.Applications(), Catalog: catalogMod.Assistant(), Drafts: originationMod.Assistant(), Payments: servicingMod.Assistant(), Planner: plannerMod.Assistant(), Loans: servicingMod.AssistantLoans(), Companies: companyMod.Companies()})
 	plannerMod.Wire(planner.Ports{
 		Matcher:  catalogMod.ProductMatcher(),
 		Notifier: notificationsMod.Notifier(),

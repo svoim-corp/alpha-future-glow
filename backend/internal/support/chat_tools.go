@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
-	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 	"io"
 	"strings"
+
+	"github.com/gin-gonic/gin/binding"
+
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
 
 func strictArgs(raw []byte, out any) error {
@@ -64,7 +66,7 @@ func appCard(a shared.ApplicationView) *applicationCard {
 	case shared.StatusSubmitted, shared.StatusDataCheck, shared.StatusScoring, shared.StatusOnDecision:
 		next = "Заявка рассматривается; следите за уведомлениями"
 	}
-	return &applicationCard{a.ID, a.Number, a.ProductCode, a.Amount, a.Term, a.Status.Label(), next}
+	return &applicationCard{ID: a.ID, Number: a.Number, ProductCode: a.ProductCode, Amount: a.Amount, Term: a.Term, Status: a.Status.Label(), NextStep: next, CanDelete: a.Status == shared.StatusDraft}
 }
 
 func (m *Module) executeTool(ctx context.Context, conv conversation, call toolCall) ([]block, error) {
@@ -178,7 +180,7 @@ func (m *Module) executeTool(ctx context.Context, conv conversation, call toolCa
 		}
 		return []block{{Kind: "action", Title: "Отправить обращение?", ActionID: chatID(), Action: &actionParams{Kind: "ticket", Subject: in.Subject, Text: in.Text}}}, nil
 	default:
-		return nil, httpx.Validation("Такое действие недоступно")
+		return m.executeCabinetTool(ctx, conv, call)
 	}
 }
 

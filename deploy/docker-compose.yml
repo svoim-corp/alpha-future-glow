@@ -108,8 +108,11 @@ services:
     profiles: [ai]
     environment:
       OLLAMA_HOST: http://ollama:11434
-    entrypoint: ["/bin/sh", "-ec"]
-    command: ['ollama pull "$${CHAT_MODEL}" && ollama pull "$${EMBED_MODEL}" && ollama list']
+    entrypoint: ["/bin/sh", "/config/prepare-models.sh"]
+    volumes:
+      - ollama-data:/root/.ollama:ro
+      - ./prepare-models.sh:/config/prepare-models.sh:ro
+      - ./models.sha256:/config/models.sha256:ro
     depends_on:
       ollama:
         condition: service_healthy

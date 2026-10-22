@@ -1,11 +1,11 @@
 import { supportApi, useGetChatMessagesQuery, useGetConversationsQuery } from '@entities/support';
 import { SendSupportMessage, useCreateConversationMutation } from '@features/send-support-message';
 import { getErrorMessage } from '@shared/api';
-import { formatDateTime } from '@shared/lib/format';
 import { Alert, Button, Card, ChatBubble, SelectField, Spinner } from '@shared/ui';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
+import { groupConversations } from '../model/history';
 import { ChatBlocks } from './ChatBlocks';
 import styles from './SupportChat.module.scss';
 
@@ -18,6 +18,8 @@ export const SupportChat = ({ applicationId }: SupportChatProps) => {
 	const [create, creation] = useCreateConversationMutation();
 	const matching = conversations.data?.filter((c) => (c.applicationId ?? undefined) === applicationId);
 	const id = selected ?? matching?.[0]?.id;
+	const days = groupConversations(matching ?? []);
+	const selectedDay = days.find((day) => day.items.some((c) => c.id === id)) ?? days[0];
 	const cached = supportApi.endpoints.getChatMessages.useQueryState(id ?? '', { skip: !id });
 	const messages = useGetChatMessagesQuery(id ?? '', {
 		skip: !id,
@@ -39,7 +41,7 @@ export const SupportChat = ({ applicationId }: SupportChatProps) => {
 			<header className={styles.header}>
 				<div>
 					<h2>Помощь в вашем темпе</h2>
-					<p>Объясню условия, покажу данные и помогу подготовить заявку.</p>
+					<p>Найдём нужный раздел, подберём кредит и разберёмся с планами и заявками.</p>
 				</div>
 				<Button variant="secondary" loading={creation.isLoading}
 					disabled={conversations.isLoading} onClick={() => void newConversation()}>
@@ -47,10 +49,13 @@ export const SupportChat = ({ applicationId }: SupportChatProps) => {
 				</Button>
 			</header>
 			{applicationId && <Alert title="Вопрос по заявке">Контекст заявки: {applicationId}</Alert>}
-			{matching && matching.length > 0 && <SelectField
-				label="История диалогов" value={id ?? ''} onChange={setSelected}
-				options={matching.map((c) => ({ value: c.id, label: formatDateTime(c.createdAt) }))}
-			/>}
+			{selectedDay && <>
+				<SelectField label="История по дням" value={selectedDay.key}
+					onChange={(key) => setSelected(days.find((day) => day.key === key)?.items[0]?.id)}
+					options={days.map((day) => ({ value: day.key, label: `${day.label} (${day.items.length})` }))} />
+				{selectedDay.items.length > 1 && <SelectField label="Диалог" value={id ?? ''} onChange={setSelected}
+					options={selectedDay.items.map((c, index) => ({ value: c.id, label: c.title || `Диалог № ${index + 1}` }))} />}
+			</>}
 			{failure && <Alert tone="danger" title={failure} />}
 			{loading && <div role="status"><Spinner /> Загружаем переписку…</div>}
 			{loadFailure && <Alert tone="danger" title="Не удалось загрузить переписку" actions={
@@ -66,6 +71,9 @@ export const SupportChat = ({ applicationId }: SupportChatProps) => {
 						<li>Чем отличается овердрафт от обычного кредита?</li>
 						<li>Подбери кредит на оборудование за 2 млн рублей на 24 месяца.</li>
 						<li>Покажи мои заявки и ближайшие платежи.</li>
+						<li>Открой планер или покажи мои планы.</li>
+						<li>Создай план: купить печь за 500 тысяч в ноябре.</li>
+						<li>Покажи реквизиты компании и мои обращения.</li>
 					</ul>
 					<p>Это ИИ-ассистент. Условия и цифры проверяйте в карточках; решение по кредиту принимает банк.</p>
 				</Card>}

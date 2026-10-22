@@ -24,10 +24,12 @@ export const SendSupportMessage = ({
 	const [send, sending] = useSendSupportMessageMutation();
 	const [failure, setFailure] = useState<string | null>(null);
 	const [request, setRequest] = useState<{ conversationId: string; text: string; key: string } | null>(null);
+	const locked = busy || creation.isLoading || sending.isLoading;
 	const { register, handleSubmit, reset, formState: { errors } } = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 	});
 	const submit = handleSubmit(async ({ text }) => {
+		if (locked) return;
 		setFailure(null);
 		try {
 			let id = conversationId;
@@ -50,7 +52,15 @@ export const SendSupportMessage = ({
 
 	return (
 		<form className={styles.form} onSubmit={(event) => void submit(event)} noValidate>
-			<TextAreaField label="Ваш вопрос" placeholder="Например: когда мой ближайший платёж?" rows={3} maxLength={4000} error={errors.text?.message} {...register('text')} />
+			<TextAreaField label="Ваш вопрос" placeholder="Например: когда мой ближайший платёж?" rows={3} maxLength={4000}
+				error={errors.text?.message} {...register('text')}
+				onKeyDown={(event) => {
+					if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+						event.preventDefault();
+						if (!locked) event.currentTarget.form?.requestSubmit();
+					}
+				}} />
+			<small>Enter — отправить, Shift+Enter — новая строка</small>
 			{failure && <Alert tone="danger" title={failure} />}
 			<div className={styles.footer}>
 				<span>Создание черновика и обращения — только после подтверждения.</span>

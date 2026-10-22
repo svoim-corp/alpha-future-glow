@@ -6,6 +6,25 @@ import { http, HttpResponse } from 'msw';
 import { ConfirmSupportAction } from './ConfirmSupportAction';
 
 describe('Подтверждение действия в чате', () => {
+	it('сохраняет план только после подтверждения и показывает переход в планер', async () => {
+		const called = vi.fn();
+		const plan = {
+			id: 'p-5', title: 'Новая печь', goal: 'EQUIPMENT', budgetRub: 500000, dateMode: 'DAY' as const,
+			startDate: '2026-11-10', state: 'ACTIVE' as const, updatedAt: '2026-10-22T12:00:00Z',
+		};
+		server.use(http.post(apiUrl('/support/conversations/chat-1/actions/plan-action/confirm'), () => {
+			called();
+			return HttpResponse.json({ kind: 'result', title: 'План сохранён', resultId: 'p-5', plan });
+		}));
+		const { user } = renderWithProviders(<ConfirmSupportAction conversationId="chat-1" actionId="plan-action"
+			action={{ kind: 'plan', planPreview: plan, planChange: { budgetRub: 500000 } }} />);
+		expect(screen.getByRole('heading', { name: 'Новая печь' })).toBeInTheDocument();
+		expect(called).not.toHaveBeenCalled();
+		await user.click(screen.getByRole('button', { name: 'Подтвердить' }));
+		expect(await screen.findByText('План сохранён')).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'Открыть сохранённый план в планере' })).toHaveAttribute('href', '/planner');
+		expect(called).toHaveBeenCalledOnce();
+	});
 	it('выполняет команду только по кнопке и показывает результат', async () => {
 		const confirm = vi.fn();
 		server.use(http.post(apiUrl('/support/conversations/chat-1/actions/action-1/confirm'), ({ request }) => {

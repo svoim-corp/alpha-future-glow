@@ -8,7 +8,7 @@ const actionApi = baseApi.injectEndpoints({
 				url: `/support/conversations/${encodeURIComponent(conversationId)}/actions/${encodeURIComponent(actionId)}/confirm`,
 				method: 'POST', headers: { 'Idempotency-Key': actionId },
 			}),
-			invalidatesTags: ['Application', 'Ticket', 'SupportChat'],
+			invalidatesTags: ['Application', 'Ticket', 'SupportChat', 'Plan'],
 		}),
 	}),
 });

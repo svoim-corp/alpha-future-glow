@@ -6595,6 +6595,120 @@ const docTemplate = `{
                 }
             }
         },
+        "shared.AssistantLoan": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "integer"
+                }
+            }
+        },
+        "shared.AssistantPlan": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer"
+                },
+                "dateMode": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "shared.AssistantPlanChange": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "maximum": 1000000000000
+                },
+                "dateMode": {
+                    "type": "string",
+                    "enum": [
+                        "DAY",
+                        "PERIOD",
+                        "UNSCHEDULED"
+                    ]
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "expectedUpdatedAt": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "id": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "PAUSED",
+                        "DONE",
+                        "ARCHIVED"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                }
+            }
+        },
         "shared.AuthorityType": {
             "type": "string",
             "enum": [
@@ -6848,12 +6962,25 @@ const docTemplate = `{
                 "draft": {
                     "$ref": "#/definitions/shared.AssistantDraft"
                 },
+                "goalLabel": {
+                    "type": "string"
+                },
                 "kind": {
                     "type": "string",
                     "enum": [
                         "draft",
-                        "ticket"
+                        "ticket",
+                        "plan"
                     ]
+                },
+                "planChange": {
+                    "$ref": "#/definitions/shared.AssistantPlanChange"
+                },
+                "planPreview": {
+                    "$ref": "#/definitions/shared.AssistantPlan"
+                },
+                "productName": {
+                    "type": "string"
                 },
                 "subject": {
                     "type": "string",
@@ -6870,6 +6997,9 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "type": "integer"
+                },
+                "canDelete": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
@@ -6906,11 +7036,23 @@ const docTemplate = `{
                 "calculation": {
                     "$ref": "#/definitions/shared.PaymentEstimate"
                 },
+                "company": {
+                    "$ref": "#/definitions/support.companyCard"
+                },
                 "kind": {
                     "type": "string"
                 },
+                "loan": {
+                    "$ref": "#/definitions/shared.AssistantLoan"
+                },
+                "navigation": {
+                    "$ref": "#/definitions/support.navigationCard"
+                },
                 "payment": {
                     "$ref": "#/definitions/shared.UpcomingPayment"
+                },
+                "plan": {
+                    "$ref": "#/definitions/shared.AssistantPlan"
                 },
                 "product": {
                     "$ref": "#/definitions/support.productCard"
@@ -6918,7 +7060,36 @@ const docTemplate = `{
                 "resultId": {
                     "type": "string"
                 },
+                "ticket": {
+                    "$ref": "#/definitions/support.ticketCard"
+                },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.companyCard": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string"
+                },
+                "inn": {
+                    "type": "string"
+                },
+                "monthlyIncome": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "regAddress": {
+                    "type": "string"
+                },
+                "viewerName": {
+                    "type": "string"
+                },
+                "viewerPosition": {
                     "type": "string"
                 }
             }
@@ -6933,6 +7104,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -7011,6 +7185,20 @@ const docTemplate = `{
                 }
             }
         },
+        "support.navigationCard": {
+            "type": "object",
+            "properties": {
+                "href": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "section": {
+                    "type": "string"
+                }
+            }
+        },
         "support.productCard": {
             "type": "object",
             "properties": {
@@ -7059,6 +7247,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.ticketCard": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "reply": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "text": {
                     "type": "string"
                 }
             }

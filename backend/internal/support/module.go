@@ -22,6 +22,9 @@ type Ports struct {
 	Catalog      shared.AssistantCatalog
 	Drafts       shared.AssistantApplications
 	Payments     shared.AssistantPayments
+	Planner      shared.AssistantPlanner
+	Loans        shared.AssistantLoans
+	Companies    shared.Companies
 }
 
 type Module struct {

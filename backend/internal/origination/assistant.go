@@ -25,6 +25,18 @@ func (p assistant) List(ctx context.Context, companyID string) ([]shared.Applica
 	return out, nil
 }
 
+func (p assistant) Find(ctx context.Context, companyID string, ids []string) ([]shared.ApplicationView, error) {
+	rows, err := p.m.store.AssistantApplications(ctx, companyID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]shared.ApplicationView, 0, len(rows))
+	for _, a := range rows {
+		out = append(out, a.view())
+	}
+	return out, nil
+}
+
 func (p assistant) CreateDraft(ctx context.Context, who shared.DraftApplicant, in shared.AssistantDraft, commandID string) (*shared.ApplicationView, error) {
 	if commandID == "" {
 		return nil, httpx.Validation("Не указан идентификатор действия")

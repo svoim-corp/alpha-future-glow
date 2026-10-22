@@ -14,6 +14,17 @@ import (
 
 type Store struct{ db *sqlx.DB }
 
+// AssistantApplications включает удалённые черновики, чтобы обновить старые карточки чата.
+func (s *Store) AssistantApplications(ctx context.Context, companyID string, ids []string) ([]appRow, error) {
+	out := []appRow{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	err := s.db.SelectContext(ctx, &out, `SELECT `+appCols+` FROM origination.applications
+		WHERE company_id=$1 AND id=ANY($2::text[]) ORDER BY created_at DESC,id`, companyID, ids)
+	return out, err
+}
+
 type appRow struct {
 	ID                string                   `db:"id"`
 	Number            *string                  `db:"number"`

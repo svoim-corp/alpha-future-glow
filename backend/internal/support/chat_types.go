@@ -1,20 +1,23 @@
 package support
 
 import (
+	"time"
+
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
-	"time"
 )
 
 // AIConfig — только локальный inference, без облачного fallback.
 type AIConfig struct{ URL, Model, EmbeddingModel string }
 
 type conversation struct {
-	ID            string    `json:"id" db:"id"`
-	UserID        string    `json:"-" db:"user_id"`
-	CompanyID     string    `json:"-" db:"company_id"`
-	ApplicationID *string   `json:"applicationId" db:"application_id"`
-	CreatedAt     time.Time `json:"createdAt" db:"created_at"`
+	ID            string         `json:"id" db:"id"`
+	UserID        string         `json:"-" db:"user_id"`
+	CompanyID     string         `json:"-" db:"company_id"`
+	ApplicationID *string        `json:"applicationId" db:"application_id"`
+	CreatedAt     time.Time      `json:"createdAt" db:"created_at"`
+	Title         string         `json:"title" db:"title"`
+	Viewer        *viewerContext `json:"-" db:"-"`
 }
 
 type source struct {
@@ -25,12 +28,14 @@ type source struct {
 }
 
 type actionParams struct {
-	ProductName string                 `json:"productName,omitempty"`
-	GoalLabel   string                 `json:"goalLabel,omitempty"`
-	Kind        string                 `json:"kind" binding:"required,oneof=draft ticket"`
-	Draft       *shared.AssistantDraft `json:"draft,omitempty"`
-	Subject     string                 `json:"subject,omitempty" binding:"max=200"`
-	Text        string                 `json:"text,omitempty" binding:"max=4000"`
+	ProductName string                      `json:"productName,omitempty"`
+	GoalLabel   string                      `json:"goalLabel,omitempty"`
+	Kind        string                      `json:"kind" binding:"required,oneof=draft ticket plan"`
+	Draft       *shared.AssistantDraft      `json:"draft,omitempty"`
+	Subject     string                      `json:"subject,omitempty" binding:"max=200"`
+	Text        string                      `json:"text,omitempty" binding:"max=4000"`
+	PlanChange  *shared.AssistantPlanChange `json:"planChange,omitempty"`
+	PlanPreview *shared.AssistantPlan       `json:"planPreview,omitempty"`
 }
 
 type applicationCard struct {
@@ -41,6 +46,7 @@ type applicationCard struct {
 	Term        int     `json:"term"`
 	Status      string  `json:"status"`
 	NextStep    string  `json:"nextStep"`
+	CanDelete   bool    `json:"canDelete"`
 }
 
 type productCard struct {
@@ -65,11 +71,45 @@ type block struct {
 	ActionID    string                  `json:"actionId,omitempty"`
 	Action      *actionParams           `json:"action,omitempty"`
 	ResultID    string                  `json:"resultId,omitempty"`
+	Navigation  *navigationCard         `json:"navigation,omitempty"`
+	Plan        *shared.AssistantPlan   `json:"plan,omitempty"`
+	Loan        *shared.AssistantLoan   `json:"loan,omitempty"`
+	Company     *companyCard            `json:"company,omitempty"`
+	Ticket      *ticketCard             `json:"ticket,omitempty"`
+}
+
+type navigationCard struct {
+	Section string `json:"section"`
+	Label   string `json:"label"`
+	Href    string `json:"href"`
+}
+type companyCard struct {
+	Name           string `json:"name"`
+	INN            string `json:"inn"`
+	RegAddress     string `json:"regAddress"`
+	ActualAddress  string `json:"actualAddress"`
+	MonthlyIncome  int64  `json:"monthlyIncome"`
+	ViewerName     string `json:"viewerName,omitempty"`
+	ViewerPosition string `json:"viewerPosition,omitempty"`
+}
+type ticketCard struct {
+	ID      string  `json:"id"`
+	Subject string  `json:"subject"`
+	Text    string  `json:"text"`
+	Status  string  `json:"status"`
+	Reply   *string `json:"reply,omitempty"`
 }
 
 type messagePayload struct {
-	Sources []source `json:"sources"`
-	Blocks  []block  `json:"blocks"`
+	Sources []source        `json:"sources"`
+	Blocks  []block         `json:"blocks"`
+	Finance *financeContext `json:"finance,omitempty"`
+	Viewer  *viewerContext  `json:"viewer,omitempty"`
+}
+
+type viewerContext struct {
+	Name     string `json:"name"`
+	Position string `json:"position"`
 }
 
 type chatMessage struct {

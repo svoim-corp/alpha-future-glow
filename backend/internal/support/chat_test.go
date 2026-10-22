@@ -41,6 +41,10 @@ type chatDrafts struct {
 	creates int
 }
 
+func (f *chatDrafts) Find(ctx context.Context, company string, ids []string) ([]shared.ApplicationView, error) {
+	return f.List(ctx, company)
+}
+
 func (f *chatDrafts) List(_ context.Context, company string) ([]shared.ApplicationView, error) {
 	return []shared.ApplicationView{{ID: "a-1", CompanyID: f.company, Status: shared.StatusDraft, Amount: 2000000, Term: 24}}, nil
 }
@@ -219,8 +223,19 @@ func TestRAGAndConfirmedAction(t *testing.T) {
 			w.WriteHeader(404)
 			return
 		}
+		var request struct {
+			Format json.RawMessage `json:"format"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Error(err)
+			return
+		}
+		if len(request.Format) > 0 {
+			_ = json.NewEncoder(w).Encode(map[string]any{"message": llmMessage{Role: "assistant", Content: `{"tools":["propose_ticket"]}`}})
+			return
+		}
 		chatCalls++
-		reply := llmMessage{Role: "assistant", Content: "Проверьте текст обращения и подтвердите отправку на карточке."}
+		reply := llmMessage{Role: "assistant", Content: "Обращение уже создано."}
 		if chatCalls == 1 {
 			reply.Calls = []toolCall{{Function: toolFunction{Name: "propose_ticket", Arguments: json.RawMessage(`{"subject":"Неверный адрес","text":"В карточке компании указан старый адрес"}`)}}}
 		}
@@ -233,6 +248,12 @@ func TestRAGAndConfirmedAction(t *testing.T) {
 	}
 	if err := e.m.IndexKnowledge(ctx); err != nil {
 		t.Fatal("повтор индексации", err)
+	}
+	vector := make([]float32, 1024)
+	vector[0] = 1
+	sources, err := e.m.retrieve(ctx, "Исправление адреса компании", vector)
+	if err != nil || len(sources) == 0 {
+		t.Fatalf("RAG не нашёл материалы: %+v %v", sources, err)
 	}
 	c := decode[conversation](t, e.as("smirnov", "POST", "/api/v1/support/conversations", `{}`))
 	if _, err := e.m.store.enqueue(ctx, c.ID, "В карточке компании неверный адрес. Подготовь обращение.", "rag-test"); err != nil {
@@ -247,7 +268,10 @@ func TestRAGAndConfirmedAction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(payload.Sources) == 0 || len(payload.Blocks) != 1 || payload.Blocks[0].Kind != "action" {
+	if strings.Contains(text, "уже создано") || !strings.Contains(text, "подтвержд") {
+		t.Fatalf("модель назвала предложение выполненным: %s", text)
+	}
+	if len(payload.Blocks) != 1 || payload.Blocks[0].Kind != "action" {
 		t.Fatalf("ответ: %+v", payload)
 	}
 	if err := e.m.store.complete(ctx, pending, text, "COMPLETED", payload); err != nil {

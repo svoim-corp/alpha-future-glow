@@ -10,17 +10,18 @@ CPU-запуск возможен, но существенно медленне�
 Из корня проекта, с NVIDIA GPU:
 
 ```powershell
-docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.ai-gpu.yml --profile ai up -d --build
-docker compose -f deploy/docker-compose.yml logs -f ai-models ai-index
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml -f deploy/docker-compose.ai-gpu.yml --profile ai up -d --build
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml logs -f ai-models ai-index
 ```
 
 Для CPU уберите `-f deploy/docker-compose.ai-gpu.yml`. Интерфейс: http://localhost:3000/support.
 Демо-вход: `smirnov` / `demo123`. Веса впервые скачиваются автоматически:
 Qwen3-8B Q4_K_M (~5.2 GB) и BGE-M3 (~1.2 GB); дождитесь завершения `ai-index`.
-Имена моделей в `.env.models` должны совпадать с `OLLAMA_MODEL` и
-`OLLAMA_EMBEDDING_MODEL`, если вы переопределяете их в окружении.
+Точные manifest SHA256 закреплены в `models.sha256`. Если веса уже подготовлены,
+повторный запуск не обращается к реестру. Для замены моделей обновите `.env.models`,
+`OLLAMA_MODEL`, `OLLAMA_EMBEDDING_MODEL` и контрольные суммы, затем перестройте индекс.
 
-Без ИИ: `docker compose -f deploy/docker-compose.yml up -d --build`.
+Без ИИ: `docker compose -p credit-cabinet-support -f deploy/docker-compose.yml up -d --build`.
 Обычные страницы, FAQ и обращения продолжают работать. Ошибка модели не должна
 превращаться в выдуманный ответ. Браузерный `npm run dev:mock` не имитирует LLM:
 он объясняет необходимость запуска серверной части.
@@ -40,7 +41,7 @@ Qwen3-8B Q4_K_M (~5.2 GB) и BGE-M3 (~1.2 GB); дождитесь заверше
 После правки корпуса пересоберите `ai-index`, затем:
 
 ```powershell
-docker compose -f deploy/docker-compose.yml --profile ai run --rm --build ai-index
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml --profile ai run --rm --build ai-index
 ```
 
 На хосте: `cd backend`, задайте `DATABASE_URL`, `OLLAMA_BASE_URL` и выполните
@@ -50,16 +51,29 @@ docker compose -f deploy/docker-compose.yml --profile ai run --rm --build ai-ind
 Модели хранятся в постоянном томе `ollama-data`. Для фиксации точных артефактов:
 
 ```powershell
-docker compose -f deploy/docker-compose.yml exec -T ollama ollama show qwen3:8b-q4_K_M
-docker compose -f deploy/docker-compose.yml exec -T ollama cat /root/.ollama/models/manifests/registry.ollama.ai/library/qwen3/8b-q4_K_M
-docker compose -f deploy/docker-compose.yml exec -T ollama cat /root/.ollama/models/manifests/registry.ollama.ai/library/bge-m3/567m
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml exec -T ollama ollama show qwen3:8b-q4_K_M
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml exec -T ollama cat /root/.ollama/models/manifests/registry.ollama.ai/library/qwen3/8b-q4_K_M
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml exec -T ollama cat /root/.ollama/models/manifests/registry.ollama.ai/library/bge-m3/567m
 ```
 
+Проверенные manifest SHA256 уже сохранены в `deploy/models.sha256`.
 Сохраняйте manifest JSON с SHA256 слоёв вместе с демонстрационной версией.
 Веса не включаются в Git. Для полностью автономного переноса заранее экспортируйте
 образы через `docker save`, сохраните том моделей и том БД с готовым индексом.
 После подготовки запускайте `db mocks backend frontend ollama`, не перезапуская
 шаг скачивания `ai-models`. Никаких платных или облачных API в рантайме нет.
+
+Для проверки изоляции сети после подготовки:
+
+```powershell
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml down
+docker compose -p credit-cabinet-support -f deploy/docker-compose.yml -f deploy/docker-compose.ai-gpu.yml -f deploy/docker-compose.offline.yml --profile ai up -d --no-build --pull never
+```
+
+`down` без `-v` сохраняет БД и веса. Чтобы вернуть обычную сеть, выполните `down`
+с тем же набором файлов и повторите запуск без `docker-compose.offline.yml`.
+API, модели, БД и моки находятся в изолированной сети. Только nginx получает
+дополнительную сеть для доступа к интерфейсу с хоста в Docker Desktop.
 
 ## Существующие данные PostgreSQL
 
@@ -98,3 +112,67 @@ dump/restore, а не подключение старого тома. Новая
 по сохранённому actionId даже при сбое после создания объекта. Диалоги — последние
 100, сообщения — последние 100. Старые сообщения остаются в БД, в контекст попадает
 ограниченная недавняя история. Операторская обработка обращений не реализована.
+
+## Результаты проверки 22.10.2026
+
+- Сервер: `go test -p 1 ./...`, `go vet ./...`, `go build ./...` проходят;
+  интеграционные тесты используют отдельную БД `cabinet_support_test`.
+- Интерфейс поддержки: 14 тестов проходят; клиент собирается.
+- Реальная RTX 3060 12 ГБ: сквозной сценарий из `deploy/check_support_ai.py`
+  прошёл в обычной и изолированной сети, включая смену темы после списка заявок,
+  приветствия, расчёт, подтверждения и повтор подтверждения без дублей.
+- Прогретые ответы в этом прогоне занимали 2–6 секунд, приветствие — около секунды.
+  Первый справочный ответ после перезапуска занял около 75 секунд из-за загрузки
+  обеих моделей. Это наблюдение на данном компьютере, а не гарантия задержки.
+- После включения обновлений `main` (`bf32607`) общий набор клиентских тестов
+  содержит 15 падений в каталоге, кредитах, календаре и планере (372 проходят).
+  Полная проверка `check` и проверка покрытия поэтому не считаются успешными.
+  В прогоне с покрытием дополнительно упали два теста отправки полной заявки
+  (370 проходят, 17 падают).
+  Пороги покрытия и проверки не отключались.
+
+### Расширение управления кабинетом
+
+Реальная модель проверена командой `python deploy/check_support_capabilities.py`:
+150к / 12 месяцев → уточнение использования телефонов → подбор → расчёт →
+предложение черновика; затем переход в планер, повторный запрос перехода,
+создание плана с датой после подтверждения, изменение бюджета, архивирование.
+Повторное подтверждение возвращает тот же объект; до подтверждения плана в списке нет.
+Реквизиты компании, обращения, список кредитов и платежи проверяются также
+через `--read-only` (кроме истории, бизнес-данные не меняются).
+После расширения повторно прошёл прежний `deploy/check_support_ai.py`, включая
+справку с источниками, подбор оборудования и создание обращения.
+
+Проходят 16 клиентских тестов поддержки, проверка типов, ESLint, Steiger и сборка;
+серверные тесты, vet и сборка проходят. Отдельный `SUPPORT_LIVE_MODEL=1 go test
+./internal/support -run TestLivePlanExtraction -v` проверяет разбор на запущенном
+Docker/Ollama. Без этой переменной обычные серверные тесты не требуют весов.
+
+Кнопки переходов используют UI-kit `ButtonLink`. Проверены переход в `/planner`,
+светлая/тёмная темы и ширина 390 px. Отправка заявки, согласия и подписание
+по-прежнему выполняются на обычных страницах.
+
+Общее покрытие клиента остаётся непроверенным: последний полный прогон содержит
+371 успешный и 18 падающих тестов в других разделах; новых падений поддержки нет.
+
+### Аккаунт и история, 22.10.2026
+
+Enter отправляет вопрос, Shift+Enter переносит строку. История сгруппирована по
+местным календарным дням; внутри дня диалоги названы по первому вопросу.
+В карточке черновика доступна кнопка удаления с подтверждением. После удаления
+старые карточки обновляются; остальные заявки удалить нельзя.
+
+Имя и должность берутся из текущей сессии, реквизиты — из Company. Запрос
+«Вот у меня как компания называется и кто я?» проверен в браузере отправкой по
+Enter: возвращены ФИО, должность и компания вошедшего пользователя.
+`python deploy/check_support_history.py` проверяет этот ответ, название диалога,
+наличие разрешения удаления и исчезновение карточки из истории после удаления.
+Скрипт удаляет только созданный им демо-черновик.
+На окончательной версии повторно прошли серверные тесты, vet и сборка, а также
+`check_support_history.py` и `check_support_capabilities.py --read-only`.
+Последний проверяет и свободную формулировку «Расскажи обо мне и моей компании».
+
+Текущая проверка клиента: 18 профильных тестов проходят, типы, ESLint, Steiger
+и Docker-сборка проходят. Общий `check`: 375 проходят, 17 падают; прогон покрытия:
+377 проходят, 15 падают. Падения относятся к каталогу, кредитам, планеру,
+календарю и заполнению полной заявки; успешное общее покрытие не подтверждено.

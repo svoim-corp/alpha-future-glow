@@ -17,7 +17,7 @@ const messageCols = `id,conversation_id,role,status,text,payload,created_at`
 
 func (s *Store) conversations(ctx context.Context, user, company string) ([]conversation, error) {
 	out := []conversation{}
-	err := s.db.SelectContext(ctx, &out, `SELECT `+conversationCols+` FROM support.conversations WHERE user_id=$1 AND company_id=$2 ORDER BY created_at DESC,id LIMIT 100`, user, company)
+	err := s.db.SelectContext(ctx, &out, `SELECT `+conversationCols+`, COALESCE((SELECT left(m.text,80) FROM support.messages m WHERE m.conversation_id=support.conversations.id AND m.role='user' ORDER BY m.seq LIMIT 1),'Новый диалог') AS title FROM support.conversations WHERE user_id=$1 AND company_id=$2 ORDER BY created_at DESC,id LIMIT 100`, user, company)
 	return out, err
 }
 
@@ -36,8 +36,12 @@ func (s *Store) messages(ctx context.Context, id string) ([]chatMessage, error) 
 	return out, err
 }
 
-func (s *Store) enqueue(ctx context.Context, id, text, key string) (*chatMessage, error) {
+func (s *Store) enqueue(ctx context.Context, id, text, key string, viewer ...viewerContext) (*chatMessage, error) {
 	var out chatMessage
+	payload := messagePayload{}
+	if len(viewer) > 0 {
+		payload.Viewer = &viewer[0]
+	}
 	err := db.WithTx(ctx, s.db, func(tx *sqlx.Tx) error {
 		var locked string
 		if err := tx.GetContext(ctx, &locked, `SELECT id FROM support.conversations WHERE id=$1 FOR UPDATE`, id); err != nil {
@@ -60,7 +64,7 @@ func (s *Store) enqueue(ctx context.Context, id, text, key string) (*chatMessage
 		if pending > 0 {
 			return httpx.InvalidTransition("Дождитесь ответа на предыдущий вопрос")
 		}
-		if err := tx.GetContext(ctx, &out, `INSERT INTO support.messages(id,conversation_id,role,status,text,request_key) VALUES($1,$2,'user','COMPLETED',$3,$4) RETURNING `+messageCols, chatID(), id, text, key); err != nil {
+		if err := tx.GetContext(ctx, &out, `INSERT INTO support.messages(id,conversation_id,role,status,text,request_key,payload) VALUES($1,$2,'user','COMPLETED',$3,$4,$5) RETURNING `+messageCols, chatID(), id, text, key, db.JSON[messagePayload]{V: payload}); err != nil {
 			return err
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO support.messages(id,conversation_id,role,status) VALUES($1,$2,'assistant','PENDING')`, chatID(), id)

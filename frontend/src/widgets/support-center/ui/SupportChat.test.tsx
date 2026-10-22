@@ -7,6 +7,46 @@ import { http, HttpResponse } from 'msw';
 import { SupportChat } from './SupportChat';
 
 describe('Чат поддержки', () => {
+	it('отправляет вопрос по Enter, а Shift+Enter оставляет перевод строки', async () => {
+		const sent = vi.fn();
+		server.use(
+			http.get(apiUrl('/support/conversations'), () => HttpResponse.json([conversationFixture])),
+			http.get(apiUrl('/support/conversations/chat-1/messages'), () => HttpResponse.json([])),
+			http.post(apiUrl('/support/conversations/chat-1/messages'), async ({ request }) => {
+				sent(await request.json());
+				return HttpResponse.json(assistantMessageFixture, { status: 202 });
+			}),
+		);
+		const { user } = renderWithProviders(<SupportChat />);
+		await screen.findByText('С чего начнём?');
+		const input = screen.getByRole('textbox', { name: 'Ваш вопрос' });
+		await user.type(input, 'Кто я?');
+		await user.keyboard('{Shift>}{Enter}{/Shift}');
+		expect(input).toHaveValue('Кто я?\n');
+		expect(sent).not.toHaveBeenCalled();
+		await user.keyboard('{Enter}');
+		await waitFor(() => expect(sent).toHaveBeenCalledWith({ text: 'Кто я?' }));
+	});
+
+	it('группирует историю по дням, сохраняя выбор отдельных диалогов', async () => {
+		const older = { ...conversationFixture, id: 'chat-2', title: 'Кредит на оборудование' };
+		const newer = { ...conversationFixture, id: 'chat-3', title: 'План развития', createdAt: '2026-10-22T12:00:00Z' };
+		server.use(
+			http.get(apiUrl('/support/conversations'), () => HttpResponse.json([newer, older, {
+				...older, id: 'chat-4', title: 'Другой вопрос',
+			}])),
+			http.get(apiUrl('/support/conversations/:id/messages'), ({ params }) => HttpResponse.json([
+				{ ...assistantMessageFixture, text: `Переписка ${String(params.id)}` },
+			])),
+		);
+		const { user } = renderWithProviders(<SupportChat />);
+		await screen.findByText('Переписка chat-3');
+		await user.click(screen.getByRole('combobox', { name: 'История по дням' }));
+		expect(screen.getAllByRole('option')).toHaveLength(2);
+		await user.click(screen.getByRole('option', { name: /\(2\)$/ }));
+		expect(await screen.findByText('Переписка chat-2')).toBeInTheDocument();
+		expect(screen.getByRole('combobox', { name: 'Диалог' })).toHaveTextContent('Кредит на оборудование');
+	});
 	it('показывает пустой диалог, создаёт его и отправляет вопрос с ключом', async () => {
 		const sent = vi.fn();
 		server.use(

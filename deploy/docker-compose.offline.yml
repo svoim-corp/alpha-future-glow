@@ -1,0 +1,11 @@
+# API, БД, моки и модели изолированы от интернета. Дополнительная сеть нужна
+# только nginx, чтобы Docker Desktop оставлял доступ к интерфейсу с хоста.
+services:
+  frontend:
+    networks: [default, preview]
+
+networks:
+  default:
+    internal: true
+  preview:
+    driver: bridge

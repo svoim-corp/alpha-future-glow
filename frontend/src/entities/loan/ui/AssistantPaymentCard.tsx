@@ -1,6 +1,5 @@
 import { formatDate, formatMoney } from '@shared/lib/format';
-import { Card, KeyValueList } from '@shared/ui';
-import { Link } from 'react-router';
+import { ButtonLink, Card, KeyValueList } from '@shared/ui';
 
 interface AssistantPaymentCardProps {
 	payment: { loanId: string; productName: string; date: string; amount: number };
@@ -13,6 +12,6 @@ export const AssistantPaymentCard = ({ payment: p }: AssistantPaymentCardProps) 
 			{ label: 'Дата платежа', value: formatDate(p.date) },
 			{ label: 'Сумма', value: formatMoney(p.amount) },
 		]} />
-		<Link to="/credits/calendar">Открыть календарь платежей</Link>
+		<ButtonLink to="/credits/calendar" variant="secondary">Открыть календарь платежей</ButtonLink>
 	</Card>
 );

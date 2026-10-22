@@ -18,6 +18,7 @@ export type {
 	PaymentStatus,
 	ScheduleItem,
 } from './model/types';
+export { AssistantLoanCard } from './ui/AssistantLoanCard';
 export { AssistantPaymentCard } from './ui/AssistantPaymentCard';
 export { LoanCard } from './ui/LoanCard';
 export { LoansSummaryCard } from './ui/LoansSummaryCard';

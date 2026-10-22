@@ -1981,6 +1981,85 @@ definitions:
     - productCode
     - term
     type: object
+  shared.AssistantLoan:
+    properties:
+      amount:
+        type: integer
+      balance:
+        type: integer
+      id:
+        type: string
+      productName:
+        type: string
+      rate:
+        type: number
+      status:
+        type: string
+      term:
+        type: integer
+    type: object
+  shared.AssistantPlan:
+    properties:
+      budgetRub:
+        type: integer
+      dateMode:
+        type: string
+      endDate:
+        type: string
+      goal:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      startDate:
+        type: string
+      state:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  shared.AssistantPlanChange:
+    properties:
+      budgetRub:
+        maximum: 1000000000000
+        type: integer
+      dateMode:
+        enum:
+        - DAY
+        - PERIOD
+        - UNSCHEDULED
+        type: string
+      endDate:
+        type: string
+      expectedUpdatedAt:
+        type: string
+      goal:
+        maxLength: 64
+        minLength: 1
+        type: string
+      id:
+        maxLength: 100
+        type: string
+      note:
+        maxLength: 2000
+        type: string
+      startDate:
+        type: string
+      state:
+        enum:
+        - ACTIVE
+        - PAUSED
+        - DONE
+        - ARCHIVED
+        type: string
+      title:
+        maxLength: 200
+        minLength: 1
+        type: string
+    type: object
   shared.AuthorityType:
     enum:
     - HEAD
@@ -2175,10 +2254,19 @@ definitions:
     properties:
       draft:
         $ref: '#/definitions/shared.AssistantDraft'
+      goalLabel:
+        type: string
       kind:
         enum:
         - draft
         - ticket
+        - plan
+        type: string
+      planChange:
+        $ref: '#/definitions/shared.AssistantPlanChange'
+      planPreview:
+        $ref: '#/definitions/shared.AssistantPlan'
+      productName:
         type: string
       subject:
         maxLength: 200
@@ -2193,6 +2281,8 @@ definitions:
     properties:
       amount:
         type: integer
+      canDelete:
+        type: boolean
       id:
         type: string
       nextStep:
@@ -2216,15 +2306,42 @@ definitions:
         $ref: '#/definitions/support.applicationCard'
       calculation:
         $ref: '#/definitions/shared.PaymentEstimate'
+      company:
+        $ref: '#/definitions/support.companyCard'
       kind:
         type: string
+      loan:
+        $ref: '#/definitions/shared.AssistantLoan'
+      navigation:
+        $ref: '#/definitions/support.navigationCard'
       payment:
         $ref: '#/definitions/shared.UpcomingPayment'
+      plan:
+        $ref: '#/definitions/shared.AssistantPlan'
       product:
         $ref: '#/definitions/support.productCard'
       resultId:
         type: string
+      ticket:
+        $ref: '#/definitions/support.ticketCard'
       title:
+        type: string
+    type: object
+  support.companyCard:
+    properties:
+      actualAddress:
+        type: string
+      inn:
+        type: string
+      monthlyIncome:
+        type: integer
+      name:
+        type: string
+      regAddress:
+        type: string
+      viewerName:
+        type: string
+      viewerPosition:
         type: string
     type: object
   support.conversation:
@@ -2234,6 +2351,8 @@ definitions:
       createdAt:
         type: string
       id:
+        type: string
+      title:
         type: string
     type: object
   support.conversationRequest:
@@ -2286,6 +2405,15 @@ definitions:
     required:
     - text
     type: object
+  support.navigationCard:
+    properties:
+      href:
+        type: string
+      label:
+        type: string
+      section:
+        type: string
+    type: object
   support.productCard:
     properties:
       amountMax:
@@ -2318,6 +2446,19 @@ definitions:
       id:
         type: string
       title:
+        type: string
+    type: object
+  support.ticketCard:
+    properties:
+      id:
+        type: string
+      reply:
+        type: string
+      status:
+        type: string
+      subject:
+        type: string
+      text:
         type: string
     type: object
   support.ticketCreatedDTO:

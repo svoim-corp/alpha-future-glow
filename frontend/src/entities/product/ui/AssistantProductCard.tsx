@@ -1,6 +1,5 @@
 import { formatMoneyRange, formatRateRange } from '@shared/lib/format';
-import { Card, KeyValueList } from '@shared/ui';
-import { Link } from 'react-router';
+import { ButtonLink, Card, KeyValueList } from '@shared/ui';
 
 interface AssistantProductCardProps {
 	product: {
@@ -17,6 +16,6 @@ export const AssistantProductCard = ({ product: p }: AssistantProductCardProps) 
 			{ label: 'Срок', value: `${p.termMin}–${p.termMax} мес.` },
 			{ label: 'Ставка', value: formatRateRange(p.rateMin, p.rateMax) },
 		]} />
-		<Link to="/products">Посмотреть условия в каталоге</Link>
+		<ButtonLink to="/products" variant="secondary">Посмотреть условия в каталоге</ButtonLink>
 	</Card>
 );

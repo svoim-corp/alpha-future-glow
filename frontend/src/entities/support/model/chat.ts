@@ -2,6 +2,7 @@ export interface Conversation {
 	id: string;
 	applicationId: string | null;
 	createdAt: string;
+	title?: string;
 }
 
 export interface ChatProduct {
@@ -24,6 +25,7 @@ export interface ChatApplication {
 	term: number;
 	status: string;
 	nextStep: string;
+	canDelete?: boolean;
 }
 
 export interface ChatCalculation {
@@ -52,14 +54,30 @@ export interface ChatDraft {
 export interface ChatAction {
 	productName?: string;
 	goalLabel?: string;
-	kind: 'draft' | 'ticket';
+	kind: 'draft' | 'ticket' | 'plan';
 	draft?: ChatDraft;
 	subject?: string;
 	text?: string;
+	planPreview?: ChatPlan;
+	planChange?: Partial<ChatPlan>;
+}
+
+export interface ChatPlan {
+	id: string;
+	title: string;
+	goal: string;
+	note?: string;
+	budgetRub: number;
+	dateMode: 'DAY' | 'PERIOD' | 'UNSCHEDULED';
+	startDate?: string;
+	endDate?: string;
+	state: 'ACTIVE' | 'PAUSED' | 'DONE' | 'ARCHIVED';
+	updatedAt: string;
 }
 
 export interface ChatBlock {
-	kind: 'product' | 'calculation' | 'application' | 'payment' | 'action' | 'result';
+	kind: 'product' | 'calculation' | 'application' | 'payment' | 'action' | 'result'
+		| 'navigation' | 'plan' | 'loan' | 'company' | 'ticket';
 	title: string;
 	product?: ChatProduct;
 	calculation?: ChatCalculation;
@@ -68,6 +86,16 @@ export interface ChatBlock {
 	actionId?: string;
 	action?: ChatAction;
 	resultId?: string;
+	navigation?: { section: string; label: string; href: string };
+	plan?: ChatPlan;
+	loan?: {
+		id: string; productName: string; amount: number; balance: number; rate: number; term: number; status: string;
+	};
+	company?: {
+		name: string; inn: string; regAddress: string; actualAddress: string; monthlyIncome: number;
+		viewerName?: string; viewerPosition?: string;
+	};
+	ticket?: { id: string; subject: string; text: string; status: string; reply?: string };
 }
 
 export interface ChatMessage {
