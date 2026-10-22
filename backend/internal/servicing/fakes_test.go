@@ -16,6 +16,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/auth"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
@@ -49,9 +50,80 @@ func (f *fakeNotifier) Notify(_ context.Context, userID string, n shared.Notific
 }
 
 var users = map[string]*auth.User{
-	"smirnov": {ID: "u-1", Role: shared.RoleClient, CompanyID: ptr("c-1")},
-	"orlova":  {ID: "u-4", Role: shared.RoleClient, CompanyID: ptr("c-3")},
+	"smirnov": {ID: "u-1", Role: shared.RoleClient, CompanyID: ptr("c-1"), PersonINN: ptr("771234567890")},
+	"orlova":  {ID: "u-4", Role: shared.RoleClient, CompanyID: ptr("c-3"), PersonINN: ptr("772512345601")},
+	"guest":   {ID: "u-7", Role: shared.RoleClient, CompanyID: ptr("c-1")}, // в АБС не связан с компанией
 	"ivanova": {ID: "u-9", Role: shared.RoleBankOfficer},
+}
+
+// fakeCompanies — ИНН компании c-N — «inn-c-N».
+type fakeCompanies struct{}
+
+func (fakeCompanies) GetByID(_ context.Context, id string) (*shared.CompanyView, error) {
+	return &shared.CompanyView{ID: id, INN: "inn-" + id}, nil
+}
+
+func (fakeCompanies) Profile(context.Context, string) (*shared.CompanyProfile, error) {
+	return nil, nil
+}
+
+// fakeAuthorities — без ИНН человека полномочий нет, с ИНН — руководитель.
+type fakeAuthorities struct{}
+
+func (fakeAuthorities) Resolve(_ context.Context, _, personINN string) (shared.AuthorityView, error) {
+	if personINN == "" {
+		return shared.AuthorityView{Type: shared.AuthorityNone, Reason: "нет полномочий"}, nil
+	}
+	return shared.AuthorityView{Type: shared.AuthorityHead}, nil
+}
+
+// fakeDebits — АБС: у каждой компании счета acc-1 (активный), acc-2 (заблокирован), acc-usd. Списание с acc-poor
+// банк принимает и отклоняет при опросе; down — АБС не принимает поручения и не отвечает о них.
+type fakeDebits struct {
+	mu     sync.Mutex
+	down   bool
+	debits map[string]shared.DebitRequest // по id поручения
+}
+
+var errBankDown = httpx.Upstream("Сервис «АБС банка» не ответил, повторите попытку позже")
+
+func (f *fakeDebits) Accounts(context.Context, string) ([]shared.BankAccount, error) {
+	return []shared.BankAccount{
+		{ID: "acc-1", Number: "40702810000000010001", Currency: currencyRUB, Active: true, Balance: ptr[int64](5_000_000)},
+		{ID: "acc-poor", Number: "40702810000000010002", Currency: currencyRUB, Active: true},
+		{ID: "acc-2", Number: "40702810000000010003", Currency: currencyRUB},
+		{ID: "acc-usd", Number: "40702840000000010004", Currency: "USD", Active: true},
+	}, nil
+}
+
+func (f *fakeDebits) Debit(_ context.Context, req shared.DebitRequest) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.down {
+		return "", errBankDown
+	}
+	if f.debits == nil {
+		f.debits = map[string]shared.DebitRequest{}
+	}
+	id := "dbt-" + req.RequestID
+	f.debits[id] = req
+	return id, nil
+}
+
+func (f *fakeDebits) DebitStatus(_ context.Context, id string) (*shared.DebitResult, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.down {
+		return nil, errBankDown
+	}
+	req, ok := f.debits[id]
+	if !ok {
+		return nil, nil
+	}
+	if req.AccountID == "acc-poor" {
+		return &shared.DebitResult{Status: shared.DebitFailed, Reason: "Недостаточно средств на счёте"}, nil
+	}
+	return &shared.DebitResult{Status: shared.DebitSucceeded, PostedAmount: req.Amount, PostedAt: today.Add(time.Minute)}, nil
 }
 
 type resolver struct{}
@@ -63,6 +135,7 @@ func (resolver) Resolve(_ context.Context, token string) (*auth.User, error) {
 type env struct {
 	m        *Module
 	notifier *fakeNotifier
+	debits   *fakeDebits
 	router   *gin.Engine
 }
 
@@ -80,10 +153,19 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = conn.Close() })
-	e := &env{notifier: &fakeNotifier{}}
-	e.m = New(module.Deps{DB: conn})
+	e := &env{notifier: &fakeNotifier{}, debits: &fakeDebits{}}
+	e.m = New(module.Deps{DB: conn, Idem: idempotency.New(conn)})
 	e.m.now = func() time.Time { return today }
-	e.m.Wire(Ports{Notifier: e.notifier, Products: fakeProducts{"WORKING": {Code: "WORKING", Name: "Оборотный кредит"}}})
+	e.m.Wire(Ports{
+		Notifier: e.notifier, Debits: e.debits, Companies: fakeCompanies{}, Authorities: fakeAuthorities{},
+		Products: fakeProducts{
+			"WORKING":   {Code: "WORKING", Name: "Оборотный кредит"},
+			"OVERDRAFT": {Code: "OVERDRAFT", Name: "Овердрафт", Revolving: true},
+		},
+	})
+	if err := idempotency.Migrate(ctx, conn); err != nil {
+		t.Fatal(err)
+	}
 	if err := e.m.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -100,8 +182,13 @@ func newEnv(t *testing.T) *env {
 // open выдаёт кредит компании company по заявке appID на 1 200 000 ₽, 24 мес., 21,5%.
 func (e *env) open(t *testing.T, appID, company string, issued time.Time) string {
 	t.Helper()
+	return e.openProduct(t, appID, company, "WORKING", issued)
+}
+
+func (e *env) openProduct(t *testing.T, appID, company, product string, issued time.Time) string {
+	t.Helper()
 	id, err := e.m.Loans().Open(context.Background(), shared.LoanOpening{
-		AppID: appID, CompanyID: company, ApplicantID: "u-1", ContractNumber: "КД-2026-" + appID, ProductCode: "WORKING",
+		AppID: appID, CompanyID: company, ApplicantID: "u-1", ContractNumber: "КД-2026-" + appID, ProductCode: product,
 		Amount: 1_200_000, Term: 24, Rate: 21.5, IssuedAt: issued,
 	})
 	if err != nil {
@@ -111,7 +198,16 @@ func (e *env) open(t *testing.T, appID, company string, issued time.Time) string
 }
 
 func (e *env) do(method, path, user string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(method, path, strings.NewReader(""))
+	return e.send(method, path, user, "")
+}
+
+// send — запрос с телом и заголовками парами «имя, значение».
+func (e *env) send(method, path, user, body string, headers ...string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	for i := 0; i+1 < len(headers); i += 2 {
+		req.Header.Set(headers[i], headers[i+1])
+	}
 	if user != "" {
 		req.AddCookie(&http.Cookie{Name: auth.CookieName, Value: user})
 	}

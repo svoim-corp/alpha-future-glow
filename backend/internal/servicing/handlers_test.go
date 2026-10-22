@@ -9,7 +9,8 @@ import (
 
 func TestSummary(t *testing.T) {
 	e := newEnv(t)
-	if w := e.do("GET", "/api/v1/loans/summary", "smirnov"); !strings.Contains(w.Body.String(), `"activeLoans":0,"nextPayment":null`) {
+	if w := e.do("GET", "/api/v1/loans/summary", "smirnov"); !strings.Contains(w.Body.String(), `"activeLoans":0,`) ||
+		!strings.Contains(w.Body.String(), `"nextPayment":null`) {
 		t.Fatalf("без кредитов: %s", w.Body.String())
 	}
 	e.open(t, "a-1", "c-1", today)
@@ -18,7 +19,8 @@ func TestSummary(t *testing.T) {
 	e.open(t, "a-4", "c-3", today)
 
 	got := decode[summaryResponse](t, e.do("GET", "/api/v1/loans/summary", "smirnov"))
-	if got.ActiveLoans != 3 || got.NextPayment == nil || got.NextPayment.Date != "2026-11-21" || got.NextPayment.Amount != 2*61_958 {
+	if got.ActiveLoans != 3 || got.TotalLoans != 3 || got.ClosedLoans != 0 || got.TotalPrincipalBalance != 3*1_200_000 ||
+		got.NextPayment == nil || got.NextPayment.Date != "2026-11-21" || got.NextPayment.Amount != 2*61_958 || got.Overdue.Loans != 0 {
 		t.Fatalf("сводка: %+v %+v", got, got.NextPayment)
 	}
 	if w := e.do("GET", "/api/v1/loans/summary", "ivanova"); w.Code != http.StatusForbidden {

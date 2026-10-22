@@ -1417,6 +1417,93 @@ definitions:
         example: 21.5
         type: number
     type: object
+  servicing.accountRefDTO:
+    properties:
+      id:
+        example: acc-7712345678-1
+        type: string
+      maskedNumber:
+        example: •••• 0001
+        type: string
+    type: object
+  servicing.allocationDTO:
+    properties:
+      fees:
+        example: 0
+        type: integer
+      interest:
+        example: 20000
+        type: integer
+      penalties:
+        example: 0
+        type: integer
+      principal:
+        example: 0
+        type: integer
+    type: object
+  servicing.debtDTO:
+    properties:
+      asOf:
+        example: "2026-12-25T10:00:00Z"
+        type: string
+      businessDate:
+        example: "2026-12-25"
+        type: string
+      calculationPolicyVersion:
+        example: policy-1
+        type: string
+      feesOutstanding:
+        example: 0
+        type: integer
+      interestOutstanding:
+        example: 24004
+        type: integer
+      loanId:
+        example: l-55
+        type: string
+      loanVersion:
+        example: 4
+        type: integer
+      overdue:
+        $ref: '#/definitions/servicing.overdueDTO'
+      penaltiesOutstanding:
+        example: 310
+        type: integer
+      prepaidInterest:
+        description: оплачено заранее сверх начисленного; учитывается при досрочном
+          погашении
+        example: 0
+        type: integer
+      principalOutstanding:
+        example: 1200000
+        type: integer
+      scheduleVersion:
+        example: 1
+        type: integer
+      timeZone:
+        example: UTC
+        type: string
+      totalOutstanding:
+        example: 1224314
+        type: integer
+      unappliedFunds:
+        example: 0
+        type: integer
+    type: object
+  servicing.earlyRequest:
+    properties:
+      accountId:
+        example: acc-7712345678-1
+        maxLength: 64
+        type: string
+      quoteId:
+        example: eq-101
+        maxLength: 64
+        type: string
+    required:
+    - accountId
+    - quoteId
+    type: object
   servicing.loanDTO:
     properties:
       amount:
@@ -1455,6 +1542,12 @@ definitions:
       balance:
         example: 1200000
         type: integer
+      closeReason:
+        description: SCHEDULE_COMPLETED, EARLY_REPAYMENT, LIMIT_CLOSED
+        example: EARLY_REPAYMENT
+        type: string
+      closedAt:
+        type: string
       contractNumber:
         example: КД-2026-0055
         type: string
@@ -1470,11 +1563,20 @@ definitions:
         type: array
       product:
         $ref: '#/definitions/servicing.productRefDTO'
+      revolving:
+        example: false
+        type: boolean
+      scheduleVersion:
+        example: 1
+        type: integer
       status:
         example: ACTIVE
         type: string
       terms:
         $ref: '#/definitions/servicing.loanTermsDTO'
+      version:
+        example: 1
+        type: integer
     type: object
   servicing.loanTermsDTO:
     properties:
@@ -1494,16 +1596,162 @@ definitions:
         example: 24
         type: integer
     type: object
+  servicing.loansPage:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/servicing.loanDTO'
+        type: array
+      page:
+        example: 1
+        type: integer
+      size:
+        example: 20
+        type: integer
+      total:
+        example: 135
+        type: integer
+    type: object
+  servicing.operationDTO:
+    properties:
+      account:
+        $ref: '#/definitions/servicing.accountRefDTO'
+      allocation:
+        $ref: '#/definitions/servicing.allocationDTO'
+      externalTransactionId:
+        example: dbt-rp-501
+        type: string
+      failureReason:
+        example: Недостаточно средств на счёте
+        type: string
+      id:
+        example: rp-501
+        type: string
+      loanId:
+        example: l-55
+        type: string
+      loanStatus:
+        example: ACTIVE
+        type: string
+      loanVersion:
+        example: 2
+        type: integer
+      postedAmount:
+        example: 20000
+        type: integer
+      postedAt:
+        example: "2026-10-21T10:00:05Z"
+        type: string
+      quoteId:
+        example: eq-101
+        type: string
+      requestedAmount:
+        example: 20000
+        type: integer
+      requestedAt:
+        example: "2026-10-21T10:00:00Z"
+        type: string
+      scheduleVersion:
+        example: 1
+        type: integer
+      status:
+        description: PENDING, PROCESSING, SUCCEEDED, FAILED
+        example: PENDING
+        type: string
+      type:
+        description: REGULAR, EARLY
+        example: REGULAR
+        type: string
+      unappliedAmount:
+        example: 0
+        type: integer
+    type: object
+  servicing.operationsPage:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/servicing.operationDTO'
+        type: array
+      page:
+        example: 1
+        type: integer
+      size:
+        example: 20
+        type: integer
+      total:
+        example: 2
+        type: integer
+    type: object
+  servicing.overdueDTO:
+    properties:
+      days:
+        example: 35
+        type: integer
+      fees:
+        example: 0
+        type: integer
+      interest:
+        example: 21500
+        type: integer
+      penalties:
+        example: 310
+        type: integer
+      principal:
+        example: 40458
+        type: integer
+      since:
+        description: null — просрочки нет
+        example: "2026-11-21"
+        type: string
+      total:
+        example: 62268
+        type: integer
+    type: object
+  servicing.overdueSummaryDTO:
+    properties:
+      amount:
+        description: просроченная задолженность с пенями, как overdue.total в /debt
+        example: 0
+        type: integer
+      loans:
+        example: 0
+        type: integer
+      payments:
+        example: 0
+        type: integer
+    type: object
   servicing.paymentDTO:
     properties:
       date:
         example: "2026-11-20"
         type: string
+      early:
+        description: строка досрочного погашения
+        example: false
+        type: boolean
+      id:
+        example: sp-55-1
+        type: string
       interest:
         example: 21500
         type: integer
+      paidInterest:
+        example: 20000
+        type: integer
+      paidPrincipal:
+        example: 0
+        type: integer
       principal:
         example: 40458
+        type: integer
+      remainingInterest:
+        example: 1500
+        type: integer
+      remainingPrincipal:
+        example: 40458
+        type: integer
+      remainingTotal:
+        example: 41958
         type: integer
       status:
         description: PLANNED, PAID, OVERDUE
@@ -1522,6 +1770,21 @@ definitions:
         example: "2026-11-20"
         type: string
     type: object
+  servicing.previewDTO:
+    properties:
+      date:
+        example: "2026-11-20"
+        type: string
+      interest:
+        example: 17913
+        type: integer
+      principal:
+        example: 44045
+        type: integer
+      total:
+        example: 61958
+        type: integer
+    type: object
   servicing.productRefDTO:
     properties:
       code:
@@ -1530,6 +1793,123 @@ definitions:
       name:
         example: Оборотный кредит
         type: string
+    type: object
+  servicing.quoteDTO:
+    properties:
+      allocation:
+        $ref: '#/definitions/servicing.allocationDTO'
+      amountToDebit:
+        example: 200000
+        type: integer
+      calculatedAt:
+        example: "2026-10-21T10:00:00Z"
+        type: string
+      calculationPolicyVersion:
+        example: policy-1
+        type: string
+      effectiveDate:
+        example: "2026-10-21"
+        type: string
+      expectedCloseDate:
+        example: "2028-06-20"
+        type: string
+      loanId:
+        example: l-55
+        type: string
+      loanVersion:
+        example: 2
+        type: integer
+      monthlyPaymentAfter:
+        example: 61958
+        type: integer
+      prepaidInterestCredit:
+        description: переплаченные проценты, засчитанные в основной долг
+        example: 0
+        type: integer
+      principalAfter:
+        example: 1000707
+        type: integer
+      quoteId:
+        example: eq-101
+        type: string
+      remainingPaymentsAfter:
+        example: 20
+        type: integer
+      schedulePreview:
+        items:
+          $ref: '#/definitions/servicing.previewDTO'
+        type: array
+      scheduleVersion:
+        example: 1
+        type: integer
+      strategy:
+        example: REDUCE_TERM
+        type: string
+      type:
+        example: PARTIAL
+        type: string
+      validUntil:
+        example: "2026-10-21T10:15:00Z"
+        type: string
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  servicing.quoteRequest:
+    properties:
+      amount:
+        example: 200000
+        type: integer
+      effectiveDate:
+        example: "2026-10-21"
+        type: string
+      strategy:
+        enum:
+        - REDUCE_TERM
+        - REDUCE_PAYMENT
+        example: REDUCE_TERM
+        type: string
+      type:
+        enum:
+        - PARTIAL
+        - FULL
+        example: PARTIAL
+        type: string
+    required:
+    - type
+    type: object
+  servicing.repaymentAccountDTO:
+    properties:
+      available:
+        example: true
+        type: boolean
+      availableBalance:
+        description: null — АБС остаток не отдаёт
+        example: 4800000
+        type: integer
+      currency:
+        example: RUB
+        type: string
+      id:
+        example: acc-7712345678-1
+        type: string
+      maskedNumber:
+        example: •••• 0001
+        type: string
+    type: object
+  servicing.repaymentRequest:
+    properties:
+      accountId:
+        example: acc-7712345678-1
+        maxLength: 64
+        type: string
+      amount:
+        example: 20000
+        type: integer
+    required:
+    - accountId
+    - amount
     type: object
   servicing.scheduleItemDTO:
     properties:
@@ -1555,10 +1935,21 @@ definitions:
       activeLoans:
         example: 1
         type: integer
+      closedLoans:
+        example: 0
+        type: integer
       nextPayment:
         allOf:
         - $ref: '#/definitions/servicing.paymentRefDTO'
         description: null — платежей впереди нет
+      overdue:
+        $ref: '#/definitions/servicing.overdueSummaryDTO'
+      totalLoans:
+        example: 1
+        type: integer
+      totalPrincipalBalance:
+        example: 1200000
+        type: integer
     type: object
   shared.ActorType:
     enum:
@@ -3701,6 +4092,8 @@ paths:
       - loans
   /loans/{id}:
     get:
+      description: Условия договора, версии и действующий график с оплаченными и оставшимися
+        суммами строк.
       parameters:
       - description: ID кредита
         in: path
@@ -3723,6 +4116,484 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: 'Кредит: условия и график платежей'
+      tags:
+      - loans
+  /loans/{id}/close:
+    post:
+      description: Закрытие возобновляемого лимита с нулевой задолженностью. Обычный
+        кредит закрывается сам после погашения.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия кредита
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Ключ команды
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.loanDetailsDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Закрыть овердрафт
+      tags:
+      - loans
+  /loans/{id}/debt:
+    get:
+      description: Основной долг, проценты, пени, комиссии и просрочка на момент расчёта
+        по policy-1. Просрочка — часть итога.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.debtDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Полная задолженность
+      tags:
+      - loans
+  /loans/{id}/early-repayment-quotes:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Расчёт на сегодня по policy-1: сумма списания, распределение и новый график. Денег не списывает.
+        Действует 15 минут и до изменения кредита.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ расчёта
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      - description: Тип, сумма и стратегия
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/servicing.quoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/servicing.quoteDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Рассчитать досрочное погашение
+      tags:
+      - loans
+  /loans/{id}/early-repayments:
+    post:
+      consumes:
+      - application/json
+      description: Подтверждение расчёта и запрос списания. Новый график применяется
+        после подтверждения банком.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия кредита
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Ключ команды
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      - description: Расчёт и счёт
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/servicing.earlyRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/servicing.operationDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Подтвердить досрочное погашение
+      tags:
+      - loans
+  /loans/{id}/early-repayments/{opId}:
+    get:
+      description: Статус досрочного погашения и итоговые версии кредита и графика.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID операции
+        in: path
+        name: opId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.operationDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: 'Досрочное погашение: статус'
+      tags:
+      - loans
+  /loans/{id}/repayment-accounts:
+    get:
+      description: Счета компании в АБС банка. available — активный рублёвый счёт,
+        с которого можно списать.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/servicing.repaymentAccountDTO'
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Счета для оплаты кредита
+      tags:
+      - loans
+  /loans/{id}/repayments:
+    get:
+      description: Обычные и досрочные операции, новые первыми.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Страница с 1
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Размер 1–100
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.operationsPage'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: История операций по кредиту
+      tags:
+      - loans
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Запрос на списание со счёта компании. Долг уменьшится после подтверждения банком: статус — через GET операции.
+        Сумма — не больше просрочки, пеней и остатка ближайшего платежа.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Версия кредита
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Ключ команды
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      - description: Счёт и сумма
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/servicing.repaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/servicing.operationDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: Precondition Failed
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Оплатить кредит
+      tags:
+      - loans
+  /loans/{id}/repayments/{opId}:
+    get:
+      description: Статус операции. Незавершённую сервер сначала сверяет с банком.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID операции
+        in: path
+        name: opId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.operationDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Операция по кредиту
+      tags:
+      - loans
+  /loans/{id}/schedule/document:
+    get:
+      description: |-
+        Условия договора, все строки действующего графика с оплаченными и оставшимися суммами, итоги и версии.
+        Ошибки — JSON.
+      parameters:
+      - description: ID кредита
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: pdf
+        description: Только pdf
+        in: query
+        name: format
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: PDF полного графика
+      tags:
+      - loans
+  /loans/page:
+    get:
+      description: Выданные кредиты компании страницами, новые первыми. total — с
+        учётом фильтра.
+      parameters:
+      - default: 1
+        description: Страница с 1
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Размер 1–100
+        in: query
+        name: size
+        type: integer
+      - description: ACTIVE или CLOSED; без фильтра — все
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/servicing.loansPage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Мои кредиты — страницами
       tags:
       - loans
   /loans/schedule:
@@ -3794,8 +4665,9 @@ paths:
       - loans
   /loans/summary:
     get:
-      description: 'Сколько действующих кредитов и ближайший платёж: сумма всех платежей
-        компании в ближайшую дату.'
+      description: |-
+        Сводка по всей компании: число кредитов, остаток долга, ближайший платёж (сумма остатков всех кредитов
+        в ближайшую дату) и просрочка с пенями.
       produces:
       - application/json
       responses:
