@@ -14,14 +14,16 @@ const PRODUCT_NAME: Record<string, string> = {
 /** Решение банка: одобрение, иные условия (рядом запрошенное и предложенное) или отказ с причиной */
 export const OfferView = ({ offer }: { offer: Offer }) => {
 	if (offer.decision === 'REJECTED') {
+		const alternatives = offer.alternatives ?? [];
+
 		return (
 			<div className={styles.offer}>
 				<Alert tone="danger" title="Банк не может одобрить заявку">{offer.reason}</Alert>
-				{offer.alternatives.length > 0 && (
+				{alternatives.length > 0 && (
 					<>
 						<p>Что можно сделать:</p>
 						<ul>
-							{offer.alternatives.map((item) => (
+							{alternatives.map((item) => (
 								<li key={item.productCode}>
 									{`${PRODUCT_NAME[item.productCode] ?? item.productCode} — до ${formatMoney(item.maxAmount)}`}
 								</li>

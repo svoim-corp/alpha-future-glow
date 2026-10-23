@@ -93,6 +93,18 @@
 	}
 }
 
+/* Итог «Отказ»: красный маркер с крестиком вместо рубинового кольца */
+.rejected {
+	color: var(--color-danger);
+
+	.marker {
+		color: var(--color-on-primary);
+		background: var(--color-danger);
+		border-color: var(--color-danger);
+		box-shadow: none;
+	}
+}
+
 .label {
 	flex: 1;
 	min-width: 0;

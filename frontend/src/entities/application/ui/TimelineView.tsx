@@ -32,11 +32,17 @@ export const TimelineView = ({ applicationId }: { applicationId: string }) => {
 						{data.steps.map((step) => (
 							<li
 								key={step.status}
-								className={clsx(styles.step, step.state === 'DONE' && styles.done, step.state === 'CURRENT' && styles.now)}
+								className={clsx(
+									styles.step,
+									step.state === 'DONE' && styles.done,
+									step.state === 'CURRENT' && styles.now,
+									step.status === 'REJECTED' && step.state !== 'PENDING' && styles.rejected,
+								)}
 								aria-current={step.state === 'CURRENT' ? 'step' : undefined}
 							>
 								<span className={styles.marker}>
 									{step.state === 'DONE' && <Icon name="check" size={14} />}
+									{step.status === 'REJECTED' && step.state !== 'PENDING' && <Icon name="close" size={14} />}
 								</span>
 								<span className={styles.label}>
 									{step.label}

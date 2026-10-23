@@ -23,6 +23,14 @@ describe('OfferView', () => {
 		expect(screen.getByText('Одобрено')).toBeInTheDocument();
 	});
 
+	it('отказ без альтернатив (бэкенд не присылает поле) не падает', () => {
+		const { alternatives: _alternatives, ...withoutAlternatives } = rejectedOfferFixture;
+		renderWithProviders(<OfferView offer={withoutAlternatives} />);
+
+		expect(screen.getByText('Банк не может одобрить заявку')).toBeInTheDocument();
+		expect(screen.queryByText('Что можно сделать:')).not.toBeInTheDocument();
+	});
+
 	it('отказ называет причину и показывает альтернативы', () => {
 		renderWithProviders(<OfferView offer={rejectedOfferFixture} />);
 

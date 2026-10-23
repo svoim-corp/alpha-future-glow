@@ -27,6 +27,23 @@ describe('TimelineView', () => {
 		expect(steps[3]).toHaveTextContent('впереди');
 	});
 
+	it('итог «Отказ» помечен крестиком в маркере', async () => {
+		const rejected = {
+			...timelineFixture,
+			steps: [
+				{ status: 'ON_DECISION', label: 'На решении', state: 'DONE', at: '2026-10-20T10:00:00Z' },
+				{ status: 'REJECTED', label: 'Отказ', state: 'CURRENT', at: '2026-10-20T11:00:00Z' },
+			],
+		};
+		server.use(http.get(apiUrl('/applications/a-1/timeline'), () => HttpResponse.json(rejected)));
+		renderWithProviders(<TimelineView applicationId="a-1" />);
+
+		const steps = within(await screen.findByRole('list', { name: 'Этапы рассмотрения' })).getAllByRole('listitem');
+
+		expect(steps[1].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).not.toBeNull();
+		expect(steps[0].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
+	});
+
 	it('при ошибке показывает сообщение', async () => {
 		server.use(http.get(apiUrl('/applications/a-1/timeline'), () => HttpResponse.json(
 			{ code: 'INTERNAL', message: 'Ошибка' },
