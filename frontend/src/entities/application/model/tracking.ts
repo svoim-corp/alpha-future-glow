@@ -33,7 +33,10 @@ export interface InfoRequest {
 	status: 'OPEN' | 'ANSWERED';
 	comment: string;
 	items: InfoRequestItem[];
+	/** Ответы клиента: поле приходит только после ответа */
+	answers?: { key: string; value: string }[];
 	createdAt: string;
+	answeredAt?: string;
 }
 
 export interface OfferTerms {
@@ -55,7 +58,8 @@ export interface OfferApproved {
 export interface OfferRejected {
 	decision: 'REJECTED';
 	reason: string;
-	alternatives: { productCode: string; maxAmount: number }[];
+	/** Бэкенд не присылает поле, если альтернатив нет */
+	alternatives?: { productCode: string; maxAmount: number }[];
 }
 
 /** GET /applications/{id}/offer; до решения сервер отвечает 404 */

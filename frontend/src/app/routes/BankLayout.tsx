@@ -1,13 +1,8 @@
-import { BankHeader } from '@widgets/bank-header';
+import { BankShell } from '@widgets/bank-shell';
 import { Outlet } from 'react-router';
 
-import styles from './BankLayout.module.scss';
-
 export const BankLayout = () => (
-	<>
-		<BankHeader />
-		<div className={styles.content}>
-			<Outlet />
-		</div>
-	</>
+	<BankShell>
+		<Outlet />
+	</BankShell>
 );

@@ -8,6 +8,7 @@ import {
 	type HistoryEntry,
 	type Score,
 } from '../model/bank';
+import { type InfoRequest } from '../model/tracking';
 import styles from './BankReviewViews.module.scss';
 import { RiskBadge } from './RiskBadge';
 
@@ -29,7 +30,10 @@ const ACTION_LABEL: Record<string, string> = {
 	SUBMIT: 'заявка подана',
 	CHECKS_DONE: 'проверки завершены',
 	INFO_REQUEST: 'запрос информации',
-	INFO_ANSWER: 'ответ на запрос банка',
+	INFO_ANSWERED: 'клиент ответил на запрос банка',
+	SCORING_STARTED: 'скоринг запущен',
+	SCORED: 'скоринг завершён',
+	DELETE_DRAFT: 'черновик удалён',
 	DECISION: 'решение принято',
 	ASSIGN: 'назначен исполнитель',
 	OFFER_ACCEPT: 'условия приняты',
@@ -48,6 +52,8 @@ const SOURCE_LABEL: Record<string, string> = {
 	GIRBO: 'ГИР БО',
 	MCHD: 'Реестр МЧД',
 	CORE_BANKING: 'Внутренние обороты',
+	BANK: 'Отношения с банком',
+	BANK_ACCOUNTS: 'Счета и обороты в банке',
 };
 
 const CHECK_VIEW: Record<ExternalCheck['status'], { label: string; tone: Tone }> = {
@@ -141,8 +147,10 @@ export const ChecksView = ({ checks }: { checks: ExternalCheck[] }) => (
 
 export const ScoreView = ({ score }: { score: Score }) => (
 	<div className={styles.stack}>
-		<p className={styles.big}>{score.score}</p>
-		<RiskBadge band={score.riskBand} />
+		<div className={styles.scoreHead}>
+			<p className={styles.big}>{score.score}</p>
+			<RiskBadge band={score.riskBand} />
+		</div>
 		<p className={styles.muted}>
 			{score.autoDecisionEligible
 				? 'Подходит для автоматического решения'
@@ -160,13 +168,47 @@ export const ScoreView = ({ score }: { score: Score }) => (
 		</ul>
 		{score.suggested && (
 			<p>
-				{`Модель предлагает: ${{ APPROVE: 'одобрить', COUNTER_OFFER: 'иные условия', REJECT: 'отказать' }[score.suggested.decision]}`}
+				{`Модель предлагает: ${{ APPROVED: 'одобрить', COUNTER_OFFER: 'иные условия', REJECTED: 'отказать' }[score.suggested.decision]}`}
 				{score.suggested.amount ? `, ${formatMoney(score.suggested.amount)}` : ''}
 				{score.suggested.rate ? `, ${score.suggested.rate} %` : ''}
 			</p>
 		)}
 		<p className={styles.muted}>{`Версия модели: ${score.modelVersion}`}</p>
 	</div>
+);
+
+/** Запросы банка клиенту: вопросы и, если клиент уже ответил, его ответы */
+export const InfoRequestsView = ({ requests }: { requests: InfoRequest[] }) => (
+	<ol className={styles.requests} aria-label="Запросы информации">
+		{requests.map((request) => {
+			const answers = new Map((request.answers ?? []).map((answer) => [answer.key, answer.value]));
+
+			return (
+				<li key={request.id} className={styles.request}>
+					<span className={styles.row}>
+						<strong>{request.comment}</strong>
+						<Badge tone={request.status === 'ANSWERED' ? 'success' : 'warning'}>
+							{request.status === 'ANSWERED' ? 'Клиент ответил' : 'Ждём ответ клиента'}
+						</Badge>
+					</span>
+					<span className={styles.muted}>
+						{`Запрос ${formatDateTime(request.createdAt)}`}
+						{request.answeredAt ? `, ответ ${formatDateTime(request.answeredAt)}` : ''}
+					</span>
+					<dl className={styles.qa}>
+						{request.items.map((item) => (
+							<div key={item.key}>
+								<dt>{item.label}</dt>
+								<dd>
+									{answers.get(item.key) ?? <span className={styles.muted}>Ответа пока нет</span>}
+								</dd>
+							</div>
+						))}
+					</dl>
+				</li>
+			);
+		})}
+	</ol>
 );
 
 const ACTOR = { CLIENT: 'Клиент', SYSTEM: 'Система', OFFICER: 'Сотрудник' } as const;

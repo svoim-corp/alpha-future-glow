@@ -431,17 +431,20 @@ export const handlers = [
 
 		return item ? HttpResponse.json(item.infoRequests) : notFound();
 	}),
-	http.post(url('/applications/:id/info-requests/:requestId/answer'), ({ params }) => {
+	http.post(url('/applications/:id/info-requests/:requestId/answer'), async ({ params, request }) => {
 		const item = findApplication(String(params.id));
 
 		if (!item) {
 			return notFound();
 		}
 
-		const request = item.infoRequests.find((entry) => entry.id === params.requestId);
+		const body = await request.json() as { answers: { key: string; value: string }[] };
+		const found = item.infoRequests.find((entry) => entry.id === params.requestId);
 
-		if (request) {
-			request.status = 'ANSWERED';
+		if (found) {
+			found.status = 'ANSWERED';
+			found.answers = body.answers;
+			found.answeredAt = nowIso();
 		}
 
 		setStatus(item, 'SCORING');
@@ -671,6 +674,11 @@ export const handlers = [
 	)),
 	http.get(url('/bank/applications/:id/score'), () => HttpResponse.json(scoreFixture)),
 	http.get(url('/bank/applications/:id/history'), () => HttpResponse.json(historyFixture)),
+	http.get(url('/bank/applications/:id/info-requests'), ({ params }) => {
+		const item = findApplication(String(params.id));
+
+		return item ? HttpResponse.json(item.infoRequests) : notFound();
+	}),
 	http.post(url('/bank/applications/:id/info-requests'), async ({ params, request }) => {
 		const item = findApplication(String(params.id));
 		const body = await request.json() as { comment: string; items: { key: string; type: string; label: string }[] };

@@ -23,9 +23,36 @@ const base = (status = 'ON_DECISION') => server.use(
 	http.get(apiUrl('/bank/applications/a-1024/checks'), () => HttpResponse.json(checksFixture)),
 	http.get(apiUrl('/bank/applications/a-1024/score'), () => HttpResponse.json(scoreFixture)),
 	http.get(apiUrl('/bank/applications/a-1024/history'), () => HttpResponse.json(historyFixture)),
+	http.get(apiUrl('/bank/applications/a-1024/info-requests'), () => HttpResponse.json([])),
 );
 
 describe('BankApplicationPage', () => {
+	it('показывает запросы информации с ответами клиента, а без запросов не рисует секцию', async () => {
+		base();
+		server.use(http.get(apiUrl('/bank/applications/a-1024/info-requests'), () => HttpResponse.json([{
+			id: 'r-1',
+			status: 'ANSWERED',
+			comment: 'Обороты расходятся с отчётностью',
+			items: [{ key: 'turnover_note', type: 'TEXT', label: 'Почему выручка ниже оборотов' }],
+			answers: [{ key: 'turnover_note', value: 'Возврат займа' }],
+			createdAt: '2026-10-20T10:00:00Z',
+			answeredAt: '2026-10-21T09:00:00Z',
+		}])));
+		renderPage();
+
+		expect(await screen.findByRole('heading', { name: 'Запросы информации' })).toBeInTheDocument();
+		expect(await screen.findByText('Возврат займа')).toBeInTheDocument();
+	});
+
+	it('без запросов информации секция не показывается', async () => {
+		base();
+		renderPage();
+
+		await screen.findByText('Петрова Анна Сергеевна');
+
+		expect(screen.queryByRole('heading', { name: 'Запросы информации' })).not.toBeInTheDocument();
+	});
+
 	it('собирает анкету, проверки, скоринг, решение и историю', async () => {
 		base();
 		renderPage();

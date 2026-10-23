@@ -5,22 +5,23 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
-import { BankHeader } from './BankHeader';
+import { BankShell } from './BankShell';
 
-describe('BankHeader', () => {
+describe('BankShell', () => {
 	it('ведёт в очередь заявок и показывает сотрудника с должностью', async () => {
 		server.use(http.get(apiUrl('/auth/me'), () => HttpResponse.json(officerUser)));
-		renderWithProviders(<BankHeader />);
+		renderWithProviders(<BankShell><p>Содержимое</p></BankShell>);
 
-		expect(screen.getByRole('link', { name: /Кредитный кабинет/ })).toHaveAttribute('href', '/bank/queue');
-		expect(await screen.findByText(/Иванова Елена Петровна, Кредитный инспектор/)).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /Кредитный\s*кабинет/ })).toHaveAttribute('href', '/bank/queue');
+		expect(await screen.findByText('Елена Иванова')).toBeInTheDocument();
+		expect(screen.getByText('Кредитный инспектор')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Выйти' })).toBeInTheDocument();
 	});
 
 	it('переключает тёмную тему и применяет её к странице', async () => {
 		server.use(http.get(apiUrl('/auth/me'), () => HttpResponse.json(officerUser)));
 		localStorage.removeItem('credit-ui-theme');
-		renderWithProviders(<BankHeader />);
+		renderWithProviders(<BankShell><p>Содержимое</p></BankShell>);
 		const toggle = screen.getByRole('button', { name: 'Тёмная тема' });
 		const before = toggle.getAttribute('aria-pressed');
 
