@@ -144,12 +144,16 @@ export const FillFullApplication = ({ application, onSubmitted }: FillFullApplic
 							})),
 						]}
 					/>
-					<CheckboxField
-						label="Поручитель согласен на запрос его кредитной истории"
-						checked={guarantorConsented}
-						disabled={!guarantorReady || guarantorConsented || busy || saveFailed || conflict}
-						onChange={() => void giveGuarantorConsent()}
-					/>
+					{guarantorConsented ? (
+						<Alert tone="success" title="Поручитель согласился на запрос его кредитной истории" />
+					) : (
+						<CheckboxField
+							label="Поручитель согласен на запрос его кредитной истории"
+							checked={false}
+							disabled={!guarantorReady || busy || saveFailed || conflict}
+							onChange={() => void giveGuarantorConsent()}
+						/>
+					)}
 				</div>
 			)}
 			<CheckboxField
