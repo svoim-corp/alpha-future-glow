@@ -1,0 +1,10 @@
+.root {
+	display: grid;
+	gap: 16px;
+	justify-items: start;
+}
+
+/* сообщение об ошибке занимает всю ширину блока */
+.root > :not(button) {
+	justify-self: stretch;
+}

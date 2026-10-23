@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useCreateApplicationMutation } from '../api/startApplicationApi';
+import styles from './StartApplicationButton.module.scss';
 
 interface StartApplicationButtonProps {
 	productCode: string;
@@ -44,9 +45,11 @@ export const StartApplicationButton = ({
 	};
 
 	return (
-		<>
+		<div className={styles.root}>
 			<Button loading={isLoading} disabled={amount === null} onClick={() => void handleClick()}>Оформить</Button>
-			{failure && failure.params === params && <Alert tone={failure.unavailable ? 'warning' : 'danger'} title={failure.message} />}
-		</>
+			{failure && failure.params === params && (
+				<Alert tone={failure.unavailable ? 'warning' : 'danger'} title={failure.message} />
+			)}
+		</div>
 	);
 };
