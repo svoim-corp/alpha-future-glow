@@ -1918,6 +1918,54 @@ const docTemplate = `{
             }
         },
         "/bank/applications/{id}/info-requests": {
+            "get": {
+                "description": "Все запросы по заявке с вопросами и ответами клиента: сотрудник видит, что именно ответили.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Запросы информации и ответы клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.infoRequestDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Только пояснения: данные, которые есть у банка, и документы не запрашиваются. Заявка → INFO_REQUESTED.",
                 "consumes": [

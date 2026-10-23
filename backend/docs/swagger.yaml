@@ -3980,6 +3980,39 @@ paths:
       tags:
       - bank
   /bank/applications/{id}/info-requests:
+    get:
+      description: 'Все запросы по заявке с вопросами и ответами клиента: сотрудник
+        видит, что именно ответили.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/underwriting.infoRequestDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Запросы информации и ответы клиента
+      tags:
+      - bank
     post:
       consumes:
       - application/json

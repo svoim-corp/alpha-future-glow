@@ -144,6 +144,21 @@ func TestInfoRequestsAndDecision(t *testing.T) {
 		t.Fatalf("после ответа: %s", w.Body)
 	}
 
+	// Сотрудник видит те же запросы с ответами клиента; клиентской ручкой пользоваться не может.
+	var bankList []infoRequestDTO
+	w = e.do("GET", "/bank/applications/a-1/info-requests", "ivanova", "")
+	_ = json.Unmarshal(w.Body.Bytes(), &bankList)
+	if w.Code != http.StatusOK || len(bankList) != 1 || bankList[0].ID != created.ID || len(bankList[0].Answers) != 2 ||
+		bankList[0].Answers[0].Value != "Возврат займа" {
+		t.Fatalf("запросы у сотрудника: %d %s", w.Code, w.Body)
+	}
+	if w := e.do("GET", "/bank/applications/a-1/info-requests", "smirnov", ""); w.Code != http.StatusForbidden {
+		t.Fatalf("клиент в банковской ручке: %d", w.Code)
+	}
+	if w := e.do("GET", "/bank/applications/a-404/info-requests", "ivanova", ""); w.Code != http.StatusNotFound {
+		t.Fatalf("нет заявки: %d", w.Code)
+	}
+
 	// Решение: одобрение без параметров — на условиях заявки; решивший становится исполнителем; клиенту — уведомление.
 	e.apps.setStatusForTest("a-1", shared.StatusOnDecision)
 	var dr decisionResponse
