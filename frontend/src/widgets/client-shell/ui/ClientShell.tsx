@@ -39,15 +39,6 @@ const shortName = (fullName: string) => {
 	return first && last ? `${first} ${last}` : fullName;
 };
 
-/** «ООО «Северная пекарня»» → «Северная пекарня»: организационная форма в карточке лишняя */
-const companyTitle = (name: string) => name.match(/«(.+)»/)?.[1] ?? name;
-
-const companyInitials = (name: string) => companyTitle(name)
-	.split(' ')
-	.slice(0, 2)
-	.map((word) => word[0]?.toUpperCase())
-	.join('');
-
 type Popover = 'profile' | 'search' | null;
 
 export interface ClientShellProps {
@@ -123,15 +114,6 @@ export const ClientShell = ({ children }: ClientShellProps) => {
 				<button type="button" className={styles.close} aria-label="Закрыть навигацию" onClick={() => setMenuPath(null)}>
 					<Icon name="close" />
 				</button>
-				{company && (
-					<div className={styles.company}>
-						<span className={styles.companyAvatar} aria-hidden="true">{companyInitials(company.name)}</span>
-						<div>
-							<strong>{companyTitle(company.name)}</strong>
-							<small>ИНН {company.inn}</small>
-						</div>
-					</div>
-				)}
 				<span className={styles.caption}>ВАШ КАБИНЕТ</span>
 				<nav className={styles.nav} aria-label="Разделы кабинета">
 					{NAV.map((item) => (

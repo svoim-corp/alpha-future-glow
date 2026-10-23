@@ -50,7 +50,7 @@ const ScopedDashboard = ({ scope }: { scope: DashboardScope }) => {
 	return <div className={styles.root}>
 		<DashboardAttention />
 		<div className={styles.toolbar}>
-			<div><h2>Моё рабочее пространство</h2><p className={styles.muted}>{editor.editing ? 'Меняйте состав, расположение и размеры виджетов.' : 'Важное для вашего бизнеса — на первом плане.'}</p></div>
+			<div><h2>Моё рабочее пространство</h2>{editor.editing && <p className={styles.muted}>Меняйте состав, расположение и размеры виджетов.</p>}</div>
 			{editor.editing ? <div className={styles.toolbarActions}>
 				<Button variant="ghost" disabled={saving} onClick={() => dispatch(resetDraft())}>Сбросить</Button>
 				<Button variant="secondary" disabled={saving || editor.config.widgets.length >= 30} onClick={openCatalog}>Добавить виджет</Button>
