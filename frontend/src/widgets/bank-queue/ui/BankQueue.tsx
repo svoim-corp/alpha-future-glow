@@ -51,6 +51,12 @@ const MODE_OPTIONS = [
 	{ value: 'MANUAL', label: 'Ручной разбор' },
 ];
 
+/** Взять в работу можно только заявку на ручном разборе, пока она не решена: у автозаявок исполнителя нет */
+const MANUAL_STATUSES: ApplicationStatus[] = ['INFO_REQUESTED', 'SCORING', 'ON_DECISION'];
+const canAssign = (row: BankQueueItem) => (
+	row.assignee !== null || (row.decisionMode === 'MANUAL' && MANUAL_STATUSES.includes(row.status))
+);
+
 const STATS = [
 	{ key: 'ON_DECISION', label: 'На решении', hint: 'Ждут решения сотрудника', accent: true },
 	{ key: 'SUBMITTED', label: 'Подано', hint: 'Новые заявки' },
@@ -191,7 +197,13 @@ export const BankQueue = () => {
 										),
 									},
 									{ key: 'mode', header: 'Режим', render: (row) => <DecisionModeLabel mode={row.decisionMode} /> },
-									{ key: 'assignee', header: 'Исполнитель', render: (row) => <AssignApplication item={row} /> },
+									{
+										key: 'assignee',
+										header: 'Исполнитель',
+										render: (row) => (
+											canAssign(row) ? <AssignApplication item={row} /> : <span>—</span>
+										),
+									},
 								]}
 							/>
 							<nav className={styles.pager} aria-label="Страницы очереди">
