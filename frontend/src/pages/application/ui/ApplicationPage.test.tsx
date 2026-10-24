@@ -58,6 +58,23 @@ describe('ApplicationPage', () => {
 		expect(screen.queryByRole('button', { name: 'Принять условия' })).not.toBeInTheDocument();
 	});
 
+	it('пока банк проверяет заявку, сам подтягивает решение и кнопки', async () => {
+		let status = 'DATA_CHECK';
+		server.use(
+			http.get(apiUrl('/applications/a-1031'), () => HttpResponse.json({ ...base, status })),
+			timeline,
+			http.get(apiUrl('/applications/a-1031/offer'), () => HttpResponse.json(counterOfferFixture)),
+		);
+		renderPage();
+
+		expect(await screen.findByText('Заявка КЗ-2026-001024')).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Принять условия' })).not.toBeInTheDocument();
+
+		status = 'APPROVED';
+
+		expect(await screen.findByRole('button', { name: 'Принять условия' }, { timeout: 6000 })).toBeInTheDocument();
+	}, 10000);
+
 	it('даёт перейти в поддержку с привязкой к заявке', async () => {
 		server.use(app('SCORING'), timeline);
 		renderPage();

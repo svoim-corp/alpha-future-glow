@@ -9,21 +9,42 @@ import {
 import { AnswerInfoRequest } from '@features/answer-info-request';
 import { DecideOffer } from '@features/decide-offer';
 import { skipToken } from '@reduxjs/toolkit/query';
+import { baseApi } from '@shared/api';
 import { paths } from '@shared/config';
 import { formatMoney, formatTerm } from '@shared/lib/format';
+import { useAppDispatch } from '@shared/lib/store';
 import { AsyncBoundary, ButtonLink, Card, Metrics } from '@shared/ui';
+import { useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 
 import styles from './ApplicationTracker.module.scss';
+
+/* Бэк проверяет и оценивает заявку в фоне, поэтому сразу после отправки статус ещё промежуточный */
+const IN_PROGRESS = new Set(['SUBMITTED', 'DATA_CHECK', 'SCORING', 'ON_DECISION']);
+const POLL_MS = 3000;
 
 const HAS_OFFER = new Set(['APPROVED', 'COUNTER_OFFER', 'REJECTED', 'SIGNING', 'ISSUED']);
 
 export const ApplicationTracker = ({ applicationId }: { applicationId: string }) => {
 	const { data: application, isLoading, isError, refetch } = useGetApplicationQuery(applicationId);
 	const status = application?.status;
+	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 	const requests = useGetInfoRequestsQuery(status === 'INFO_REQUESTED' ? applicationId : skipToken);
 	const offer = useGetOfferQuery(status && HAS_OFFER.has(status) ? applicationId : skipToken);
+	const waiting = status !== undefined && IN_PROGRESS.has(status);
+
+	/* Пока банк работает над заявкой, раз в несколько секунд обновляем её данные вместе с таймлайном и предложением */
+	useEffect(() => {
+		if (!waiting) return undefined;
+
+		const timer = setInterval(() => {
+			dispatch(baseApi.util.invalidateTags([{ type: 'Application', id: applicationId }]));
+		}, POLL_MS);
+
+		return () => clearInterval(timer);
+	}, [waiting, applicationId, dispatch]);
+
 	const openRequests = (requests.data ?? []).filter((request) => request.status === 'OPEN');
 
 	if (status === 'DRAFT') {
