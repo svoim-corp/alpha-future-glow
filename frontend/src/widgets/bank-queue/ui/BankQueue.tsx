@@ -26,7 +26,10 @@ const ANY = '';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
 	{ value: ANY, label: 'Все статусы' },
-	...(['SUBMITTED', 'DATA_CHECK', 'INFO_REQUESTED', 'SCORING', 'ON_DECISION'] as ApplicationStatus[])
+	...([
+		'SUBMITTED', 'DATA_CHECK', 'INFO_REQUESTED', 'SCORING', 'ON_DECISION',
+		'APPROVED', 'COUNTER_OFFER', 'REJECTED', 'SIGNING', 'ISSUED', 'CLOSED',
+	] as ApplicationStatus[])
 		.map((value) => ({ value, label: BANK_STATUS_LABEL[value] })),
 ];
 const PRODUCT_OPTIONS = [
