@@ -7,8 +7,28 @@
 	border-radius: 16px;
 }
 
-.yourTurn {
-	background: var(--color-primary-soft);
+.warning {
+	background: var(--color-warning-soft);
+
+	.next {
+		color: var(--color-warning);
+	}
+}
+
+.success {
+	background: var(--color-success-soft);
+
+	.next {
+		color: var(--color-success);
+	}
+}
+
+.danger {
+	background: var(--color-danger-soft);
+
+	.next {
+		color: var(--color-danger);
+	}
 }
 
 .what {
@@ -21,10 +41,6 @@
 	margin: 0;
 	font-size: 14px;
 	color: var(--color-text-muted);
-}
-
-.yourTurn .next {
-	color: var(--color-primary-text);
 }
 
 .steps {
@@ -82,18 +98,19 @@
 	}
 }
 
+/* Ожидание: текущий шаг с жёлтой обводкой */
 .now {
 	font-weight: 600;
-	color: var(--color-primary-text);
+	color: var(--color-warning);
 
 	.marker {
 		background: var(--color-surface);
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 4px var(--color-primary-soft);
+		border-color: var(--color-warning);
+		box-shadow: 0 0 0 4px var(--color-warning-soft);
 	}
 }
 
-/* Итог «Отказ» и «Закрыта»: красный маркер с крестиком вместо рубинового кольца */
+/* Итог «Отказ» и «Закрыта»: красный маркер с крестиком */
 .rejected {
 	color: var(--color-danger);
 

@@ -7,12 +7,16 @@ import { type TimelineStep } from '../model/tracking';
 import styles from './TimelineView.module.scss';
 
 /** Итоговые «отрицательные» шаги: отказ и закрытие заявки — красный маркер с крестиком */
-const isStop = (step: TimelineStep) => (step.status === 'REJECTED' || step.status === 'CLOSED') && step.state !== 'PENDING';
+const isStop = (step: TimelineStep) => STOPPED.has(step.status) && step.state !== 'PENDING';
 
 const DECIDED = new Set(['APPROVED', 'COUNTER_OFFER', 'ISSUED']);
+const STOPPED = new Set(['REJECTED', 'CLOSED']);
 
 /** Шаг выполнен: пройден или это достигнутый положительный итог («Одобрено», «Иные условия», «Выдано») */
 const isDone = (step: TimelineStep) => step.state === 'DONE' || (DECIDED.has(step.status) && step.state === 'CURRENT');
+
+/** Тон текущего состояния: отказ или закрытие — красный, успех — зелёный, иначе заявка просто ждёт — жёлтый */
+const currentTone = (status: string) => (STOPPED.has(status) ? 'danger' : DECIDED.has(status) ? 'success' : 'warning');
 
 const STATE_TEXT = { DONE: 'выполнено', CURRENT: 'текущий этап', PENDING: 'впереди' } as const;
 
@@ -30,7 +34,7 @@ export const TimelineView = ({ applicationId }: { applicationId: string }) => {
 		>
 			{data && (
 				<div>
-					<div className={clsx(styles.current, data.current.actor === 'CLIENT' && styles.yourTurn)}>
+					<div className={clsx(styles.current, styles[currentTone(data.current.status)])}>
 						<p className={styles.what}>{data.current.whatsHappening}</p>
 						<p className={styles.next}>
 							{data.current.actor === 'CLIENT' ? 'Ход за вами: ' : 'Ход за банком: '}
@@ -44,7 +48,7 @@ export const TimelineView = ({ applicationId }: { applicationId: string }) => {
 								className={clsx(
 									styles.step,
 									isDone(step) && styles.done,
-									step.state === 'CURRENT' && !isDone(step) && styles.now,
+									step.state === 'CURRENT' && !isDone(step) && !isStop(step) && styles.now,
 									isStop(step) && styles.rejected,
 								)}
 								aria-current={step.state === 'CURRENT' ? 'step' : undefined}
