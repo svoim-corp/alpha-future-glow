@@ -181,7 +181,7 @@ export const BankQueue = () => {
 										key: 'score',
 										header: 'Балл и риск',
 										render: (row) => (
-											<span className={styles.cell}>
+											<span className={styles.score}>
 												<strong>{row.score ?? '—'}</strong>
 												<RiskBadge band={row.riskBand} />
 											</span>

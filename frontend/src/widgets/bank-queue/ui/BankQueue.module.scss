@@ -56,6 +56,17 @@
 	}
 }
 
+.score {
+	display: inline-flex;
+	gap: 12px;
+	align-items: center;
+	white-space: nowrap;
+
+	strong {
+		font-weight: 500;
+	}
+}
+
 .end {
 	justify-items: end;
 }
