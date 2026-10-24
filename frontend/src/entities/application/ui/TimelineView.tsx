@@ -3,7 +3,16 @@ import { AsyncBoundary, Icon } from '@shared/ui';
 import clsx from 'clsx';
 
 import { useGetTimelineQuery } from '../api/trackingApi';
+import { type TimelineStep } from '../model/tracking';
 import styles from './TimelineView.module.scss';
+
+/** Итоговые «отрицательные» шаги: отказ и закрытие заявки — красный маркер с крестиком */
+const isStop = (step: TimelineStep) => (step.status === 'REJECTED' || step.status === 'CLOSED') && step.state !== 'PENDING';
+
+const DECIDED = new Set(['APPROVED', 'COUNTER_OFFER', 'ISSUED']);
+
+/** Шаг выполнен: пройден или это достигнутый положительный итог («Одобрено», «Иные условия», «Выдано») */
+const isDone = (step: TimelineStep) => step.state === 'DONE' || (DECIDED.has(step.status) && step.state === 'CURRENT');
 
 const STATE_TEXT = { DONE: 'выполнено', CURRENT: 'текущий этап', PENDING: 'впереди' } as const;
 
@@ -34,15 +43,15 @@ export const TimelineView = ({ applicationId }: { applicationId: string }) => {
 								key={step.status}
 								className={clsx(
 									styles.step,
-									step.state === 'DONE' && styles.done,
-									step.state === 'CURRENT' && styles.now,
-									step.status === 'REJECTED' && step.state !== 'PENDING' && styles.rejected,
+									isDone(step) && styles.done,
+									step.state === 'CURRENT' && !isDone(step) && styles.now,
+									isStop(step) && styles.rejected,
 								)}
 								aria-current={step.state === 'CURRENT' ? 'step' : undefined}
 							>
 								<span className={styles.marker}>
-									{step.state === 'DONE' && <Icon name="check" size={14} />}
-									{step.status === 'REJECTED' && step.state !== 'PENDING' && <Icon name="close" size={14} />}
+									{isDone(step) && <Icon name="check" size={14} />}
+									{isStop(step) && <Icon name="close" size={14} />}
 								</span>
 								<span className={styles.label}>
 									{step.label}
