@@ -7,6 +7,7 @@ import { Button } from '@shared/ui';
 import { Link } from 'react-router';
 
 import styles from '../Dashboard.module.scss';
+import { WidgetPreview } from './WidgetPreview';
 import { WidgetState } from './WidgetState';
 
 const freshness = { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true };
@@ -14,13 +15,12 @@ export const LoansWidget = ({ widget }: { widget: Extract<DashboardWidget, { typ
 	const query = useGetLoansQuery(undefined, freshness);
 	const items = (query.currentData ?? []).filter((item) => item.status === widget.settings.status);
 	return <WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()}>
-		<p className={styles.muted}>{widget.settings.status === 'ACTIVE' ? 'Действующие договоры' : 'Закрытые договоры'}</p>
 		{items.length === 0 ? <p className={styles.empty}>Таких кредитов пока нет.</p>
-			: <div className={styles.portfolio}>{items.slice(0, widget.h >= 4 ? 4 : 3).map((loan) => <Link key={loan.id} className={styles.portfolioCard} to={`${ROUTES.credits}?loan=${encodeURIComponent(loan.id)}&tab=${loan.status === 'CLOSED' ? 'closed' : 'active'}`}>
+			: <WidgetPreview rowHeight={116} maxColumns={3} minColumnWidth={190}>{items.map((loan) => <Link key={loan.id} className={styles.portfolioCard} to={`${ROUTES.credits}?loan=${encodeURIComponent(loan.id)}&tab=${loan.status === 'CLOSED' ? 'closed' : 'active'}`}>
 				<strong>{loan.product.name}</strong><span className={styles.muted}>{loan.id}</span>
 				<span className={styles.smallNumber}>{formatMoney(loan.balance)}</span><span className={styles.muted}>Основной долг · {formatRate(loan.rate)}</span>
-			</Link>)}</div>}
-		<Link className={styles.link} to={`${ROUTES.credits}?tab=${widget.settings.status === 'CLOSED' ? 'closed' : 'active'}`}>Открыть кредиты ↗</Link>
+			</Link>)}</WidgetPreview>}
+		<Link className={styles.link} to={`${ROUTES.credits}?tab=${widget.settings.status === 'CLOSED' ? 'closed' : 'active'}`}>{widget.settings.status === 'CLOSED' ? 'Все закрытые кредиты' : 'Все действующие кредиты'} ↗</Link>
 	</WidgetState>;
 };
 
@@ -37,12 +37,12 @@ export const PaymentsWidget = ({ widget, onConfigure }: { widget: Extract<Dashbo
 		error={schedule.isError || (widget.settings.loanId !== null && loan.isError)} retry={() => { void schedule.refetch(); if (widget.settings.loanId) void loan.refetch(); }}>
 		<div className={styles.inline}><span className={styles.smallNumber}>{formatMoney(total)}</span><span className={styles.muted}>{formatDate(range.from)} — {formatDate(range.to)}</span></div>
 		<p className={styles.muted}>{widget.settings.loanId ? `По договору ${loan.currentData?.contractNumber ?? widget.settings.loanId}` : 'По всем кредитам'} · запланированные платежи</p>
-		{groups.length === 0 ? <p className={styles.empty}>На этот период платежей не запланировано.</p> : <div className={styles.paymentBars} data-compact={widget.w < 8}>
-			{groups.slice(0, widget.h >= 4 ? 7 : 3).map((group) => <Link className={styles.paymentBar} key={group.date} to={ROUTES.creditsCalendar}>
+		{groups.length === 0 ? <p className={styles.empty}>На этот период платежей не запланировано.</p> : <WidgetPreview rowHeight={38}>
+			{groups.map((group) => <Link className={styles.paymentBar} data-compact={widget.w < 8} key={group.date} to={ROUTES.creditsCalendar}>
 				<span>{formatDate(group.date)}</span><span className={styles.barTrack} aria-hidden="true"><i style={{ width: `${group.amount / ceiling * 100}%` }} /></span>
 				<strong>{formatMoney(group.amount)}</strong><small>Платежей: {group.count}</small>
 			</Link>)}
-		</div>}
+		</WidgetPreview>}
 		<Link className={styles.link} to={ROUTES.creditsCalendar}>Полный календарь платежей ↗</Link>
 	</WidgetState>;
 };

@@ -1,5 +1,7 @@
 import clsx from 'clsx';
-import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
+import { type CSSProperties, type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { Icon } from '../Icon';
 import styles from './Select.module.scss';
@@ -26,7 +28,7 @@ export interface SelectProps {
 	'aria-describedby'?: string;
 }
 
-/** Высота списка, при которой он ещё открывается вниз, иначе — вверх */
+/** Максимальная высота меню; при нехватке места список прокручивается. */
 const PANEL_SPACE = 260;
 
 /**
@@ -53,30 +55,82 @@ export const Select = ({
 	const rootRef = useRef<HTMLDivElement>(null);
 	const listRef = useRef<HTMLUListElement>(null);
 	const [open, setOpen] = useState(false);
-	const [openUp, setOpenUp] = useState(false);
+	const [position, setPosition] = useState<CSSProperties | null>(null);
 	const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
 	const [active, setActive] = useState(selectedIndex);
 	const selected = options.find((option) => option.value === value);
 
 	useEffect(() => {
 		if (!open) return undefined;
-		const close = (event: MouseEvent) => {
-			if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+		const close = (event: PointerEvent) => {
+			if (event.target instanceof Node && !rootRef.current?.contains(event.target)
+				&& !listRef.current?.contains(event.target)) setOpen(false);
 		};
-		document.addEventListener('mousedown', close);
-		return () => document.removeEventListener('mousedown', close);
+		document.addEventListener('pointerdown', close);
+		return () => document.removeEventListener('pointerdown', close);
 	}, [open]);
+
+	useLayoutEffect(() => {
+		const panel = listRef.current;
+		const root = rootRef.current;
+		if (!open || !panel || !root) return;
+		panel.showPopover();
+		const update = () => {
+			const rect = root.getBoundingClientRect();
+			const viewport = window.visualViewport;
+			const left = (viewport?.offsetLeft ?? 0) + 12;
+			const top = (viewport?.offsetTop ?? 0) + 12;
+			const right = left + (viewport?.width ?? window.innerWidth) - 24;
+			const bottom = top + (viewport?.height ?? window.innerHeight) - 24;
+			const width = Math.min(Math.max(rect.width, variant === 'field' ? 0 : 200), right - left);
+			const below = Math.max(0, bottom - rect.bottom - 6);
+			const above = Math.max(0, rect.top - top - 6);
+			const desired = Math.min(PANEL_SPACE, panel.scrollHeight + 2);
+			const up = below < desired && above > below;
+			setPosition({
+				left: Math.max(left, Math.min(rect.left, right - width)), width,
+				top: up ? undefined : Math.max(top, rect.bottom + 6),
+				bottom: up ? window.innerHeight - Math.min(bottom, rect.top - 6) : undefined,
+				maxHeight: Math.min(PANEL_SPACE, up ? above : below),
+			});
+		};
+		const scroll = (event: Event) => {
+			if (event.target instanceof Node && panel.contains(event.target)) return;
+			update();
+		};
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(root);
+		observer.observe(panel);
+		window.addEventListener('resize', update);
+		window.addEventListener('scroll', scroll, true);
+		window.visualViewport?.addEventListener('resize', update);
+		window.visualViewport?.addEventListener('scroll', update);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener('resize', update);
+			window.removeEventListener('scroll', scroll, true);
+			window.visualViewport?.removeEventListener('resize', update);
+			window.visualViewport?.removeEventListener('scroll', update);
+			panel.hidePopover();
+		};
+	}, [open, variant]);
 
 	useEffect(() => {
 		if (!open) return;
-		const node = listRef.current?.children[active];
-		if (node && 'scrollIntoView' in node) (node as HTMLElement).scrollIntoView({ block: 'nearest' });
+		const panel = listRef.current;
+		const node = panel?.children[active];
+		if (!panel || !(node instanceof HTMLElement)) return;
+		// Прокручиваем только список, не страницу и не модальное окно.
+		if (node.offsetTop < panel.scrollTop) panel.scrollTop = node.offsetTop;
+		else if (node.offsetTop + node.offsetHeight > panel.scrollTop + panel.clientHeight) {
+			panel.scrollTop = node.offsetTop + node.offsetHeight - panel.clientHeight;
+		}
 	}, [open, active]);
 
 	const show = () => {
 		if (disabled) return;
-		const rect = rootRef.current?.getBoundingClientRect();
-		setOpenUp(rect !== undefined && window.innerHeight - rect.bottom < PANEL_SPACE && rect.top > PANEL_SPACE);
+		setPosition(null);
 		setActive(selectedIndex);
 		setOpen(true);
 	};
@@ -157,15 +211,17 @@ export const Select = ({
 				<Icon name="chevron" size={18} className={styles.chevron} />
 			</button>
 			{name && <input type="hidden" name={name} value={value} />}
-			{open && (
+			{open && createPortal(
 				<ul
+					popover="manual"
+					style={{ ...position, visibility: position ? undefined : 'hidden' }}
 					ref={listRef}
 					id={listId}
 					role="listbox"
 					tabIndex={-1}
 					aria-label={ariaLabel}
 					aria-labelledby={ariaLabelledBy}
-					className={clsx(styles.panel, openUp && styles.up)}
+					className={styles.panel}
 					onMouseDown={(event) => event.preventDefault()}
 					onPointerUp={(event) => {
 						const item = (event.target as HTMLElement).closest<HTMLElement>('[role="option"]');
@@ -190,7 +246,8 @@ export const Select = ({
 							{option.value === value && <Icon name="check" size={16} />}
 						</li>
 					))}
-				</ul>
+				</ul>,
+				rootRef.current?.closest('[role="dialog"]') ?? document.body,
 			)}
 		</div>
 	);

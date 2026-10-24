@@ -10,6 +10,7 @@ import { Link } from 'react-router';
 
 import { calendarPayments } from '../../model/calendarPayments';
 import styles from '../Dashboard.module.scss';
+import { WidgetPreview } from './WidgetPreview';
 import { WidgetState } from './WidgetState';
 
 const freshness = { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true };
@@ -23,9 +24,9 @@ export const PlansWidget = ({ widget }: { widget: Extract<DashboardWidget, { typ
 	return <WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()} empty={plans.length === 0}
 		emptyText={limited ? 'В полученной выборке подходящих планов нет. Список ограничен 200 записями.' : widget.settings.filter === 'ideas' ? 'Идей без даты пока нет.' : 'Ближайших планов пока нет.'}>
 		{limited && <p className={styles.notice}>Получено до 200 планов. Список может быть неполным.</p>}
-		<div className={styles.planList}>{plans.slice(0, widget.h >= 5 ? 4 : 3).map((plan) => <Link to={ROUTES.planner} key={plan.id} className={styles.plan}>
+		<WidgetPreview rowHeight={66}>{plans.map((plan) => <Link to={ROUTES.planner} key={plan.id} className={styles.plan}>
 			<div><strong>{plan.title}</strong><span className={styles.muted}>{formatPeriod(plan)}</span></div><span>{formatMoney(plan.budgetRub)}</span>
-		</Link>)}</div>
+		</Link>)}</WidgetPreview>
 		<Link className={styles.link} to={ROUTES.planner}>Все планы ↗</Link>
 	</WidgetState>;
 };

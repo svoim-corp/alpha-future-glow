@@ -4,17 +4,19 @@ import { ROUTES } from '@shared/config';
 import { useDebouncedValue } from '@shared/lib/debounce';
 import { Alert, AsyncBoundary, Button, Icon } from '@shared/ui';
 import clsx from 'clsx';
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
 
 import { clamp, DEFAULT_AMOUNT, DEFAULT_TERM } from '../model/range';
-import { selectProduct, selectionAdjustment } from '../model/selection';
+import { selectionAdjustment,selectProduct } from '../model/selection';
 import { ConditionsDialog } from './ConditionsDialog';
 import { PaymentCalculator } from './PaymentCalculator';
 import styles from './ProductCatalog.module.scss';
 
 /** Каталог по макету catalog.html: баннер, цели-фильтры, карточки одной высоты, калькулятор, подсказка */
 export const ProductCatalog = () => {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const linkedProduct = searchParams.get('product');
 	const goalsQuery = useGetGoalsQuery();
 	const productsQuery = useGetProductsQuery();
 	const [goal, setGoal] = useState<string | null>(null);
@@ -28,23 +30,19 @@ export const ProductCatalog = () => {
 	const calcProduct = selectProduct(products, calcCode, goal);
 	const amount = calcProduct ? clamp(amountValue, calcProduct.amount) : amountValue;
 	const term = calcProduct?.term ? clamp(termValue, calcProduct.term) : null;
-	const matchParams = useMemo(() => ({ goal, amount, term: term ?? 0 }), [goal, amount, term]);
-	const debounced = useDebouncedValue(matchParams);
+	const debouncedGoal = useDebouncedValue(goal);
+	const debouncedAmount = useDebouncedValue(amount);
+	const debouncedTerm = useDebouncedValue(term);
 	const match = useMatchProductsQuery(
-		debounced.goal ? { goal: debounced.goal, amount: debounced.amount, term: debounced.term } : skipToken,
+		debouncedGoal ? { goal: debouncedGoal, amount: debouncedAmount, term: debouncedTerm ?? 0 } : skipToken,
 	);
-	const waiting = debounced !== matchParams || match.isFetching;
+	const waiting = goal !== debouncedGoal || amount !== debouncedAmount
+ || term !== debouncedTerm || match.isFetching;
 	const results = goal && !waiting && !match.isError ? match.currentData : undefined;
-	const fitting = new Set((results ?? []).filter((item) => item.fits).map((item) => item.code));
-	const openedProduct = products.find((item) => item.code === opened);
+	const openedCode = linkedProduct ?? opened;
 	const order = new Map((results ?? []).map((item, index) => [item.code, index]));
-	const shown = [...eligible].sort((a, b) => (order.get(a.code) ?? products.length) - (order.get(b.code) ?? products.length));
-	const fitNames = shown.filter((product) => fitting.has(product.code)).map((product) => product.name);
-	const fitLine = results
-		? (fitNames.length > 0
-			? `Подходят: ${fitNames.join(', ')}. Сумма и срок перейдут в форму заявки.`
-			: 'Под эту задачу, сумму и срок продуктов не нашлось. Измените сумму или срок в калькуляторе.')
-		: null;
+	const shown = [...eligible].sort((a, b) =>
+		(order.get(a.code) ?? products.length) - (order.get(b.code) ?? products.length));
 
 	return (
 		<div className={styles.root}>
@@ -93,15 +91,11 @@ export const ProductCatalog = () => {
 						Условия продуктов доступны ниже. Соответствие выбранным параметрам пока не подтверждено.
 					</Alert>
 				)}
-				{fitLine && <p className={styles.fitLine} role="status">{fitLine}</p>}
 				{shown.length === 0 && <Alert title="Для этой цели продуктов пока нет.">Выберите другую цель или «Все предложения».</Alert>}
 				<ul className={styles.grid} aria-label="Продукты">
 					{shown.map((product) => (
 						<li key={product.code}>
-							<ProductCard product={product} fits={fitting.has(product.code)}
-								reason={results?.find((item) => item.code === product.code)?.reason}
-								goalLabel={goalsQuery.data?.find((item) => item.code === (goal ?? product.goals[0]))?.name}
-								onSelect={setOpened} />
+							<ProductCard product={product} onSelect={setOpened} />
 						</li>
 					))}
 				</ul>
@@ -127,14 +121,17 @@ export const ProductCatalog = () => {
 				</div>
 				<Link to={ROUTES.support} className={styles.helpLink}>Задать вопрос <Icon name="arrow" size={14} /></Link>
 			</section>
-			{openedProduct && (
+			{openedCode && (
 				<ConditionsDialog
-					key={openedProduct.code}
-					productCode={openedProduct.code}
+					key={openedCode}
+					productCode={openedCode}
 					amount={amount}
 					term={term}
 					goal={goal}
-					onClose={() => setOpened(null)}
+					onClose={() => {
+						setOpened(null);
+						if (linkedProduct) { const next = new URLSearchParams(searchParams); next.delete('product'); setSearchParams(next, { replace: true }); }
+					}}
 				/>
 			)}
 		</div>

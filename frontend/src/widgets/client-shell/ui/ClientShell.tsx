@@ -1,12 +1,13 @@
 import { NotificationBell } from '@entities/notification';
 import { useGetMeQuery } from '@entities/session';
+import { GlobalSearch } from '@features/global-search';
 import { SignOutButton } from '@features/sign-out';
 import { ROUTES } from '@shared/config';
 import { useTheme } from '@shared/lib/theme';
 import { Icon, type IconName } from '@shared/ui';
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router';
+import { Link, NavLink, useLocation } from 'react-router';
 
 import styles from './ClientShell.module.scss';
 
@@ -15,15 +16,19 @@ interface NavEntry {
 	label: string;
 	icon: IconName;
 	end: boolean;
+	keywords?: readonly string[];
 }
 
 const NAV: NavEntry[] = [
-	{ to: ROUTES.home, label: 'Главная', icon: 'home', end: true },
-	{ to: ROUTES.planner, label: 'Планер', icon: 'calendar', end: false },
-	{ to: ROUTES.applications, label: 'Мои заявки', icon: 'applications', end: true },
-	{ to: ROUTES.credits, label: 'Мои кредиты', icon: 'loans', end: false },
-	{ to: ROUTES.products, label: 'Каталог', icon: 'catalog', end: false },
-	{ to: ROUTES.support, label: 'Поддержка', icon: 'support', end: false },
+	{ to: ROUTES.home, label: 'Главная', icon: 'home', end: true, keywords: ['обзор', 'виджеты'] },
+	{ to: ROUTES.planner, label: 'Планер', icon: 'calendar', end: false, keywords: ['план', 'идея'] },
+	{ to: ROUTES.applications, label: 'Мои заявки', icon: 'applications', end: true,
+		keywords: ['заявка', 'черновик', 'оформление'] },
+	{ to: ROUTES.credits, label: 'Мои кредиты', icon: 'loans', end: false,
+		keywords: ['кредит', 'договор', 'платёж', 'график'] },
+	{ to: ROUTES.products, label: 'Каталог', icon: 'catalog', end: false, keywords: ['продукт', 'финансирование'] },
+	{ to: ROUTES.support, label: 'Поддержка', icon: 'support', end: false,
+		keywords: ['вопрос', 'ответ', 'обращение', 'помощь'] },
 ];
 
 const initials = (fullName: string) => {
@@ -39,7 +44,7 @@ const shortName = (fullName: string) => {
 	return first && last ? `${first} ${last}` : fullName;
 };
 
-type Popover = 'profile' | 'search' | null;
+type Popover = 'profile' | null;
 
 export interface ClientShellProps {
 	/** Содержимое страницы (слот, чтобы оболочка не зависела от роутера) */
@@ -51,14 +56,11 @@ export const ClientShell = ({ children }: ClientShellProps) => {
 	const { data: user } = useGetMeQuery();
 	const { theme, toggle } = useTheme();
 	const { pathname } = useLocation();
-	const navigate = useNavigate();
 	const [menuPath, setMenuPath] = useState<string | null>(null);
 	const [popover, setPopover] = useState<Popover>(null);
-	const [query, setQuery] = useState('');
 	const topbarRef = useRef<HTMLElement>(null);
 	const open = menuPath === pathname;
 	const company = user?.company;
-	const found = NAV.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()));
 
 	useEffect(() => {
 		if (!open && !popover) {
@@ -87,11 +89,6 @@ export const ClientShell = ({ children }: ClientShellProps) => {
 
 	const toggleMenu = () => setMenuPath(open ? null : pathname);
 	const togglePopover = (name: Exclude<Popover, null>) => setPopover(popover === name ? null : name);
-	const goTo = (to: string) => {
-		setPopover(null);
-		setQuery('');
-		void navigate(to);
-	};
 
 	return (
 		<div className={styles.shell}>
@@ -139,39 +136,7 @@ export const ClientShell = ({ children }: ClientShellProps) => {
 			<div className={styles.workspace}>
 				<header className={styles.topbar} ref={topbarRef}>
 					<div className={styles.searchWrap}>
-						<label className={styles.search}>
-							<Icon name="search" />
-							<span className="visually-hidden">Поиск по кабинету</span>
-							<input
-								type="search"
-								placeholder="Поиск по кабинету"
-								value={query}
-								autoComplete="off"
-								onFocus={() => setPopover('search')}
-								onChange={(event) => setQuery(event.target.value)}
-								onKeyDown={(event) => {
-									if (event.key === 'Enter' && found[0]) {
-										goTo(found[0].to);
-									}
-								}}
-							/>
-						</label>
-						{popover === 'search' && (
-							<div className={clsx(styles.popover, styles.searchPanel)}>
-								<span className={styles.caption2}>РАЗДЕЛЫ КАБИНЕТА</span>
-								{found.length === 0 && <p className={styles.hint}>Ничего не найдено</p>}
-								<ul className={styles.results}>
-									{found.map((item) => (
-										<li key={item.to}>
-											<button type="button" onClick={() => goTo(item.to)}>
-												<Icon name={item.icon} size={18} />
-												{item.label}
-											</button>
-										</li>
-									))}
-								</ul>
-							</div>
-						)}
+						<GlobalSearch sections={NAV} onOpen={() => setPopover(null)} />
 					</div>
 					<div className={styles.actions}>
 						<NotificationBell />

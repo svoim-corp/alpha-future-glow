@@ -40,8 +40,10 @@ func (m *Module) Wire(p Ports) { m.ports = p }
 // Register — частые вопросы открыты без входа, как и каталог.
 func (m *Module) Register(r httpx.Routes) {
 	r.Public.GET("/support/faq", m.faq)
+	r.Public.GET("/support/faq/:id", m.getFAQ)
 	r.Client.POST("/support/tickets", m.createTicket)
 	r.Client.GET("/support/tickets", m.listTickets)
+	r.Client.GET("/support/tickets/:id", m.getTicket)
 }
 
 // ResetDemo удаляет обращения; частые вопросы — seed и остаются.

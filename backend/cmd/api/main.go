@@ -34,6 +34,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/scoring"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/search"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/servicing"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/support"
@@ -99,10 +100,11 @@ func run(log *slog.Logger) error {
 	})
 	identityMod.Wire(identity.Ports{Companies: companyMod.Companies()})
 	originationMod.Wire(origination.Ports{
-		Products:    catalogMod.Products(),
-		Companies:   companyMod.Companies(),
-		Authorities: companyMod.Authorities(),
-		Prelims:     scoringMod.Prelims(),
+		SearchLabels: catalogMod.SearchLabels,
+		Products:     catalogMod.Products(),
+		Companies:    companyMod.Companies(),
+		Authorities:  companyMod.Authorities(),
+		Prelims:      scoringMod.Prelims(),
 	})
 	scoringMod.Wire(scoring.Ports{
 		Applications: originationMod.Applications(),
@@ -132,8 +134,9 @@ func run(log *slog.Logger) error {
 	})
 	supportMod.Wire(support.Ports{Applications: originationMod.Applications()})
 	plannerMod.Wire(planner.Ports{
-		Matcher:  catalogMod.ProductMatcher(),
-		Notifier: notificationsMod.Notifier(),
+		SearchLabels: catalogMod.SearchLabels,
+		Matcher:      catalogMod.ProductMatcher(),
+		Notifier:     notificationsMod.Notifier(),
 	})
 	dashboardMod.Wire(dashboard.Ports{
 		Applications: originationMod.Applications(),
@@ -141,9 +144,14 @@ func run(log *slog.Logger) error {
 		Plans:        plannerMod.PlanOwners(),
 	})
 
+	searchMod := search.New(search.Ports{
+		Applications: originationMod.Search, Loans: servicingMod.Search, Plans: plannerMod.Search,
+		Products: catalogMod.Search, FAQ: supportMod.SearchFAQ, Tickets: supportMod.SearchTickets,
+	})
+
 	zones := []zone{
 		companyMod, identityMod, catalogMod, originationMod, integrationsMod, scoringMod,
-		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod, dashboardMod,
+		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod, dashboardMod, searchMod,
 	}
 	for _, z := range zones {
 		if err := z.Migrate(ctx); err != nil {

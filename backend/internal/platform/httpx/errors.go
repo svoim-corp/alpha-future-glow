@@ -15,6 +15,7 @@ const (
 	CodeBusinessRule      = "BUSINESS_RULE"
 	CodeUpstreamUnavail   = "UPSTREAM_UNAVAILABLE"
 	CodeInternal          = "INTERNAL"
+	CodeSearchUnavailable = "SEARCH_UNAVAILABLE"
 
 	// Настройка главной (docs/dashboard.md).
 	CodeDashboardSchema   = "DASHBOARD_SCHEMA_UNSUPPORTED"

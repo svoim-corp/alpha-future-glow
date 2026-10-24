@@ -6,7 +6,7 @@
 .attention { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 20px; color: var(--color-warning); background: var(--color-warning-soft); border-radius: 16px; font-size: 14px;
 	a { margin-left: auto; color: inherit; }
 }
-.widget { display: flex; flex-direction: column; min-width: 0; height: 100%; padding: 18px; box-sizing: border-box; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 22px; box-shadow: var(--shadow);
+.widget { display: flex; flex-direction: column; min-width: 0; height: 100%; container: dashboard-widget / size; padding: 18px; box-sizing: border-box; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 22px; box-shadow: var(--shadow);
 	&[data-kind='loan'] { background: var(--card-background); color: var(--color-on-primary); border-color: transparent;
 		.muted,.link { color: var(--color-on-primary); }
 		.widgetIcon { background: rgb(255 255 255 / 14%); color: inherit; }
@@ -19,7 +19,7 @@
 	h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.02em; }
 }
 .widgetIcon { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px; background: var(--color-raised); color: var(--color-text-muted); }
-.body { display: flex; flex-direction: column; flex: 1; gap: 6px; min-height: 0; min-width: 0; overflow: auto; scrollbar-width: thin;
+.body { display: flex; flex-direction: column; flex: 1; gap: 6px; min-height: 0; min-width: 0; overflow: clip;
 	p { margin: 0; }
 }
 .number { font-size: clamp(24px,2.3vw,32px); font-weight: 600; line-height: 1.2; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -39,7 +39,7 @@
 	span { height: 12px; border-radius: 6px; background: var(--color-border); }
 	span:first-child { height: 28px; width: 70%; }
 }
-.applications { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; overflow: auto; }
+.applications { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
 .applicationCard { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; gap: 8px; padding: 12px; background: var(--color-background); border-radius: 12px; color: var(--color-text); text-decoration: none;
 	strong { font-size: 13px; font-weight: 500; }
 	> span:not(:last-child) { font-size: 18px; font-weight: 600; }
@@ -87,6 +87,7 @@
 		&[data-kind='calendar'],&[data-kind='plans'] { min-height: 300px; }
 	}
 	.body { overflow: visible; }
+	.widget { container-type: inline-size; }
 	.applications { grid-template-columns: 1fr; }
 	.number { font-size: 30px; }
 	.toolbarActions { width: 100%; }
@@ -146,3 +147,104 @@ a.feedCard:hover,.feedButton:hover { border-color: var(--color-primary); }
 	.paymentBar { grid-template-columns: 80px minmax(16px,1fr) auto; gap: 4px 8px; }
 	.widget[data-kind='offers'],.widget[data-kind='planFunding'],.widget[data-kind='notifications'] { min-height: 280px; }
 }
+
+/* Содержимое адаптируется к карточке, а не к ширине всего окна. */
+.widgetHeading { flex-shrink: 0;
+	h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+.body { gap: 4px;
+	> * { flex-shrink: 0; min-width: 0; }
+	> .previewList { flex: 1 1 0; min-height: 0; }
+}
+.previewList {
+	display: grid;
+	gap: 8px;
+	align-content: start;
+	min-height: 0;
+	min-width: 0;
+
+	> * { min-height: 0; min-width: 0; box-sizing: border-box; }
+	strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.applicationCard { gap: 4px; padding: 10px; }
+	.portfolioCard { gap: 4px; padding: 10px; }
+	.feedCard, .feedButton { gap: 4px; padding: 10px; }
+	.inline { margin-top: 0; flex-wrap: nowrap; min-width: 0;
+		strong { flex: 1; min-width: 0; }
+	}
+	.muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.notice { padding: 4px 6px; }
+}
+.singleLine { margin: 0; font-size: 13px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.previewTitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; padding: 8px 0;
+	> div { min-width: 0; }
+	strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	> span { font-size: 13px; white-space: nowrap; }
+}
+.paymentBar { align-content: center; }
+.paymentBar[data-compact='true'] { grid-template-columns: 1fr auto;
+	.barTrack { display: none; }
+}
+.quickActions { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 6px;
+	a { min-width: 0; align-content: start; }
+	strong { font-size: 12px; line-height: 1.2; font-weight: 400; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+}
+.widget[data-kind='offers'] .previewList .feedCard > .muted:first-of-type { display: none; }
+.widget[data-kind='funding'] .fundingTitle { font-size: 20px; line-height: 1.2; }
+.widget[data-kind='funding'] .fundingProducts { gap: 4px;
+	p { flex-wrap: nowrap; font-size: 12px;
+		strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		span { flex-shrink: 0; }
+	}
+}
+.calendar { flex: 1; min-height: 0; grid-auto-rows: minmax(0,1fr);
+	button { height: auto; min-height: 18px; }
+}
+.fundingMatch { padding: 10px; gap: 4px;
+	strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	p { font-size: 12px; line-height: 1.4; }
+}
+.fundingReason { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+@container dashboard-widget (height < 300px) {
+	.body > .muted, .notice { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.widgetHeading { margin-bottom: 8px; }
+	.previewList .clamped { -webkit-line-clamp: 1; }
+	.fundingReason { display: none; }
+}
+@container dashboard-widget (height < 200px) {
+	.widgetHeading { margin-bottom: 6px; }
+	.body { gap: 4px; }
+	.number { font-size: clamp(24px, 8cqi, 30px); }
+	.muted, .singleLine { font-size: 12px; line-height: 1.3; }
+	.link { font-size: 12px; line-height: 1.3; }
+	.inline { gap: 4px; }
+	.fundingProducts { display: none; }
+	.body > .muted { -webkit-line-clamp: 1; }
+}
+@container dashboard-widget (height < 140px) {
+	.number { font-size: 26px; }
+	.empty { font-size: 12px; line-height: 1.3; }
+	.quickActions a > span { width: 24px; height: 24px; }
+	.quickActions a { gap: 4px; }
+}
+@media(max-width:600px) {
+	.previewList { flex: none; min-height: 0; }
+	.body > .previewList { flex: none; }
+	.calendar { flex: none; min-height: 164px; }
+	.widgetHeading h3 { white-space: normal; }
+}
+
+.widget[data-kind='planFunding'] .fundingMatch .muted { font-size: 12px; }
+.widget[data-kind='application'] .body > .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.widget[data-kind='funding'] .body > .muted { font-size: 12px; line-height: 1.3; }
+.previewList .clamped { -webkit-line-clamp: 1; }
+@container dashboard-widget (width < 280px) {
+	.paymentBar { grid-template-columns: 1fr auto; .barTrack { display: none; } }
+	.plan { grid-template-columns: minmax(0,1fr); gap: 2px; padding: 4px 0;
+		strong { margin-bottom: 0; }
+	}
+}
+
+.widget[data-kind='planFunding'] .body > .muted { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.widget[data-kind='calendar'] .notice { padding: 4px 6px; line-height: 1.3; }

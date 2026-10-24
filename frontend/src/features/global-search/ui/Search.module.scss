@@ -1,0 +1,36 @@
+.root { position: relative; width: min(100%, 560px); min-width: 0; }
+.input { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 14px;
+	color: var(--color-text-muted); border: 1px solid var(--color-border); border-radius: var(--radius-control);
+	background: var(--color-background);
+	&:focus-within { border-color: var(--color-primary); }
+	input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent;
+		color: var(--color-text); font: inherit; font-size: 14px; }
+}
+.panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30;
+	width: min(680px, calc(100vw - 48px)); max-height: min(640px, 75dvh); overflow: auto;
+	padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-card);
+	background: var(--color-surface); box-shadow: var(--shadow); }
+.caption { margin: 12px 10px 6px; font-size: 12px; font-weight: 600; color: var(--color-text-muted); }
+.option { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; width: 100%;
+	box-sizing: border-box; padding: 12px; text-align: left; font: inherit; border: 0; border-radius: var(--radius-control);
+	color: var(--color-text); background: transparent; cursor: pointer; text-decoration: none;
+	&:hover, &[aria-selected='true'] { background: var(--color-primary-soft); }
+	strong { font-size: 14px; font-weight: 600; }
+	small { font-size: 12px; line-height: 1.5; color: var(--color-text-muted);
+		display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+}
+.hint { margin: 12px; color: var(--color-text-muted); font-size: 13px; line-height: 1.5; }
+.footer { padding: 8px; border-top: 1px solid var(--color-border); a { color: var(--color-primary-text); } }
+.results { display: grid; gap: 24px; }
+.group { padding: 20px; border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-card);
+	h2 { margin: 0 0 14px; font-size: 18px; }
+}
+.list { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+	> div { flex: 1; min-width: 180px; }
+}
+@media (max-width: 600px) {
+	.root { flex: 1; }
+	.panel { position: fixed; left: 12px; right: 12px; top: 76px; width: auto; max-height: calc(100dvh - 100px); }
+}

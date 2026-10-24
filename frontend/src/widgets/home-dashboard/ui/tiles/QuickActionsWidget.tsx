@@ -13,5 +13,5 @@ const actions: Record<QuickAction, { title: string; to: string; icon: IconName }
 	support: { title: 'Написать банку', to: ROUTES.support, icon: 'support' },
 };
 export const QuickActionsWidget = ({ items }: { items: QuickAction[] }) => <div className={styles.quickActions}>
-	{items.map((id) => <Link to={actions[id].to} key={id}><span><Icon name={actions[id].icon} size={20} /></span>{actions[id].title}</Link>)}
+	{items.map((id) => <Link to={actions[id].to} key={id} aria-label={actions[id].title} title={actions[id].title}><span><Icon name={actions[id].icon} size={20} /></span><strong>{actions[id].title}</strong></Link>)}
 </div>;

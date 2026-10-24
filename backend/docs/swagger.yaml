@@ -1461,6 +1461,43 @@ definitions:
         example: 21.5
         type: number
     type: object
+  search.groupDTO:
+    properties:
+      hasMore:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/search.itemDTO'
+        type: array
+      nextCursor:
+        type: string
+      type:
+        type: string
+      unavailable:
+        type: boolean
+    type: object
+  search.itemDTO:
+    properties:
+      id:
+        type: string
+      snippet:
+        type: string
+      state:
+        type: string
+      step:
+        type: string
+      title:
+        type: string
+    type: object
+  search.responseDTO:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/search.groupDTO'
+        type: array
+      query:
+        type: string
+    type: object
   servicing.accountRefDTO:
     properties:
       id:
@@ -4982,6 +5019,35 @@ paths:
       summary: Удалить план
       tags:
       - planner
+    get:
+      parameters:
+      - description: ID плана
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/planner.planDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: План по ID, включая архив
+      tags:
+      - planner
     patch:
       consumes:
       - application/json
@@ -5130,6 +5196,53 @@ paths:
       summary: Подбор продукта по задаче
       tags:
       - catalog
+  /search:
+    get:
+      parameters:
+      - description: Запрос, 2–120 символов
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Категории через запятую
+        in: query
+        name: types
+        type: string
+      - default: 3
+        description: Результатов на категорию, 1–20
+        in: query
+        name: limitPerType
+        type: integer
+      - description: Продолжение одной категории
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/search.responseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Общий поиск клиентского кабинета
+      tags:
+      - search
   /support/faq:
     get:
       description: Вопросы по шагу пути клиента. Без step — по всем шагам.
@@ -5158,6 +5271,28 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Частые вопросы
+      tags:
+      - support
+  /support/faq/{id}:
+    get:
+      parameters:
+      - description: ID вопроса
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/support.faqDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Частый вопрос по ID
       tags:
       - support
   /support/tickets:
@@ -5210,6 +5345,36 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Новое обращение в поддержку
+      tags:
+      - support
+  /support/tickets/{id}:
+    get:
+      parameters:
+      - description: ID обращения
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/support.ticketDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Обращение текущего пользователя по ID
       tags:
       - support
 swagger: "2.0"

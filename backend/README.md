@@ -104,6 +104,7 @@ internal/
   notifications/        уведомления в кабинете (../docs/notifications.md)
   company/              таблица компаний (id ↔ ИНН) и заглушки Profile/Authorities
   dashboard/            настройка главной клиента (../docs/dashboard.md)
+  search/               общий поиск через провайдеры доменных зон (../docs/search.md)
   integrations, scoring, underwriting, planner             зоны разработчика B
 ```
 

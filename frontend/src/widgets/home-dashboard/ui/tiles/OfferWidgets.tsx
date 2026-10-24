@@ -7,6 +7,7 @@ import { Badge, Button } from '@shared/ui';
 import { Link } from 'react-router';
 
 import styles from '../Dashboard.module.scss';
+import { WidgetPreview } from './WidgetPreview';
 import { WidgetState } from './WidgetState';
 
 const freshness = { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true };
@@ -14,11 +15,11 @@ export const DraftsWidget = ({ widget }: { widget: Extract<DashboardWidget, { ty
 	const query = useGetAllMyApplicationsQuery(undefined, freshness);
 	const items = (query.currentData ?? []).filter((item) => item.status === 'DRAFT');
 	return <WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()}>
-		{items.length === 0 ? <p className={styles.empty}>Незавершённых заявок нет.</p> : <div className={styles.feed}>
-			{items.slice(0, widget.w >= 6 ? 3 : 2).map((item) => <Link key={item.id} className={styles.feedCard} to={applicationHref(item)}>
+		{items.length === 0 ? <p className={styles.empty}>Незавершённых заявок нет.</p> : <WidgetPreview rowHeight={94} maxColumns={3} minColumnWidth={210}>
+			{items.map((item) => <Link key={item.id} className={styles.feedCard} to={applicationHref(item)}>
 				<strong>{item.product.name}</strong><span>{formatMoney(item.amount)} · {formatTerm(item.term)}</span><small className={styles.muted}>Изменено {formatDateTime(item.updatedAt)}</small>
 			</Link>)}
-		</div>}
+		</WidgetPreview>}
 		<Link className={styles.link} to={items[0] ? applicationHref(items[0]) : ROUTES.products}>{items[0] ? 'Продолжить последний черновик' : 'Подобрать продукт'} ↗</Link>
 	</WidgetState>;
 };
@@ -29,8 +30,8 @@ export const OffersWidget = ({ widget }: { widget: Extract<DashboardWidget, { ty
 	const today = new Date().toISOString().slice(0, 10);
 	const entries = (query.currentData ?? []).filter((entry) => widget.settings.filter === 'all' || !isExpiredOffer(entry, today));
 	return <WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()}>
-		{entries.length === 0 ? <p className={styles.empty}>Подходящих предложений пока нет.</p> : <div className={styles.feed}>
-			{entries.slice(0, widget.w >= 6 ? 3 : 2).map((entry) => {
+		{entries.length === 0 ? <p className={styles.empty}>Подходящих предложений пока нет.</p> : <WidgetPreview rowHeight={184} maxColumns={3} minColumnWidth={220}>
+			{entries.map((entry) => {
 				const { application, offer } = entry;
 				const signing = application.status === 'SIGNING';
 				const expired = isExpiredOffer(entry, today);
@@ -46,7 +47,7 @@ export const OffersWidget = ({ widget }: { widget: Extract<DashboardWidget, { ty
 					<Link className={styles.link} to={signing ? paths.applicationSign(application.id) : applicationHref(application)}>{signing ? 'Продолжить оформление' : expired ? 'Открыть заявку' : 'Рассмотреть условия'} ↗</Link>
 				</div>;
 			})}
-		</div>}
+		</WidgetPreview>}
 		<Link className={styles.link} to={`${ROUTES.credits}?tab=approved`}>Все предложения ↗</Link>
 	</WidgetState>;
 };

@@ -66,10 +66,15 @@ const ScopedDashboard = ({ scope }: { scope: DashboardScope }) => {
 		</Button>} />}
 		<TileGrid items={editor.config.widgets} editing={editor.editing} disabled={saving}
 			label={(widget) => DASHBOARD_DEFINITIONS[widget.type].title}
+			resizeSizes={(widget) => DASHBOARD_DEFINITIONS[widget.type].sizes}
+			onResize={(rect) => {
+				const widget = editor.config.widgets.find((entry) => entry.id === rect.id);
+				if (widget) dispatch(updateWidget({ ...widget, ...rect }));
+			}}
 			onMove={(id, x, y) => dispatch(moveWidget({ id, x, y }))}
 			onReorder={(id, index) => dispatch(reorderWidget({ id, index }))}
 			onConfigure={configure} onRemove={(id) => dispatch(removeWidget(id))}
-			render={(widget) => <section className={styles.widget} data-kind={widget.type} data-height={widget.h} aria-label={DASHBOARD_DEFINITIONS[widget.type].title}>
+			render={(widget) => <section className={styles.widget} data-kind={widget.type} data-height={widget.h} data-width={widget.w} aria-label={DASHBOARD_DEFINITIONS[widget.type].title}>
 				<div className={styles.widgetHeading}><span className={styles.widgetIcon}><Icon name={icons[widget.type]} size={18} /></span><h3>{DASHBOARD_DEFINITIONS[widget.type].title}</h3></div>
 				<div className={styles.body}><WidgetContent widget={widget} onConfigure={() => configure(widget.id)} /></div>
 			</section>} />

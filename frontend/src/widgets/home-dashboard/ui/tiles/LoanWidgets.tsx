@@ -24,13 +24,13 @@ export const LoanWidget = ({ widget, onConfigure }: { widget: Extract<DashboardW
 	const next = overview?.next;
 	return <WidgetState loading={query.isLoading || (query.isFetching && !query.currentData)} error={query.isError} retry={() => void query.refetch()}>
 		{loan && <>
-			<p className={styles.muted}>{loan.product?.name ?? 'Кредит'} · {loan.contractNumber}{closed ? ' · закрыт' : ''}</p>
-			{Boolean(overview?.overdue) && <p className={styles.muted}>Есть просроченные платежи. Проверьте график.</p>}
+			<p className={styles.singleLine} title={`${loan.product?.name ?? 'Кредит'} · ${loan.contractNumber}`}>{loan.product?.name ?? 'Кредит'} · {loan.contractNumber}{closed ? ' · закрыт' : ''}</p>
+			{Boolean(overview?.overdue) && <p className={styles.muted}>Есть просрочка — проверьте график.</p>}
 			<div><p className={styles.muted}>Остаток основного долга</p><div className={styles.number}>{loan.balance === undefined ? '—' : formatMoney(loan.balance)}</div></div>
 			<div className={styles.inline}><span className={styles.muted}>{formatRate(loan.terms.rate)}</span><span className={styles.muted}>{formatTerm(loan.terms.term)}</span></div>
 			{widget.h >= 4 && <p className={styles.muted}>{closed ? 'Кредит закрыт' : next ? `${formatDate(next.date)} · ${formatMoney(paymentAmounts(next).remaining)}` : 'Будущих платежей нет. Проверьте полный график.'}</p>}
-			{percent !== null && <><div className={styles.progress} role="progressbar" aria-label="Погашено основного долга" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${percent}%` }} /></div><p className={styles.muted}>Погашено {percent}% основного долга</p></>}
-			<Link className={styles.link} to={creditHref(loanId, closed)}>Детали кредита ↗</Link>
+			{percent !== null && <div className={styles.progress} role="progressbar" aria-label="Погашено основного долга" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${percent}%` }} /></div>}
+			<Link className={styles.link} to={creditHref(loanId, closed)}>Детали{percent !== null ? ` · погашено ${percent}%` : ' кредита'} ↗</Link>
 		</>}
 	</WidgetState>;
 };

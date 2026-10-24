@@ -8,7 +8,9 @@ import { type MonthRef, shiftMonth } from '@shared/lib/calendar';
 import { formatMoney } from '@shared/lib/format';
 import { AsyncBoundary, Badge, Icon, Metrics, panelId, SelectField, tabId, Tabs } from '@shared/ui';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 
+import { LinkedPlan } from './LinkedPlan';
 import { calendarDateLabel, PlanCalendar } from './PlanCalendar';
 import { PlanDetails } from './PlanDetails';
 import styles from './PlannerBoard.module.scss';
@@ -18,6 +20,8 @@ const states: PlanState[] = ['ACTIVE', 'PAUSED', 'DONE'];
 const monthOf = (date: string): MonthRef => ({ year: Number(date.slice(0, 4)), month: Number(date.slice(5, 7)) - 1 });
 
 export const PlannerBoard = () => {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const linkedPlan = searchParams.get('plan');
 	const [filter, setFilter] = useState<PlanState | ''>('');
 	const [tab, setTab] = useState<Tab>('calendar');
 	const queryState = tab === 'archive' ? 'ARCHIVED' : filter || undefined;
@@ -107,7 +111,9 @@ export const PlannerBoard = () => {
 					) : cards(tab === 'ideas' ? ideas : plans)}
 				</div>
 			</AsyncBoundary>
-			{details}
+			{linkedPlan ? <LinkedPlan key={linkedPlan} id={linkedPlan} today={today} onClose={() => {
+				const next = new URLSearchParams(searchParams); next.delete('plan'); setSearchParams(next, { replace: true });
+			}} /> : details}
 		</div>
 	);
 };

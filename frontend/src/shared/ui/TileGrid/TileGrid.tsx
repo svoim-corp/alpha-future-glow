@@ -1,8 +1,9 @@
 import { type CSSProperties, type DragEvent, type ReactNode, useId, useRef, useState, useSyncExternalStore } from 'react';
 
-import { orderedGrid, projectGrid, type GridItem } from '../../lib/grid';
+import { arrangeGrid, orderedGrid, projectGrid, type GridItem } from '../../lib/grid';
 import { Icon } from '../Icon';
 import styles from './TileGrid.module.scss';
+import { TileResizeHandles } from './TileResizeHandles';
 
 const subscribe = (notify: () => void) => {
 	const queries = [window.matchMedia('(max-width:1250px)'), window.matchMedia('(max-width:600px)')];
@@ -13,29 +14,43 @@ const breakpoint = (): 1 | 6 | 12 => window.matchMedia('(max-width:600px)').matc
 interface TileGridProps<T extends GridItem> {
 	items: readonly T[]; editing: boolean; disabled?: boolean;
 	label: (item: T) => string; render: (item: T) => ReactNode;
+	resizeSizes?: (item: T) => readonly (readonly [number, number])[];
+	onResize?: (item: GridItem) => void;
 	onMove: (id: string, x: number, y: number) => void;
 	onReorder: (id: string, index: number) => void;
 	onConfigure: (id: string) => void; onRemove: (id: string) => void;
 }
-export const TileGrid = <T extends GridItem>({ items, editing, disabled = false, label, render, onMove, onReorder, onConfigure, onRemove }: TileGridProps<T>) => {
+export const TileGrid = <T extends GridItem>({ items, editing, disabled = false, label, render, onMove, onReorder, onConfigure, onRemove, resizeSizes, onResize }: TileGridProps<T>) => {
 	const columns = useSyncExternalStore(subscribe, breakpoint, () => 12 as const);
 	const instructionsId = useId();
 	const board = useRef<HTMLDivElement>(null);
 	const dragging = useRef<string | null>(null);
+	const dragOffset = useRef({ x: 0, y: 0 });
 	const [moving, setMoving] = useState<string | null>(null);
 	const [preview, setPreview] = useState<GridItem | null>(null);
+	const [resizing, setResizing] = useState<GridItem | null>(null);
+	const live = editing && !disabled && columns === 12 && resizing;
+	const anchor = live ? items.find((item) => item.id === live.id) : undefined;
 	const sequence = orderedGrid(items);
-	const projection = columns === 1 ? sequence : projectGrid(sequence, columns);
-	const clearDrag = () => { dragging.current = null; setMoving(null); setPreview(null); };
+	const arranged = anchor && live ? arrangeGrid(items, { ...anchor, ...live }) : null;
+	// Во время жеста не переставляем DOM-узлы: ручка должна удерживать pointer capture.
+	const projection = arranged ? sequence.map((item) => arranged.find((entry) => entry.id === item.id) ?? item)
+		: columns === 1 ? sequence : projectGrid(sequence, columns);
+	const clearDrag = () => {
+		dragging.current = null; dragOffset.current = { x: 0, y: 0 }; setMoving(null); setPreview(null);
+	};
 	const position = (event: DragEvent<HTMLDivElement>) => {
 		const item = items.find((entry) => entry.id === dragging.current);
 		const rect = board.current?.getBoundingClientRect();
 		if (!item || !rect) return null;
-		return { ...item, x: Math.max(0, Math.min(12 - item.w, Math.floor((event.clientX - rect.left) / ((rect.width + 16) / 12)))),
-			y: Math.max(0, Math.min(200, Math.floor((event.clientY - rect.top) / 80))) };
+		return { ...item,
+			x: Math.max(0, Math.min(12 - item.w,
+				Math.round((event.clientX - rect.left - dragOffset.current.x) / ((rect.width + 16) / 12)))),
+			y: Math.max(0, Math.min(200, Math.round((event.clientY - rect.top - dragOffset.current.y) / 80))),
+		};
 	};
 	return <>
-		{editing && <p id={instructionsId} className={styles.instructions}>Перетащите виджет за ручку. На ручке доступны клавиши ↑ и ↓. Размер и порядок можно изменить в настройках виджета.</p>}
+		{editing && <p id={instructionsId} className={styles.instructions}>Перетащите виджет за ручку. На ручке доступны клавиши ↑ и ↓. Размер меняется ручками по сторонам (на компьютере), стрелками на них или в настройках. Escape отменяет растягивание.</p>}
 		<div ref={board} className={styles.grid} data-columns={columns} data-editing={editing} role="list" aria-label="Виджеты главной"
 			onDragOver={(event) => { if (editing && !disabled && dragging.current) { event.preventDefault(); if (columns === 12) setPreview(position(event)); } }}
 			onDrop={(event) => {
@@ -54,7 +69,7 @@ export const TileGrid = <T extends GridItem>({ items, editing, disabled = false,
 				const original = items.find((entry) => entry.id === item.id) ?? item;
 				const title = label(original); const index = sequence.findIndex((entry) => entry.id === item.id);
 				const placement: CSSProperties = { gridColumn: `${item.x + 1} / span ${item.w}`, gridRow: `${item.y + 1} / span ${item.h}` };
-				return <div key={item.id} role="listitem" data-grid-id={item.id} data-moving={moving === item.id} data-editing={editing} className={styles.tile} style={placement}>
+				return <div key={item.id} role="listitem" data-grid-id={item.id} data-resizing={Boolean(live && live.id === item.id)} data-moving={moving === item.id} data-editing={editing} className={styles.tile} style={placement}>
 					{editing && <div className={styles.tools} role="group" aria-label={`Настройка: ${title}`}>
 						<button type="button" draggable={!disabled && columns !== 1} disabled={disabled}
 							aria-label={`Перетащить: ${title}`} aria-describedby={instructionsId}
@@ -64,12 +79,21 @@ export const TileGrid = <T extends GridItem>({ items, editing, disabled = false,
 								onReorder(item.id, Math.max(0, Math.min(sequence.length - 1, index + (event.key === 'ArrowUp' ? -1 : 1))));
 							}}
 							onDragStart={(event) => { dragging.current = item.id; setMoving(item.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', item.id);
-								const tile = event.currentTarget.closest<HTMLElement>('[data-grid-id]'); if (tile) event.dataTransfer.setDragImage(tile, 24, 12); }}
+								const tile = event.currentTarget.closest<HTMLElement>('[data-grid-id]');
+								if (tile) {
+									const rect = tile.getBoundingClientRect();
+									dragOffset.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+									event.dataTransfer.setDragImage(tile, dragOffset.current.x, dragOffset.current.y);
+								} }}
 							onDragEnd={clearDrag}>⠿</button>
 						<button type="button" disabled={disabled} aria-label={`Настроить: ${title}`} onClick={() => onConfigure(item.id)}><Icon name="settings" size={16} /></button>
 						<button type="button" disabled={disabled} aria-label={`Убрать: ${title}`} onClick={() => onRemove(item.id)}><Icon name="close" size={16} /></button>
 					</div>}
-					{render(original)}
+					{render(live && live.id === original.id ? { ...original, ...live } : original)}
+					{editing && columns === 12 && onResize && resizeSizes && <TileResizeHandles item={original}
+						title={title} disabled={disabled} sizes={resizeSizes(original)}
+						columnStep={() => ((board.current?.getBoundingClientRect().width ?? 12) + 16) / 12}
+						onPreview={setResizing} onCommit={onResize} />}
 				</div>;
 			})}
 			{editing && preview && columns === 12 && <div className={styles.preview} aria-hidden="true" style={{ gridColumn: `${preview.x + 1} / span ${preview.w}`, gridRow: `${preview.y + 1} / span ${preview.h}` }} />}

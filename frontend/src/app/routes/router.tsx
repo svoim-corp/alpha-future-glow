@@ -11,6 +11,7 @@ import { LoginPage } from '@pages/login';
 import { NotFoundPage } from '@pages/not-found';
 import { PlannerPage } from '@pages/planner';
 import { ProductsPage } from '@pages/products';
+import { SearchPage } from '@pages/search';
 import { SupportPage } from '@pages/support';
 import { ROUTES } from '@shared/config';
 import { createBrowserRouter, type RouteObject } from 'react-router';
@@ -28,6 +29,7 @@ export const routes: RouteObject[] = [
 				element: <ClientLayout />,
 				children: [
 					{ path: ROUTES.home, element: <HomePage /> },
+					{ path: ROUTES.search, element: <SearchPage /> },
 					{ path: ROUTES.products, element: <ProductsPage /> },
 					{ path: ROUTES.applicationEdit, element: <ApplicationEditPage /> },
 					{ path: ROUTES.application, element: <ApplicationPage /> },

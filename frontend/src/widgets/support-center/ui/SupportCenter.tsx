@@ -1,4 +1,4 @@
-import { FAQ_STEPS, FaqList, type FaqStep, TicketList } from '@entities/support';
+import { FAQ_STEPS, FaqList, type FaqStep, SupportDetails, TicketList } from '@entities/support';
 import { CreateTicket } from '@features/create-ticket';
 import { ROUTES } from '@shared/config';
 import { Icon, SearchField, SelectFilter } from '@shared/ui';
@@ -9,7 +9,7 @@ import styles from './SupportCenter.module.scss';
 
 /** Центр поддержки по макету support.html: частые вопросы с поиском слева, обращения к специалисту справа */
 export const SupportCenter = () => {
-	const [params] = useSearchParams();
+	const [params, setParams] = useSearchParams();
 	const [step, setStep] = useState<FaqStep>('APPLICATION');
 	const [query, setQuery] = useState('');
 	const applicationId = params.get('applicationId') ?? undefined;
@@ -64,6 +64,11 @@ export const SupportCenter = () => {
 					<TicketList />
 				</div>
 			</section>
+			{params.get('ticket') ? <SupportDetails kind="ticket" id={params.get('ticket') ?? ''} onClose={() => {
+				const next = new URLSearchParams(params); next.delete('ticket'); next.delete('faq'); setParams(next, { replace: true });
+			}} /> : params.get('faq') ? <SupportDetails kind="faq" id={params.get('faq') ?? ''} onClose={() => {
+				const next = new URLSearchParams(params); next.delete('faq'); setParams(next, { replace: true });
+			}} /> : null}
 		</div>
 	);
 };

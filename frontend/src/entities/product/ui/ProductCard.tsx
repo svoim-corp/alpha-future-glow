@@ -1,5 +1,5 @@
 import { formatCompactMoney, formatCompactMoneyRange, formatRateRange, formatTerm } from '@shared/lib/format';
-import { AsyncBoundary, Badge, Icon, type IconName, Modal } from '@shared/ui';
+import { AsyncBoundary, Icon, type IconName, Modal } from '@shared/ui';
 import { useId, useState } from 'react';
 
 import { useGetProductQuery } from '../api/productApi';
@@ -8,10 +8,6 @@ import styles from './ProductCard.module.scss';
 
 interface ProductCardProps {
 	product: ProductSummary;
-	/** Подходит под задачу из подбора */
-	fits: boolean;
-	reason?: string;
-	goalLabel?: string;
 	onSelect: (code: string) => void;
 }
 
@@ -23,7 +19,7 @@ const ICONS: Record<string, IconName> = {
 };
 
 /** Карточка продукта по макету catalog.html: все карточки в ряду одной высоты, кнопка — внизу */
-export const ProductCard = ({ product, fits, reason, goalLabel, onSelect }: ProductCardProps) => {
+export const ProductCard = ({ product, onSelect }: ProductCardProps) => {
 	const titleId = useId();
 	const [requirementsOpen, setRequirementsOpen] = useState(false);
 	const details = useGetProductQuery(product.code, { skip: !requirementsOpen });
@@ -34,10 +30,6 @@ export const ProductCard = ({ product, fits, reason, goalLabel, onSelect }: Prod
 		<article className={styles.card} aria-labelledby={titleId}>
 			<div className={styles.top}>
 				<span className={styles.icon}><Icon name={ICONS[product.code] ?? 'catalog'} size={20} /></span>
-				<div className={styles.tags}>
-					{goalLabel && <span className={styles.label}>{goalLabel}</span>}
-					{fits && <Badge tone="success">Подходит под задачу</Badge>}
-				</div>
 			</div>
 			<h3 id={titleId} className={styles.name}>{product.name}</h3>
 			<p className={styles.text}>{product.shortText}</p>
@@ -57,7 +49,6 @@ export const ProductCard = ({ product, fits, reason, goalLabel, onSelect }: Prod
 					<dd>{formatRateRange(product.rate.min, product.rate.max)}</dd>
 				</div>
 			</dl>
-			{reason && <p className={styles.reason}>{reason}</p>}
 			<button type="button" className={styles.requirementsTrigger}
 				aria-haspopup="dialog" aria-label={`Что понадобится: ${product.name}`}
 				onClick={() => setRequirementsOpen(true)}>

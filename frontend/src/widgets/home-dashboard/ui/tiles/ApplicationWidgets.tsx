@@ -7,6 +7,7 @@ import { Button } from '@shared/ui';
 import { Link } from 'react-router';
 
 import styles from '../Dashboard.module.scss';
+import { WidgetPreview } from './WidgetPreview';
 import { WidgetState } from './WidgetState';
 
 const freshness = { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true };
@@ -15,9 +16,9 @@ export const ApplicationsWidget = ({ widget }: { widget: Extract<DashboardWidget
 	const items = (query.data ?? []).filter((item) => widget.settings.filter !== 'attention' || item.actionRequired);
 	return <WidgetState loading={query.isLoading || (query.isFetching && !query.currentData)} error={query.isError} retry={() => void query.refetch()} empty={items.length === 0}
 		emptyText={widget.settings.filter === 'attention' ? 'Заявок, требующих действия, нет.' : 'Заявок пока нет. Начните с каталога продуктов.'}>
-		<div className={styles.applications}>{items.slice(0, widget.h >= 4 ? 4 : 3).map((application) => <Link key={application.id} to={applicationHref(application)} className={styles.applicationCard}>
+		<WidgetPreview rowHeight={106} maxColumns={3} minColumnWidth={180}>{items.map((application) => <Link key={application.id} to={applicationHref(application)} className={styles.applicationCard}>
 			<strong>{application.product.name}</strong><span>{formatMoney(application.amount)}</span><StatusBadge status={application.status} />
-		</Link>)}</div>
+		</Link>)}</WidgetPreview>
 		<div className={styles.inline}><span className={styles.muted}>Заявок: {items.length}</span><Link className={styles.link} to={ROUTES.applications}>Все заявки ↗</Link></div>
 	</WidgetState>;
 };

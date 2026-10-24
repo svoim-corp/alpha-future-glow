@@ -84,18 +84,17 @@
 }
 
 .panel {
-	position: absolute;
-	top: calc(100% + 6px);
-	left: 0;
-	z-index: 30;
+	position: fixed;
+	inset: auto;
+	z-index: 2100;
 	box-sizing: border-box;
-	width: max-content;
-	min-width: 100%;
-	max-width: min(360px, calc(100vw - 32px));
+	min-width: 0;
 	max-height: 260px;
 	margin: 0;
 	padding: 6px;
 	overflow-y: auto;
+	overscroll-behavior: contain;
+	font-family: inherit;
 	font-size: 13px;
 	color: var(--color-text);
 	list-style: none;
@@ -103,15 +102,6 @@
 	border: 1px solid var(--color-border);
 	border-radius: 18px;
 	box-shadow: 0 12px 40px rgb(0 0 0 / 12%);
-}
-
-.up {
-	top: auto;
-	bottom: calc(100% + 6px);
-}
-
-.filter .panel {
-	min-width: 200px;
 }
 
 .option {

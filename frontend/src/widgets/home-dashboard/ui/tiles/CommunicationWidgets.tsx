@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router';
 
 import { notificationRoute } from '../../model/notificationRoute';
 import styles from '../Dashboard.module.scss';
+import { WidgetPreview } from './WidgetPreview';
 import { WidgetState } from './WidgetState';
 
 const freshness = { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true };
@@ -42,9 +43,9 @@ export const NotificationsWidget = ({ widget }: { widget: Extract<DashboardWidge
 		<p className={styles.muted}>Непрочитанных: {query.currentData?.unreadCount ?? '—'}</p>
 		{error && <Alert tone="danger" title={error}>{pendingRoute && <Link to={pendingRoute}>Перейти к событию</Link>}</Alert>}
 		{items.length === 0 ? <p className={styles.empty}>{widget.settings.filter === 'unread' ? 'Непрочитанных уведомлений нет.' : 'Событий пока нет.'}</p>
-			: <div className={styles.feed}>{items.slice(0, widget.w >= 6 ? 5 : 3).map((item) => <button key={item.id} type="button" className={styles.feedButton} data-unread={!item.read} disabled={mutation.isLoading} onClick={() => void open(item)}>
+			: <WidgetPreview rowHeight={132} maxColumns={3} minColumnWidth={210}>{items.map((item) => <button key={item.id} type="button" className={styles.feedButton} data-unread={!item.read} disabled={mutation.isLoading} onClick={() => void open(item)}>
 				<strong>{item.title}</strong><span className={styles.clamped}>{item.text}</span><small className={styles.muted}>{formatDateTime(item.createdAt)}{!item.read ? ' · Не прочитано' : ''}</small>
-			</button>)}</div>}
+			</button>)}</WidgetPreview>}
 		<p className={styles.muted}>Последние события{items.length >= 50 ? ' · выборка ограничена 50 уведомлениями' : ''}. Другие полученные уведомления — в колокольчике.</p>
 	</WidgetState>
 		{selected && <Modal title={selected.title} onClose={() => setSelected(null)}>
@@ -63,12 +64,12 @@ export const TicketsWidget = ({ widget }: { widget: Extract<DashboardWidget, { t
 	const selected: Ticket | undefined = query.currentData?.find((item) => item.id === selectedId);
 	return <>
 		<WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()}>
-			{(query.currentData?.length ?? 0) >= 100 && <p className={styles.notice}>Показаны последние 100 обращений. Фильтр применяется к полученной выборке.</p>}
+			{(query.currentData?.length ?? 0) >= 100 && <p className={styles.muted} title="Показаны последние 100 обращений. Фильтр применяется к полученной выборке.">Последние 100 обращений</p>}
 			{items.length === 0 ? <p className={styles.empty}>В полученном списке подходящих обращений нет.</p>
-				: <div className={styles.feed}>{items.slice(0, widget.h >= 4 ? 4 : 2).map((ticket) => <button key={ticket.id} type="button" className={styles.feedButton} aria-haspopup="dialog" onClick={() => setSelectedId(ticket.id)}>
+				: <WidgetPreview rowHeight={92} maxColumns={3} minColumnWidth={220}>{items.map((ticket) => <button key={ticket.id} type="button" className={styles.feedButton} aria-haspopup="dialog" onClick={() => setSelectedId(ticket.id)}>
 					<div className={styles.inline}><strong>{ticket.subject}</strong><Badge tone={ticket.status === 'ANSWERED' ? 'success' : 'neutral'}>{statusLabels[ticket.status]}</Badge></div>
 					<span className={styles.muted}>{formatDateTime(ticket.updatedAt)} · {ticket.id}</span>
-				</button>)}</div>}
+				</button>)}</WidgetPreview>}
 			<Link className={styles.link} to={ROUTES.support}>Открыть поддержку ↗</Link>
 		</WidgetState>
 		{selected && <Modal title={selected.subject} onClose={() => setSelectedId(null)} footer={<Link className={styles.link} to={paths.support(selected.applicationId ?? undefined)}>Открыть поддержку ↗</Link>}>

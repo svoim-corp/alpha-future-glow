@@ -37,7 +37,10 @@ const LoansView = ({ requestedLoan, requestedTab }: LoansViewProps) => {
 	const closed = loans.data?.filter((loan) => loan.status === 'CLOSED') ?? [];
 	const offers = offersQuery.data ?? [];
 	const visibleLoans = tab === 'closed' ? closed : active;
-	const selectedLoan = visibleLoans.find((loan) => loan.id === (selectedIds[tab] ?? requestedLoan)) ?? visibleLoans[0];
+	const desiredLoan = selectedIds[tab] ?? (selectedTab === null ? requestedLoan : null);
+	const selectedLoan = desiredLoan
+		? visibleLoans.find((loan) => loan.id === desiredLoan) ?? (selectedIds[tab] ? visibleLoans[0] : undefined)
+		: visibleLoans[0];
 	const selectedOffer = offers.find((entry) => entry.application.id === selectedIds.approved) ?? offers[0];
 	const selectCredit = (id: string) => setSelectedIds((current) => ({ ...current, [tab]: id }));
 	const today = new Date().toISOString().slice(0, 10);
@@ -60,9 +63,11 @@ const LoansView = ({ requestedLoan, requestedTab }: LoansViewProps) => {
 			{requestedLoan && loans.data && !loans.data.some((loan) => loan.id === requestedLoan) && <Alert tone="warning" title="Запрошенный кредит не найден в загруженном списке.">
 				Проверьте доступ к договору и обновите список кредитов.
 			</Alert>}
-			{summary.isError && <Alert tone="danger" title="Не удалось загрузить сводку кредитов." actions={<Button variant="secondary" onClick={() => void summary.refetch()}>Повторить</Button>} />}
+			{summary.isError && <Alert tone="danger" title="Не удалось загрузить сводку кредитов."
+				actions={<Button variant="secondary" onClick={() => void summary.refetch()}>Повторить</Button>} />}
 			{totalsKnown && summary.data?.overdue && summary.data.overdue.amount > 0 && <Alert tone="danger" title={`Просроченная задолженность: ${formatMoney(summary.data.overdue.amount)}`}>
-				Кредитов с просрочкой: {summary.data.overdue.loans}. Сумма включает пени; подробности — в задолженности выбранного кредита.
+				Кредитов с просрочкой: {summary.data.overdue.loans}.
+				Сумма включает пени; подробности — в задолженности выбранного кредита.
 			</Alert>}
 			<Metrics label="Обзор кредитов" items={[
 				{
@@ -83,9 +88,11 @@ const LoansView = ({ requestedLoan, requestedTab }: LoansViewProps) => {
 				},
 			]} />
 			<Tabs label="Состояние кредитов" value={tab} onChange={setTab} items={[
-				{ id: 'active', label: 'Действующие', count: loansKnown ? active.length : undefined },
+				{ id: 'active', label: 'Действующие', count: loansKnown ? active.length : undefined,
+				},
 				{ id: 'approved', label: 'Одобренные', count: offersKnown ? offers.length : undefined },
-				{ id: 'closed', label: 'Закрытые', count: loansKnown ? closed.length : undefined },
+				{ id: 'closed', label: 'Закрытые', count: loansKnown ? closed.length : undefined,
+				},
 			]} />
 			<section id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)} className={styles.panel}>
 				{tab === 'approved' ? (
@@ -95,10 +102,12 @@ const LoansView = ({ requestedLoan, requestedTab }: LoansViewProps) => {
 						emptyTitle="Одобренных предложений нет" emptyText="Одобренные банком заявки появятся здесь.">
 						{offersQuery.isFetching && <p role="status">Обновляем предложения банка…</p>}
 						{selectedOffer && <>
-							<LoanSelector value={selectedOffer.application.id} onChange={selectCredit} detailsId={detailsId}
+							<LoanSelector value={selectedOffer.application.id} onChange={selectCredit}
+								detailsId={detailsId}
 								items={offers.map(({ application, offer }) => ({
 									id: application.id,
-									title: products.data?.find((product) => product.code === offer?.offered.productCode)?.name
+									title: products.data?.find((product) =>
+										product.code === offer?.offered.productCode)?.name
 										?? (!offer || offer.offered.productCode === application.product.code ? application.product.name : 'Предложение банка'),
 									caption: `Заявка ${application.number ?? application.id}`,
 									amount: offer?.offered.amount,
