@@ -1,5 +1,5 @@
 import { type InfoRequest } from '@entities/application';
-import { getErrorMessage } from '@shared/api';
+import { getApiError, getErrorMessage } from '@shared/api';
 import { Alert, Button, TextAreaField } from '@shared/ui';
 import { type FormEvent, useState } from 'react';
 
@@ -11,12 +11,16 @@ interface AnswerInfoRequestProps {
 	request: InfoRequest;
 }
 
-/** Ответ на запрос банка: все пункты обязательны, заявка после ответа возвращается на проверку */
+/** Ответ на запрос банка: все пункты обязательны, заявка после ответа возвращается на проверку.
+    Когда ответ уже дан (сейчас, раньше или в другой вкладке), поля только для чтения */
 export const AnswerInfoRequest = ({ applicationId, request }: AnswerInfoRequestProps) => {
 	const [answer, { isLoading }] = useAnswerInfoRequestMutation();
 	const [values, setValues] = useState<Record<string, string>>({});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [failure, setFailure] = useState<string | null>(null);
+	const [sent, setSent] = useState(false);
+	const readOnly = sent || request.status === 'ANSWERED';
+	const saved = Object.fromEntries((request.answers ?? []).map((item) => [item.key, item.value]));
 
 	const submit = async (event: FormEvent) => {
 		event.preventDefault();
@@ -42,7 +46,14 @@ export const AnswerInfoRequest = ({ applicationId, request }: AnswerInfoRequestP
 				requestId: request.id,
 				answers: request.items.map((item) => ({ key: item.key, value: (values[item.key] ?? '').trim() })),
 			}).unwrap();
+			setSent(true);
 		} catch (error) {
+			if (getApiError(error)?.code === 'INVALID_TRANSITION') {
+				setSent(true);
+
+				return;
+			}
+
 			setFailure(getErrorMessage(error, 'Не удалось отправить ответ. Введённое сохранено — повторите попытку.'));
 		}
 	};
@@ -54,15 +65,20 @@ export const AnswerInfoRequest = ({ applicationId, request }: AnswerInfoRequestP
 				<TextAreaField
 					key={item.key}
 					label={item.label}
-					value={values[item.key] ?? ''}
+					value={readOnly ? (values[item.key] ?? saved[item.key] ?? '') : (values[item.key] ?? '')}
 					error={errors[item.key]}
+					readOnly={readOnly}
 					onChange={(event) => setValues((prev) => ({ ...prev, [item.key]: event.target.value }))}
 				/>
 			))}
 			{failure && <Alert tone="danger" title={failure} />}
-			<div>
-				<Button type="submit" loading={isLoading}>Отправить ответ</Button>
-			</div>
+			{readOnly ? (
+				<Alert tone="success" title="Ответ отправлен банку" />
+			) : (
+				<div>
+					<Button type="submit" loading={isLoading}>Отправить ответ</Button>
+				</div>
+			)}
 		</form>
 	);
 };

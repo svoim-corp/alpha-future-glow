@@ -30,7 +30,7 @@ export const ApplicationTracker = ({ applicationId }: { applicationId: string })
 	const status = application?.status;
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
-	const requests = useGetInfoRequestsQuery(status === 'INFO_REQUESTED' ? applicationId : skipToken);
+	const requests = useGetInfoRequestsQuery(status && status !== 'DRAFT' ? applicationId : skipToken);
 	const offer = useGetOfferQuery(status && HAS_OFFER.has(status) ? applicationId : skipToken);
 	const waiting = status !== undefined && IN_PROGRESS.has(status);
 
@@ -45,7 +45,7 @@ export const ApplicationTracker = ({ applicationId }: { applicationId: string })
 		return () => clearInterval(timer);
 	}, [waiting, applicationId, dispatch]);
 
-	const openRequests = (requests.data ?? []).filter((request) => request.status === 'OPEN');
+	const infoRequests = requests.data ?? [];
 
 	if (status === 'DRAFT') {
 		return <Navigate to={paths.applicationEdit(applicationId)} replace />;
@@ -87,9 +87,11 @@ export const ApplicationTracker = ({ applicationId }: { applicationId: string })
 						<h2 id="t-status" className={styles.title}>Что происходит с заявкой</h2>
 						<TimelineView applicationId={application.id} />
 					</Card>
-					{openRequests.map((request) => (
+					{infoRequests.map((request) => (
 						<Card key={request.id} className={styles.card} aria-labelledby={`t-req-${request.id}`}>
-							<h2 id={`t-req-${request.id}`} className={styles.title}>Банк просит уточнить</h2>
+							<h2 id={`t-req-${request.id}`} className={styles.title}>
+								{request.status === 'OPEN' ? 'Банк просит уточнить' : 'Ваш ответ на запрос банка'}
+							</h2>
 							<AnswerInfoRequest applicationId={application.id} request={request} />
 						</Card>
 					))}
