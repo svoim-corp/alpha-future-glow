@@ -40,8 +40,9 @@ describe('TimelineView', () => {
 
 		const steps = within(await screen.findByRole('list', { name: 'Этапы рассмотрения' })).getAllByRole('listitem');
 
-		expect(steps[1].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).not.toBeNull();
-		expect(steps[0].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
+		expect(steps).toHaveLength(2);
+		expect(steps[1]?.querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).not.toBeNull();
+		expect(steps[0]?.querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
 	});
 
 	it('итог «Закрыта» помечен крестиком в маркере', async () => {
@@ -57,8 +58,9 @@ describe('TimelineView', () => {
 
 		const steps = within(await screen.findByRole('list', { name: 'Этапы рассмотрения' })).getAllByRole('listitem');
 
-		expect(steps[1].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).not.toBeNull();
-		expect(steps[0].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
+		expect(steps).toHaveLength(2);
+		expect(steps[1]?.querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).not.toBeNull();
+		expect(steps[0]?.querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
 	});
 
 	it.each([['ISSUED', 'Выдано'], ['APPROVED', 'Одобрено']])('итог «%s» помечен галочкой', async (status, label) => {
@@ -74,8 +76,9 @@ describe('TimelineView', () => {
 
 		const steps = within(await screen.findByRole('list', { name: 'Этапы рассмотрения' })).getAllByRole('listitem');
 
-		expect(steps[1].querySelector('svg')).not.toBeNull();
-		expect(steps[1].querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
+		expect(steps).toHaveLength(2);
+		expect(steps[1]?.querySelector('svg')).not.toBeNull();
+		expect(steps[1]?.querySelector('svg path[d="m6 6 12 12M6 18 18 6"]')).toBeNull();
 	});
 
 	it('при ошибке показывает сообщение', async () => {
