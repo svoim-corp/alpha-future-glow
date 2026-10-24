@@ -14,8 +14,8 @@ import { paths } from '@shared/config';
 import { formatMoney, formatTerm } from '@shared/lib/format';
 import { useAppDispatch } from '@shared/lib/store';
 import { AsyncBoundary, ButtonLink, Card, Metrics } from '@shared/ui';
-import { useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { type ReactNode, useEffect } from 'react';
+import { Navigate } from 'react-router';
 
 import styles from './ApplicationTracker.module.scss';
 
@@ -25,11 +25,16 @@ const POLL_MS = 3000;
 
 const HAS_OFFER = new Set(['APPROVED', 'COUNTER_OFFER', 'REJECTED', 'SIGNING', 'ISSUED']);
 
-export const ApplicationTracker = ({ applicationId }: { applicationId: string }) => {
+interface ApplicationTrackerProps {
+	applicationId: string;
+	/** Подписание договора: показываем на этой же странице, пока заявка на подписании и после выдачи */
+	signing?: ReactNode;
+}
+
+export const ApplicationTracker = ({ applicationId, signing }: ApplicationTrackerProps) => {
 	const { data: application, isLoading, isError, refetch } = useGetApplicationQuery(applicationId);
 	const status = application?.status;
 	const dispatch = useAppDispatch();
-	const navigate = useNavigate();
 	const requests = useGetInfoRequestsQuery(status && status !== 'DRAFT' ? applicationId : skipToken);
 	const offer = useGetOfferQuery(status && HAS_OFFER.has(status) ? applicationId : skipToken);
 	const waiting = status !== undefined && IN_PROGRESS.has(status);
@@ -100,20 +105,11 @@ export const ApplicationTracker = ({ applicationId }: { applicationId: string })
 							<h2 id="t-offer" className={styles.title}>Решение банка</h2>
 							<OfferView offer={offer.data} />
 							{(application.status === 'APPROVED' || application.status === 'COUNTER_OFFER') && (
-								<DecideOffer
-									applicationId={application.id}
-									onAccepted={(redirect) => void navigate(redirect)}
-								/>
-							)}
-							{application.status === 'SIGNING' && (
-								<div>
-									<ButtonLink to={paths.applicationSign(application.id)}>
-										Перейти к подписанию
-									</ButtonLink>
-								</div>
+								<DecideOffer applicationId={application.id} />
 							)}
 						</Card>
 					)}
+					{signing && (application.status === 'SIGNING' || application.status === 'ISSUED') && signing}
 					<div>
 						<ButtonLink variant="ghost" to={paths.support(application.id)}>
 							Задать вопрос по заявке

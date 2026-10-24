@@ -1,17 +1,9 @@
-import { Page } from '@shared/ui';
-import { ContractSigning } from '@widgets/contract-signing';
-import { useParams } from 'react-router';
+import { paths } from '@shared/config';
+import { Navigate, useParams } from 'react-router';
 
+/** Подписание живёт на странице заявки; адрес оставлен для старых ссылок */
 export const ApplicationSignPage = () => {
 	const { id = '' } = useParams();
 
-	return (
-		<Page
-			eyebrow="ПОСЛЕДНИЙ ШАГ"
-			title="Подписание договора"
-			subtitle="Проверьте условия и документы. Подпись имитируется, без кода из SMS."
-		>
-			<ContractSigning applicationId={id} />
-		</Page>
-	);
+	return <Navigate to={paths.application(id)} replace />;
 };

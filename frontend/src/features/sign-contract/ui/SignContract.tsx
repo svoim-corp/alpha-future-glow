@@ -1,6 +1,5 @@
 import { type Contract } from '@entities/contract';
 import { getErrorMessage } from '@shared/api';
-import { paths } from '@shared/config';
 import { Alert, Button, ButtonLink, Modal } from '@shared/ui';
 import { useState } from 'react';
 
@@ -75,7 +74,6 @@ export const SignContract = ({ applicationId, contract }: { applicationId: strin
 					<Button onClick={() => setConfirming(true)}>Подписать договор</Button>
 				</div>
 			)}
-			<div><ButtonLink variant="ghost" to={paths.application(applicationId)}>К заявке</ButtonLink></div>
 			{confirming && (
 				<Modal
 					title="Подтверждение подписи"
