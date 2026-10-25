@@ -55,9 +55,11 @@ export const SupportCenter = () => {
 				</section>}
 			</div>
 			{params.get('ticket') ? <SupportDetails kind="ticket" id={params.get('ticket') ?? ''} onClose={() => {
-				const next = new URLSearchParams(params); next.delete('ticket'); next.delete('faq'); setParams(next, { replace: true });
+				const next = new URLSearchParams(params);
+				next.set('tab', tab); next.delete('ticket'); next.delete('faq'); setParams(next, { replace: true });
 			}} /> : params.get('faq') ? <SupportDetails kind="faq" id={params.get('faq') ?? ''} onClose={() => {
-				const next = new URLSearchParams(params); next.delete('faq'); setParams(next, { replace: true });
+				const next = new URLSearchParams(params);
+				next.set('tab', tab); next.delete('faq'); setParams(next, { replace: true });
 			}} /> : null}
 		</div>
 	);

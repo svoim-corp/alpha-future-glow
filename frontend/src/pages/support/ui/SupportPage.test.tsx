@@ -2,12 +2,39 @@ import { faqFixture, ticketsFixture } from '@test/fixtures/support';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
 import { chooseOption } from '@test/select';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 
 import { SupportPage } from './SupportPage';
 
 describe('SupportPage', () => {
+	it.each([
+		{
+			kind: 'faq', endpoint: 'faq', id: 'f-3', tab: 'Частые вопросы',
+			title: 'Зачем выписка из 1С?', text: 'Она подтверждает обороты и позволяет получить больший лимит',
+			response: faqFixture[0],
+		},
+		{
+			kind: 'ticket', endpoint: 'tickets', id: 't-12', tab: 'Мои обращения',
+			title: 'Не загружается выписка', text: 'Выгрузите выписку в формате 1CClientBankExchange',
+			response: ticketsFixture[0],
+		},
+	])('открывает $kind из поиска и сохраняет вкладку после закрытия', async (item) => {
+		if (!item.response) throw new Error('Нет тестовых данных поддержки');
+		server.use(
+			http.get(apiUrl('/support/faq'), () => HttpResponse.json([])),
+			http.get(apiUrl('/support/tickets'), () => HttpResponse.json([])),
+			http.get(apiUrl(`/support/${item.endpoint}/${item.id}`), () => HttpResponse.json(item.response)),
+		);
+		const { user } = renderWithProviders(<SupportPage />, { route: `/support?${item.kind}=${item.id}` });
+		const dialog = await screen.findByRole('dialog', { name: item.title });
+		expect(within(dialog).getByText(item.text)).toBeInTheDocument();
+		expect(screen.getByRole('tab', { name: item.tab })).toHaveAttribute('aria-selected', 'true');
+		await user.click(within(dialog).getByRole('button', { name: 'Закрыть' }));
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+		expect(screen.getByRole('tab', { name: item.tab })).toHaveAttribute('aria-selected', 'true');
+	});
+
 	it('меняет вопросы по выбранному шагу', async () => {
 		const steps = vi.fn();
 		server.use(
