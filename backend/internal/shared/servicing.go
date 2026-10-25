@@ -25,3 +25,9 @@ type LoanOpening struct {
 	GraceMonths    int // 0 — без отсрочки
 	IssuedAt       time.Time
 }
+
+// LoanOwners — принадлежность кредитов. Реализует: Servicing (A). Использует: Dashboard (B) при привязке виджета.
+type LoanOwners interface {
+	// LoanCompany — компания кредита, в том числе закрытого; "" — кредита нет.
+	LoanCompany(ctx context.Context, id string) (string, error)
+}

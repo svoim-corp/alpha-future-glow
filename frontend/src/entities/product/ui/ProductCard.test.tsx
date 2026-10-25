@@ -10,7 +10,7 @@ const overdraft = productsFixture[2]!;
 
 describe('ProductCard', () => {
 	it('показывает диапазон суммы, срок и ставку', () => {
-		render(<ProductCard product={working} fits={false} onSelect={vi.fn()} />);
+		render(<ProductCard product={working} onSelect={vi.fn()} />);
 
 		expect(screen.getByRole('heading', { name: 'Оборотный кредит' })).toBeInTheDocument();
 		expect(screen.getByText('300 тыс. — 10 млн ₽')).toBeInTheDocument();
@@ -18,20 +18,20 @@ describe('ProductCard', () => {
 		expect(screen.getByText('20–28 % годовых')).toBeInTheDocument();
 	});
 
-	it('подходящий продукт помечен, клик по «Посмотреть условия» отдаёт код', async () => {
+	it('клик по «Посмотреть условия» отдаёт код', async () => {
 		const onSelect = vi.fn();
-		render(<ProductCard product={express} fits onSelect={onSelect} />);
+		render(<ProductCard product={express} onSelect={onSelect} />);
 
 		await userEvent.click(screen.getByRole('button', { name: 'Условия: Экспресс-кредит' }));
 
-		expect(screen.getByText('Подходит под задачу')).toBeInTheDocument();
 		expect(onSelect).toHaveBeenCalledWith('EXPRESS');
 	});
 
 	it('овердрафт: вместо суммы — лимит', () => {
-		render(<ProductCard product={overdraft} fits={false} onSelect={vi.fn()} />);
+		render(<ProductCard product={overdraft} onSelect={vi.fn()} />);
 
 		expect(screen.getByText('Лимит до 5 млн ₽')).toBeInTheDocument();
 		expect(screen.getByText('Лимит на 12 месяцев')).toBeInTheDocument();
 	});
 });
+

@@ -1,6 +1,7 @@
 package underwriting
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -85,14 +86,50 @@ func (m *Module) clientInfoRequests(c *gin.Context) {
 		httpx.Fail(c, err)
 		return
 	}
-	rows, err := m.store.InfoRequests(ctx, app.ID)
+	out, err := m.infoRequestDTOs(ctx, app.ID)
 	if err != nil {
 		httpx.Fail(c, err)
 		return
 	}
+	httpx.JSON(c, http.StatusOK, out)
+}
+
+// infoRequestDTOs — запросы банка с ответами клиента, от старых к новым; общий вид для клиента и сотрудника.
+func (m *Module) infoRequestDTOs(ctx context.Context, appID string) ([]infoRequestDTO, error) {
+	rows, err := m.store.InfoRequests(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]infoRequestDTO, len(rows))
 	for i, r := range rows {
 		out[i] = infoRequestDTO{ID: r.ID, Status: r.Status, Comment: r.Comment, Items: r.Items.V, Answers: r.Answers.V, CreatedAt: r.CreatedAt, AnsweredAt: r.AnsweredAt}
+	}
+	return out, nil
+}
+
+// bankInfoRequests godoc
+//
+//	@Summary		Запросы информации и ответы клиента
+//	@Description	Все запросы по заявке с вопросами и ответами клиента: сотрудник видит, что именно ответили.
+//	@Tags			bank
+//	@Produce		json
+//	@Param			id	path	string	true	"ID заявки"
+//	@Success		200	{array}	infoRequestDTO
+//	@Failure		401	{object}	httpx.ErrorBody
+//	@Failure		403	{object}	httpx.ErrorBody
+//	@Failure		404	{object}	httpx.ErrorBody
+//	@Router			/bank/applications/{id}/info-requests [get]
+func (m *Module) bankInfoRequests(c *gin.Context) {
+	ctx := c.Request.Context()
+	app, err := m.load(ctx, c.Param("id"))
+	if err != nil {
+		httpx.Fail(c, err)
+		return
+	}
+	out, err := m.infoRequestDTOs(ctx, app.ID)
+	if err != nil {
+		httpx.Fail(c, err)
+		return
 	}
 	httpx.JSON(c, http.StatusOK, out)
 }

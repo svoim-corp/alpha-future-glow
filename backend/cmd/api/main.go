@@ -19,6 +19,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/docs"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/catalog"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/company"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/dashboard"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/identity"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/integrations"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/notifications"
@@ -33,6 +34,7 @@ import (
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/scoring"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/search"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/servicing"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/support"
@@ -89,6 +91,7 @@ func run(log *slog.Logger) error {
 	supportMod.ConfigureAI(support.AIConfig{URL: cfg.OllamaURL, Model: cfg.OllamaModel, EmbeddingModel: cfg.EmbeddingModel})
 	notificationsMod := notifications.New(deps)
 	plannerMod := planner.New(deps)
+	dashboardMod := dashboard.New(deps)
 
 	// Связи между зонами (shared-интерфейсы). Пока у поставщика нет реализации, он отдаёт заглушку из своего ports.go.
 	companyMod.Wire(company.Ports{
@@ -98,10 +101,11 @@ func run(log *slog.Logger) error {
 	})
 	identityMod.Wire(identity.Ports{Companies: companyMod.Companies()})
 	originationMod.Wire(origination.Ports{
-		Products:    catalogMod.Products(),
-		Companies:   companyMod.Companies(),
-		Authorities: companyMod.Authorities(),
-		Prelims:     scoringMod.Prelims(),
+		SearchLabels: catalogMod.SearchLabels,
+		Products:     catalogMod.Products(),
+		Companies:    companyMod.Companies(),
+		Authorities:  companyMod.Authorities(),
+		Prelims:      scoringMod.Prelims(),
 	})
 	scoringMod.Wire(scoring.Ports{
 		Applications: originationMod.Applications(),
@@ -131,13 +135,24 @@ func run(log *slog.Logger) error {
 	})
 	supportMod.Wire(support.Ports{Applications: originationMod.Applications(), Catalog: catalogMod.Assistant(), Drafts: originationMod.Assistant(), Payments: servicingMod.Assistant(), Planner: plannerMod.Assistant(), Loans: servicingMod.AssistantLoans(), Companies: companyMod.Companies()})
 	plannerMod.Wire(planner.Ports{
-		Matcher:  catalogMod.ProductMatcher(),
-		Notifier: notificationsMod.Notifier(),
+		SearchLabels: catalogMod.SearchLabels,
+		Matcher:      catalogMod.ProductMatcher(),
+		Notifier:     notificationsMod.Notifier(),
+	})
+	dashboardMod.Wire(dashboard.Ports{
+		Applications: originationMod.Applications(),
+		Loans:        servicingMod.LoanOwners(),
+		Plans:        plannerMod.PlanOwners(),
+	})
+
+	searchMod := search.New(search.Ports{
+		Applications: originationMod.Search, Loans: servicingMod.Search, Plans: plannerMod.Search,
+		Products: catalogMod.Search, FAQ: supportMod.SearchFAQ, Tickets: supportMod.SearchTickets,
 	})
 
 	zones := []zone{
 		companyMod, identityMod, catalogMod, originationMod, integrationsMod, scoringMod,
-		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod,
+		underwritingMod, offerMod, servicingMod, supportMod, notificationsMod, plannerMod, dashboardMod, searchMod,
 	}
 	for _, z := range zones {
 		if err := z.Migrate(ctx); err != nil {

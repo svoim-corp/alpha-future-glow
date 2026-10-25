@@ -8,6 +8,8 @@ import styles from './MakeDecision.module.scss';
 interface MakeDecisionProps {
 	applicationId: string;
 	requested: { productCode: string; amount: number; term: number };
+	/** Ставка из рекомендации скоринга или предварительной проверки: бэкенд требует её и для одобрения, и для иных условий */
+	defaultRate?: number;
 }
 
 type Mode = 'COUNTER' | 'REJECT' | null;
@@ -19,12 +21,12 @@ const toNumber = (text: string): number | null => {
 };
 
 /** Решение сотрудника: одобрить как запрошено, предложить иные условия (модалка) или отказать с причиной */
-export const MakeDecision = ({ applicationId, requested }: MakeDecisionProps) => {
+export const MakeDecision = ({ applicationId, requested, defaultRate }: MakeDecisionProps) => {
 	const [decide, { isLoading }] = useMakeDecisionMutation();
 	const [mode, setMode] = useState<Mode>(null);
 	const [amount, setAmount] = useState(String(requested.amount));
 	const [term, setTerm] = useState(String(requested.term));
-	const [rate, setRate] = useState('');
+	const [rate, setRate] = useState(defaultRate ? String(defaultRate) : '');
 	const [reason, setReason] = useState('');
 	const [error, setError] = useState<string | null>(null);
 	const [done, setDone] = useState<string | null>(null);
@@ -47,8 +49,16 @@ export const MakeDecision = ({ applicationId, requested }: MakeDecisionProps) =>
 		const parsedAmount = toNumber(amount);
 		const parsedTerm = toNumber(term);
 
+		const parsedRate = Number(rate.replace(',', '.'));
+
 		if (!parsedAmount || !parsedTerm || !reason.trim()) {
 			setError('Укажите сумму, срок и объяснение для клиента');
+
+			return;
+		}
+
+		if (!Number.isFinite(parsedRate) || parsedRate <= 0) {
+			setError('Укажите ставку, % годовых');
 
 			return;
 		}
@@ -58,7 +68,7 @@ export const MakeDecision = ({ applicationId, requested }: MakeDecisionProps) =>
 			amount: parsedAmount,
 			term: parsedTerm,
 			productCode: requested.productCode,
-			rate: rate.trim() ? Number(rate.replace(',', '.')) : undefined,
+			rate: parsedRate,
 			reason: reason.trim(),
 		});
 	};
@@ -83,17 +93,23 @@ export const MakeDecision = ({ applicationId, requested }: MakeDecisionProps) =>
 	}
 
 	return (
-		<div>
+		<div className={styles.root}>
 			{error && !mode && <Alert tone="danger" title={error} />}
+			{!defaultRate && (
+				<Alert tone="info" title="Ставка не рассчитана">
+					Одобрить как запрошено нельзя: укажите ставку через «Иные условия».
+				</Alert>
+			)}
 			<div className={styles.actions}>
 				<Button
 					loading={isLoading}
-					onClick={() => void send({ type: 'APPROVE', ...requested })}
+					disabled={!defaultRate}
+					onClick={() => void send({ type: 'APPROVE', ...requested, rate: defaultRate })}
 				>
 					Одобрить как запрошено
 				</Button>
-				<Button variant="secondary" onClick={() => setMode('COUNTER')}>Иные условия</Button>
 				<Button variant="danger" onClick={() => setMode('REJECT')}>Отказать</Button>
+				<Button variant="secondary" onClick={() => setMode('COUNTER')}>Иные условия</Button>
 			</div>
 			{mode === 'COUNTER' && (
 				<Modal

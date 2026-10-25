@@ -290,6 +290,50 @@ definitions:
         - $ref: '#/definitions/shared.CheckSource'
         example: BANK_ACCOUNTS
     type: object
+  dashboard.config:
+    properties:
+      schemaVersion:
+        example: 1
+        type: integer
+      widgets:
+        items:
+          $ref: '#/definitions/dashboard.widget'
+        type: array
+    type: object
+  dashboard.documentDTO:
+    properties:
+      config:
+        $ref: '#/definitions/dashboard.config'
+      revision:
+        example: 8efc6500-8373-4e9d-9f0a-a5d9efae1175
+        type: string
+      updatedAt:
+        example: "2026-10-22T10:00:00Z"
+        type: string
+    type: object
+  dashboard.widget:
+    properties:
+      h:
+        example: 3
+        type: integer
+      id:
+        example: 77a45b12-67cf-4e29-848a-0db98fb07eb8
+        type: string
+      settings:
+        type: object
+      type:
+        example: loan
+        type: string
+      w:
+        example: 4
+        type: integer
+      x:
+        example: 0
+        type: integer
+      "y":
+        example: 0
+        type: integer
+    type: object
   httpx.ErrorBody:
     properties:
       code:
@@ -1416,6 +1460,43 @@ definitions:
       rate:
         example: 21.5
         type: number
+    type: object
+  search.groupDTO:
+    properties:
+      hasMore:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/search.itemDTO'
+        type: array
+      nextCursor:
+        type: string
+      type:
+        type: string
+      unavailable:
+        type: boolean
+    type: object
+  search.itemDTO:
+    properties:
+      id:
+        type: string
+      snippet:
+        type: string
+      state:
+        type: string
+      step:
+        type: string
+      title:
+        type: string
+    type: object
+  search.responseDTO:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/search.groupDTO'
+        type: array
+      query:
+        type: string
     type: object
   servicing.accountRefDTO:
     properties:
@@ -4257,6 +4338,39 @@ paths:
       tags:
       - bank
   /bank/applications/{id}/info-requests:
+    get:
+      description: 'Все запросы по заявке с вопросами и ответами клиента: сотрудник
+        видит, что именно ответили.'
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/underwriting.infoRequestDTO'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Запросы информации и ответы клиента
+      tags:
+      - bank
     post:
       consumes:
       - application/json
@@ -5007,6 +5121,89 @@ paths:
       summary: Кредиты на главной
       tags:
       - loans
+  /me/dashboard:
+    get:
+      description: Сохранённая раскладка виджетов пользователя в его компании. 204
+        — настройку ещё не сохраняли, клиент строит исходную.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ETag — ревизия в кавычках
+          schema:
+            $ref: '#/definitions/dashboard.documentDTO'
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Настройка главной
+      tags:
+      - dashboard
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Заменяет документ целиком и атомарно. Нужен If-Match с ревизией или If-None-Match: * для первого сохранения.
+        Повтор с тем же Idempotency-Key и телом возвращает исходный результат.
+      parameters:
+      - description: Ревизия сохранённой настройки в кавычках
+        in: header
+        name: If-Match
+        type: string
+      - description: '* — первое сохранение'
+        in: header
+        name: If-None-Match
+        type: string
+      - description: Ключ попытки сохранения
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Настройка формата v1
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dashboard.config'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dashboard.documentDTO'
+        "400":
+          description: VALIDATION_ERROR или DASHBOARD_SCHEMA_UNSUPPORTED
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "409":
+          description: IDEMPOTENCY_KEY_REUSED
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "412":
+          description: DASHBOARD_VERSION_CONFLICT
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "428":
+          description: PRECONDITION_REQUIRED
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Сохранить настройку главной
+      tags:
+      - dashboard
   /notifications:
     get:
       description: Последние 50 уведомлений пользователя, новые первыми. unread=true
@@ -5141,6 +5338,35 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Удалить план
+      tags:
+      - planner
+    get:
+      parameters:
+      - description: ID плана
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/planner.planDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: План по ID, включая архив
       tags:
       - planner
     patch:
@@ -5291,6 +5517,53 @@ paths:
       summary: Подбор продукта по задаче
       tags:
       - catalog
+  /search:
+    get:
+      parameters:
+      - description: Запрос, 2–120 символов
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Категории через запятую
+        in: query
+        name: types
+        type: string
+      - default: 3
+        description: Результатов на категорию, 1–20
+        in: query
+        name: limitPerType
+        type: integer
+      - description: Продолжение одной категории
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/search.responseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Общий поиск клиентского кабинета
+      tags:
+      - search
   /support/conversations:
     get:
       produces:
@@ -5453,6 +5726,28 @@ paths:
       summary: Частые вопросы
       tags:
       - support
+  /support/faq/{id}:
+    get:
+      parameters:
+      - description: ID вопроса
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/support.faqDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Частый вопрос по ID
+      tags:
+      - support
   /support/tickets:
     get:
       description: Последние 100 обращений пользователя, недавно изменённые первыми.
@@ -5503,6 +5798,36 @@ paths:
           schema:
             $ref: '#/definitions/httpx.ErrorBody'
       summary: Новое обращение в поддержку
+      tags:
+      - support
+  /support/tickets/{id}:
+    get:
+      parameters:
+      - description: ID обращения
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/support.ticketDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Обращение текущего пользователя по ID
       tags:
       - support
 swagger: "2.0"

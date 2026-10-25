@@ -12,6 +12,8 @@ export type TicketStatus = 'OPEN' | 'ANSWERED' | 'CLOSED';
 export interface Ticket {
 	id: string;
 	subject: string;
+	/** Текст возвращается реальным GET /support/tickets; старые записи могут его не содержать. */
+	text?: string;
 	status: TicketStatus;
 	reply: string | null;
 	applicationId: string | null;

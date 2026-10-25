@@ -98,7 +98,7 @@ export interface Score {
 	autoDecisionEligible: boolean;
 	autoDecisionReason: string | null;
 	factors: ScoreFactor[];
-	suggested: { decision: 'APPROVE' | 'COUNTER_OFFER' | 'REJECT'; amount?: number; rate?: number } | null;
+	suggested: { decision: 'APPROVED' | 'COUNTER_OFFER' | 'REJECTED'; amount?: number; rate?: number } | null;
 	modelVersion: string;
 }
 

@@ -2,7 +2,7 @@ import { counterOfferFixture, rejectedOfferFixture } from '@test/fixtures/tracki
 import { renderWithProviders } from '@test/render';
 import { screen } from '@testing-library/react';
 
-import { type OfferApproved } from '../model/tracking';
+import { type OfferApproved, type OfferRejected } from '../model/tracking';
 import { OfferView } from './OfferView';
 
 describe('OfferView', () => {
@@ -21,6 +21,14 @@ describe('OfferView', () => {
 
 		expect(screen.queryByRole('region', { name: 'Вы запрашивали' })).not.toBeInTheDocument();
 		expect(screen.getByText('Одобрено')).toBeInTheDocument();
+	});
+
+	it('отказ без альтернатив (бэкенд не присылает поле) не падает', () => {
+		const { alternatives: _alternatives, ...withoutAlternatives } = rejectedOfferFixture as OfferRejected;
+		renderWithProviders(<OfferView offer={withoutAlternatives} />);
+
+		expect(screen.getByText('Банк не может одобрить заявку')).toBeInTheDocument();
+		expect(screen.queryByText('Что можно сделать:')).not.toBeInTheDocument();
 	});
 
 	it('отказ называет причину и показывает альтернативы', () => {

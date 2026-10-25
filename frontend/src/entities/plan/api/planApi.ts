@@ -11,6 +11,10 @@ import {
 
 export const planApi = baseApi.injectEndpoints({
 	endpoints: (build) => ({
+		getPlan: build.query<BusinessPlan, string>({
+			query: (id) => `/plans/${encodeURIComponent(id)}`,
+			providesTags: (_result, _error, id) => [{ type: 'Plan', id }, { type: 'Plan', id: 'LIST' }],
+		}),
 		createPlan: build.mutation<BusinessPlan, CreatePlanArgs>({
 			query: (body) => ({ url: '/plans', method: 'POST', body }),
 			invalidatesTags: (_result, error) => error ? [] : [{ type: 'Plan', id: 'LIST' }],
@@ -35,6 +39,7 @@ export const planApi = baseApi.injectEndpoints({
 });
 
 export const {
+	useGetPlanQuery,
 	useGetPlansQuery,
 	useGetPlanRecommendationsQuery,
 	useCreatePlanMutation,

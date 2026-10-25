@@ -8,7 +8,9 @@ import { type MonthRef, shiftMonth } from '@shared/lib/calendar';
 import { formatMoney } from '@shared/lib/format';
 import { AsyncBoundary, Badge, Icon, Metrics, panelId, SelectField, tabId, Tabs } from '@shared/ui';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 
+import { LinkedPlan } from './LinkedPlan';
 import { calendarDateLabel, PlanCalendar } from './PlanCalendar';
 import { PlanDetails } from './PlanDetails';
 import styles from './PlannerBoard.module.scss';
@@ -18,6 +20,8 @@ const states: PlanState[] = ['ACTIVE', 'PAUSED', 'DONE'];
 const monthOf = (date: string): MonthRef => ({ year: Number(date.slice(0, 4)), month: Number(date.slice(5, 7)) - 1 });
 
 export const PlannerBoard = () => {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const linkedPlan = searchParams.get('plan');
 	const [filter, setFilter] = useState<PlanState | ''>('');
 	const [tab, setTab] = useState<Tab>('calendar');
 	const queryState = tab === 'archive' ? 'ARCHIVED' : filter || undefined;
@@ -59,11 +63,11 @@ export const PlannerBoard = () => {
 
 	return (
 		<div className={styles.board}>
-			{data && <Metrics label={tab === 'archive' ? 'Обзор архива' : 'Обзор планов'} items={[
-				{ label: tab === 'archive' ? 'Планы в архиве' : 'Планы развития', value: data.summary.total, hint: `${data.summary.withPeriod} с датами · ${data.summary.unscheduled} без даты` },
-				{ label: 'Общий ориентир бюджета', value: formatMoney(data.summary.budgetRub), hint: 'По выбранному состоянию, не кредитные обязательства', accent: true },
-				{ label: 'Идеи без даты', value: data.summary.unscheduled, hint: 'Можно вернуться к ним позже' },
-			]} />}
+			<Metrics label={tab === 'archive' ? 'Обзор архива' : 'Обзор планов'} items={[
+				{ label: tab === 'archive' ? 'Планы в архиве' : 'Планы развития', value: data?.summary.total ?? '—', hint: data ? `${data.summary.withPeriod} с датами · ${data.summary.unscheduled} без даты` : '— с датами · — без даты' },
+				{ label: 'Общий ориентир бюджета', value: data ? formatMoney(data.summary.budgetRub) : '—', hint: 'По выбранному состоянию, не кредитные обязательства', accent: true },
+				{ label: 'Идеи без даты', value: data?.summary.unscheduled ?? '—', hint: 'Можно вернуться к ним позже' },
+			]} />
 			<div className={styles.toolbar}>
 				<Tabs label="Представление планов" value={tab} onChange={(value) => { setTab(value); setSelectedId(null); }} items={[
 					{ id: 'calendar', label: 'Календарь' },
@@ -71,15 +75,17 @@ export const PlannerBoard = () => {
 					{ id: 'ideas', label: 'Идеи без даты', count: tab === 'archive' ? undefined : ideas.length },
 					{ id: 'archive', label: 'Архив', count: tab === 'archive' ? plans.length : undefined },
 				]} />
-				{tab !== 'archive' && <SelectField
-					label="Состояние" value={filter}
-					options={[{ value: '', label: 'Все, кроме архива' },
-						...states.map((value) => ({ value, label: PLAN_STATE_LABELS[value] }))]}
-					onChange={(value) => {
-						setFilter(states.find((state) => state === value) ?? '');
-						setSelectedId(null);
-					}}
-				/>}
+				<div className={`${styles.stateFilter} ${tab === 'archive' ? styles.hiddenFilter : ''}`} aria-hidden={tab === 'archive'}>
+					<SelectField disabled={tab === 'archive'}
+						label="Состояние" value={filter}
+						options={[{ value: '', label: 'Все, кроме архива' },
+							...states.map((value) => ({ value, label: PLAN_STATE_LABELS[value] }))]}
+						onChange={(value) => {
+							setFilter(states.find((state) => state === value) ?? '');
+							setSelectedId(null);
+						}}
+					/>
+				</div>
 			</div>
 			<AsyncBoundary isLoading={isLoading || (isFetching && !data)} isError={isError} onRetry={() => void refetch()} loadingLabel="Загружаем планы" errorText="Не удалось загрузить планы">
 				{plans.length === 0 && tab === 'calendar' && <p className={styles.empty}>{filter ? 'В выбранном состоянии планов пока нет' : 'Планов пока нет'}</p>}
@@ -105,7 +111,9 @@ export const PlannerBoard = () => {
 					) : cards(tab === 'ideas' ? ideas : plans)}
 				</div>
 			</AsyncBoundary>
-			{details}
+			{linkedPlan ? <LinkedPlan key={linkedPlan} id={linkedPlan} today={today} onClose={() => {
+				const next = new URLSearchParams(searchParams); next.delete('plan'); setSearchParams(next, { replace: true });
+			}} /> : details}
 		</div>
 	);
 };

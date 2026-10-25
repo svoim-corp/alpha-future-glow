@@ -17,10 +17,11 @@ var migrations embed.FS
 
 // Ports — данные и действия других зон, нужные зоне. Подставляются в cmd/api/main.go.
 type Ports struct {
-	Products    shared.Products    // рамки продукта: 422 при создании и PATCH
-	Companies   shared.Companies   // карточка, адрес, обороты, кандидаты в поручители
-	Authorities shared.Authorities // полномочия заявителя при создании черновика
-	Prelims     shared.Prelims     // блок prelim и prelimInvalidated
+	SearchLabels shared.SearchLabelsProvider
+	Products     shared.Products    // рамки продукта: 422 при создании и PATCH
+	Companies    shared.Companies   // карточка, адрес, обороты, кандидаты в поручители
+	Authorities  shared.Authorities // полномочия заявителя при создании черновика
+	Prelims      shared.Prelims     // блок prelim и prelimInvalidated
 }
 
 type Module struct {

@@ -1,5 +1,6 @@
 import { Page } from '@shared/ui';
 import { ApplicationTracker } from '@widgets/application-tracker';
+import { ContractSigning } from '@widgets/contract-signing';
 import { useParams } from 'react-router';
 
 export const ApplicationPage = () => {
@@ -7,7 +8,7 @@ export const ApplicationPage = () => {
 
 	return (
 		<Page eyebrow="ВАША ЗАЯВКА" title="Статус заявки" subtitle="Всегда видно, что происходит и чей сейчас ход.">
-			<ApplicationTracker applicationId={id} />
+			<ApplicationTracker applicationId={id} signing={<ContractSigning applicationId={id} />} />
 		</Page>
 	);
 };

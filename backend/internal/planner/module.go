@@ -18,8 +18,9 @@ var migrations embed.FS
 
 // Ports — данные и действия других зон, нужные зоне. Подставляются в cmd/api/main.go.
 type Ports struct {
-	Matcher  shared.ProductMatcher // подбор продукта по цели и бюджету плана
-	Notifier shared.Notifier       // уведомления PLAN_MATCH
+	SearchLabels shared.SearchLabelsProvider
+	Matcher      shared.ProductMatcher // подбор продукта по цели и бюджету плана
+	Notifier     shared.Notifier       // уведомления PLAN_MATCH
 }
 
 type Module struct {
@@ -43,6 +44,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Client.GET("/plans", m.listPlans)
 	r.Client.POST("/plans", m.createPlan)
 	r.Client.GET("/plans/recommendations", m.planRecommendations)
+	r.Client.GET("/plans/:id", m.getPlan)
 	r.Client.PATCH("/plans/:id", m.patchPlan)
 	r.Client.DELETE("/plans/:id", m.deletePlan)
 }

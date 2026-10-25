@@ -94,7 +94,7 @@ internal/
     events/             синхронная шина доменных событий
     module/             Deps — общая инфраструктура зоны (БД, шина, идемпотентность)
   shared/               контракты между зонами: файл на зону-поставщика (catalog.go, company.go,
-                        origination.go, scoring.go, notifications.go, servicing.go), доменные типы, события
+                        origination.go, scoring.go, notifications.go, servicing.go, planner.go), доменные типы, события
   identity/             вход, сессии, роли
   catalog/              линейка продуктов, подбор, калькулятор (../docs/catalog.md)
   origination/          заявка, этапы, отправка, машина состояний, история (../docs/origination.md)
@@ -103,6 +103,8 @@ internal/
   support/              частые вопросы и обращения (../docs/support.md)
   notifications/        уведомления в кабинете (../docs/notifications.md)
   company/              таблица компаний (id ↔ ИНН) и заглушки Profile/Authorities
+  dashboard/            настройка главной клиента (../docs/dashboard.md)
+  search/               общий поиск через провайдеры доменных зон (../docs/search.md)
   integrations, scoring, underwriting, planner             зоны разработчика B
 ```
 
@@ -139,7 +141,7 @@ internal/
 | Разработчик | Зоны |
 |---|---|
 | A | identity, catalog, origination, offer, servicing, support, notifications |
-| B | company, integrations, scoring, underwriting, planner, бинарь моков (`cmd/mocks`) |
+| B | company, integrations, scoring, underwriting, planner, dashboard, бинарь моков (`cmd/mocks`) |
 
 Контракты между A и B — `internal/shared/*.go`: в комментарии к каждому интерфейсу указано, кто реализует и кто
 использует. Меняете общий контракт — договоритесь со вторым разработчиком и поменяйте все реализации и заглушки

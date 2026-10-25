@@ -15,19 +15,15 @@ import styles from './RequestPrelimDecision.module.scss';
 
 interface RequestPrelimDecisionProps {
 	application: Application;
-	/** Нужен числовой ввод суммы выше формы параметров: после выбора «уменьшить» параметры обновятся из заявки */
-	onStage2?: () => void;
+	/** Выбор сделан, на первом этапе больше нечего решать: мастер ведёт на второй */
+	onChosen?: () => void;
 }
 
-const CHECK_TONE = { OK: 'Ок', WARN: 'Внимание', FAIL: 'Проблема' } as const;
-
-const CHOICES = [
-	{ value: 'REDUCE_AMOUNT', label: 'Уменьшить сумму до лимита' },
-	{ value: 'KEEP_AMOUNT', label: 'Оставить запрошенную сумму: решение примет сотрудник банка, возможны иные условия' },
-];
+/** Подпись только у проверок с замечанием: «Ок» у каждой строки лишний */
+const CHECK_TONE = { WARN: 'Внимание', FAIL: 'Проблема' } as const;
 
 /** Согласие на БКИ → предварительное решение (лимит по оборотам в банке или стоп) → выбор, если сумма выше лимита */
-export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDecisionProps) => {
+export const RequestPrelimDecision = ({ application, onChosen }: RequestPrelimDecisionProps) => {
 	const [giveConsent, consentState] = useGiveBkiConsentMutation();
 	const [requestPrelim, prelimState] = useRequestPrelimMutation();
 	const [choose, chooseState] = useChoosePrelimMutation();
@@ -35,10 +31,23 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 	const [result, setResult] = useState<PrelimResult | null>(null);
 	const [choice, setChoice] = useState<string>('REDUCE_AMOUNT');
 	const [error, setError] = useState<string | null>(null);
+	const [applied, setApplied] = useState<{ reduced: boolean; from: number; to: number } | null>(null);
 
 	const authorityOk = application.authority?.verified === true;
 	const consented = application.consents.bki?.given === true;
 	const stored = application.prelim;
+	const [hadPrelim, setHadPrelim] = useState(stored !== null);
+
+	/* Параметры изменили: сервер сбросил предварительное решение, значит старый результат убираем
+	   и снова показываем кнопку запроса. Сброс состояния прямо при рендере, без эффекта */
+	if (hadPrelim && stored === null) {
+		setHadPrelim(false);
+		setResult(null);
+		setApplied(null);
+		setChoice('REDUCE_AMOUNT');
+	} else if (!hadPrelim && stored !== null) {
+		setHadPrelim(true);
+	}
 	const limit: PrelimLimit | null = result?.outcome === 'LIMIT' ? result : null;
 	const stop = result?.outcome === 'STOP' ? result : null;
 	const requested = application.params.amount;
@@ -67,12 +76,14 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 
 		try {
 			const reduce = choice === 'REDUCE_AMOUNT';
-			await choose({
+			const saved = await choose({
 				applicationId: application.id,
 				choice: reduce ? 'REDUCE_AMOUNT' : 'KEEP_AMOUNT',
 				amount: reduce && bankLimit !== null ? bankLimit : undefined,
 			}).unwrap();
-			onStage2?.();
+			setApplied({ reduced: reduce, from: requested, to: saved.params.amount });
+
+			onChosen?.();
 		} catch (caught) {
 			setError(getErrorMessage(caught, 'Не удалось сохранить выбор. Повторите попытку.'));
 		}
@@ -136,16 +147,44 @@ export const RequestPrelimDecision = ({ application, onStage2 }: RequestPrelimDe
 			{limit && (
 				<ul className={styles.list} aria-label="Результаты проверок">
 					{limit.checks.map((check) => (
-						<li key={check.source}>{`${CHECK_TONE[check.status]}: ${check.label}`}</li>
+						<li key={check.source}>{check.status === 'OK' ? check.label : `${CHECK_TONE[check.status]}: ${check.label}`}</li>
 					))}
 				</ul>
 			)}
+			{applied && (applied.reduced ? (
+				<Alert tone="success" title="Сумма снижена до лимита">
+					{`Было ${formatMoney(applied.from)}, стало ${formatMoney(applied.to)}. Параметры заявки обновлены.`}
+				</Alert>
+			) : (
+				<Alert tone="info" title="Запрошенная сумма сохранена">
+					Решение примет сотрудник банка, возможны иные условия.
+				</Alert>
+			))}
 			{needsChoice && (
 				<div className={styles.choice}>
 					<Alert tone="warning" title="Запрошенная сумма выше лимита">
 						{`Вы просили ${formatMoney(requested)}. Выберите, как продолжить.`}
 					</Alert>
-					<RadioGroup legend="Как продолжить" value={choice} onChange={setChoice} options={CHOICES} />
+					<RadioGroup
+						legend="Как продолжить"
+						variant="cards"
+						value={choice}
+						onChange={setChoice}
+						options={[
+							{
+								value: 'REDUCE_AMOUNT',
+								label: 'Уменьшить сумму до лимита',
+								description: bankLimit === null
+									? 'Сумма в заявке станет равна лимиту банка'
+									: `Сумма в заявке станет ${formatMoney(bankLimit)}`,
+							},
+							{
+								value: 'KEEP_AMOUNT',
+								label: 'Оставить запрошенную сумму',
+								description: 'Решение примет сотрудник банка, возможны иные условия',
+							},
+						]}
+					/>
 					<div>
 						<Button onClick={() => void confirmChoice()} loading={chooseState.isLoading}>
 							Продолжить к полной заявке

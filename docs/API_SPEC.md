@@ -963,6 +963,24 @@ Identity ──► Origination ◄── Catalog
 }
 ```
 
+#### `GET /bank/applications/{id}/info-requests`
+Запросы информации по заявке вместе с ответами клиента: сотрудник видит, что именно ответили. Формат тот же, что у клиентской ручки, плюс `answers` и `answeredAt` после ответа. Ошибки: `403` (не сотрудник), `404`.
+
+Ответ `200`:
+```json
+[
+  {
+    "id": "r-7",
+    "status": "ANSWERED",
+    "comment": "Обороты по счетам расходятся с отчётностью",
+    "items": [{ "key": "turnover_note", "type": "TEXT", "label": "Почему выручка ниже оборотов" }],
+    "answers": [{ "key": "turnover_note", "value": "Возврат займа" }],
+    "createdAt": "2026-10-20T12:40:00Z",
+    "answeredAt": "2026-10-21T09:00:00Z"
+  }
+]
+```
+
 #### `POST /bank/applications/{id}/info-requests`
 Запрос информации у клиента → `INFO_REQUESTED` и уведомление клиенту.
 

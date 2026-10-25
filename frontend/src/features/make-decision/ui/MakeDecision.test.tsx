@@ -19,15 +19,36 @@ describe('MakeDecision', () => {
 	it('«Одобрить» отправляет запрошенные параметры с ключом идемпотентности', async () => {
 		const spy = vi.fn();
 		server.use(ok(spy));
-		const { user } = renderWithProviders(<MakeDecision applicationId="a-1" requested={requested} />);
+		const { user } = renderWithProviders(<MakeDecision applicationId="a-1" requested={requested} defaultRate={20} />);
 
 		await user.click(screen.getByRole('button', { name: 'Одобрить как запрошено' }));
 
 		await waitFor(() => expect(spy).toHaveBeenCalledWith(
-			{ type: 'APPROVE', ...requested },
+			{ type: 'APPROVE', ...requested, rate: 20 },
 			expect.stringMatching(/^[0-9a-f-]{36}$/u),
 		));
 		expect(await screen.findByText('Решение сохранено')).toBeInTheDocument();
+	});
+
+	it('без рассчитанной ставки одобрить как запрошено нельзя: бэкенд требует ставку', () => {
+		renderWithProviders(<MakeDecision applicationId="a-1" requested={requested} />);
+
+		expect(screen.getByRole('button', { name: 'Одобрить как запрошено' })).toBeDisabled();
+		expect(screen.getByText('Ставка не рассчитана')).toBeInTheDocument();
+	});
+
+	it('иные условия: ставка предзаполнена рекомендованной и обязательна', async () => {
+		const spy = vi.fn();
+		server.use(ok(spy));
+		const { user } = renderWithProviders(<MakeDecision applicationId="a-1" requested={requested} />);
+
+		await user.click(screen.getByRole('button', { name: 'Иные условия' }));
+		const dialog = screen.getByRole('dialog');
+		await user.type(within(dialog).getByLabelText('Объяснение для клиента'), 'Сумма снижена');
+		await user.click(within(dialog).getByRole('button', { name: 'Предложить клиенту' }));
+
+		expect(await within(dialog).findByText('Укажите ставку, % годовых')).toBeInTheDocument();
+		expect(spy).not.toHaveBeenCalled();
 	});
 
 	it('иные условия: сумма и срок предзаполнены, объяснение обязательно', async () => {
@@ -79,7 +100,7 @@ describe('MakeDecision', () => {
 			{ code: 'BUSINESS_RULE', message: 'Сумма вне рамок продукта' },
 			{ status: 422 },
 		)));
-		const { user } = renderWithProviders(<MakeDecision applicationId="a-1" requested={requested} />);
+		const { user } = renderWithProviders(<MakeDecision applicationId="a-1" requested={requested} defaultRate={20} />);
 
 		await user.click(screen.getByRole('button', { name: 'Иные условия' }));
 		const dialog = screen.getByRole('dialog');

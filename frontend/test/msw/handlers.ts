@@ -16,4 +16,6 @@ export const handlers: HttpHandler[] = [
 	// главная запрашивает кредиты и подбор по планам на любой клиентской странице
 	http.get(apiUrl('/loans'), () => HttpResponse.json([])),
 	http.get(apiUrl('/plans/recommendations'), () => HttpResponse.json([])),
+	// страница заявки запрашивает запросы банка при любом статусе, кроме черновика
+	http.get(apiUrl('/applications/:id/info-requests'), () => HttpResponse.json([])),
 ];

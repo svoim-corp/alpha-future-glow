@@ -1918,6 +1918,54 @@ const docTemplate = `{
             }
         },
         "/bank/applications/{id}/info-requests": {
+            "get": {
+                "description": "Все запросы по заявке с вопросами и ответами клиента: сотрудник видит, что именно ответили.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bank"
+                ],
+                "summary": "Запросы информации и ответы клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/underwriting.infoRequestDTO"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Только пояснения: данные, которые есть у банка, и документы не запрашиваются. Заявка → INFO_REQUESTED.",
                 "consumes": [
@@ -2985,6 +3033,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/dashboard": {
+            "get": {
+                "description": "Сохранённая раскладка виджетов пользователя в его компании. 204 — настройку ещё не сохраняли, клиент строит исходную.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Настройка главной",
+                "responses": {
+                    "200": {
+                        "description": "ETag — ревизия в кавычках",
+                        "schema": {
+                            "$ref": "#/definitions/dashboard.documentDTO"
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Заменяет документ целиком и атомарно. Нужен If-Match с ревизией или If-None-Match: * для первого сохранения.\nПовтор с тем же Idempotency-Key и телом возвращает исходный результат.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Сохранить настройку главной",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ревизия сохранённой настройки в кавычках",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "* — первое сохранение",
+                        "name": "If-None-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ попытки сохранения",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Настройка формата v1",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dashboard.config"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dashboard.documentDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "VALIDATION_ERROR или DASHBOARD_SCHEMA_UNSUPPORTED",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "IDEMPOTENCY_KEY_REUSED",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "412": {
+                        "description": "DASHBOARD_VERSION_CONFLICT",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "428": {
+                        "description": "PRECONDITION_REQUIRED",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/notifications": {
             "get": {
                 "description": "Последние 50 уведомлений пользователя, новые первыми. unread=true — только непрочитанные.",
@@ -3185,6 +3354,50 @@ const docTemplate = `{
             }
         },
         "/plans/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "planner"
+                ],
+                "summary": "План по ID, включая архив",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID плана",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/planner.planDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "tags": [
                     "planner"
@@ -3403,6 +3616,77 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Общий поиск клиентского кабинета",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Запрос, 2–120 символов",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Категории через запятую",
+                        "name": "types",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3,
+                        "description": "Результатов на категорию, 1–20",
+                        "name": "limitPerType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Продолжение одной категории",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/search.responseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrorBody"
                         }
@@ -3655,6 +3939,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/support/faq/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Частый вопрос по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID вопроса",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/support.faqDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/support/tickets": {
             "get": {
                 "description": "Последние 100 обращений пользователя, недавно изменённые первыми.",
@@ -3727,6 +4045,52 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/support/tickets/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Обращение текущего пользователя по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID обращения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/support.ticketDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/httpx.ErrorBody"
                         }
@@ -4154,6 +4518,69 @@ const docTemplate = `{
                         }
                     ],
                     "example": "BANK_ACCOUNTS"
+                }
+            }
+        },
+        "dashboard.config": {
+            "type": "object",
+            "properties": {
+                "schemaVersion": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "widgets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dashboard.widget"
+                    }
+                }
+            }
+        },
+        "dashboard.documentDTO": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/dashboard.config"
+                },
+                "revision": {
+                    "type": "string",
+                    "example": "8efc6500-8373-4e9d-9f0a-a5d9efae1175"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2026-10-22T10:00:00Z"
+                }
+            }
+        },
+        "dashboard.widget": {
+            "type": "object",
+            "properties": {
+                "h": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "id": {
+                    "type": "string",
+                    "example": "77a45b12-67cf-4e29-848a-0db98fb07eb8"
+                },
+                "settings": {
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "loan"
+                },
+                "w": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "x": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "y": {
+                    "type": "integer",
+                    "example": 0
                 }
             }
         },
@@ -5812,6 +6239,63 @@ const docTemplate = `{
                 "rate": {
                     "type": "number",
                     "example": 21.5
+                }
+            }
+        },
+        "search.groupDTO": {
+            "type": "object",
+            "properties": {
+                "hasMore": {
+                    "type": "boolean"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/search.itemDTO"
+                    }
+                },
+                "nextCursor": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "unavailable": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "search.itemDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "snippet": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "step": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "search.responseDTO": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/search.groupDTO"
+                    }
+                },
+                "query": {
+                    "type": "string"
                 }
             }
         },

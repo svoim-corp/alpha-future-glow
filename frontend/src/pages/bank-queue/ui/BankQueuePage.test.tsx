@@ -1,4 +1,4 @@
-import { bankStatsFixture, queuePageFixture } from '@test/fixtures/bank';
+import { bankStatsFixture, queueItemFixture, queuePageFixture } from '@test/fixtures/bank';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
 import { chooseOption } from '@test/select';
@@ -40,6 +40,20 @@ describe('BankQueuePage', () => {
 
 		await screen.findByRole('link', { name: 'КЗ-2026-001024' });
 		expect(query).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'ON_DECISION', page: '1' }));
+	});
+
+	it('«Взять в работу» только у ручных заявок в работе, у автозаявок — прочерк', async () => {
+		base();
+		const auto = { ...queueItemFixture, id: 'a-1025', number: 'КЗ-2026-001025', decisionMode: 'AUTO' as const, status: 'APPROVED' as const };
+		server.use(http.get(apiUrl('/bank/applications'), () => HttpResponse.json({
+			...queuePageFixture,
+			items: [queueItemFixture, auto],
+			total: 2,
+		})));
+		renderWithProviders(<BankQueuePage />);
+
+		expect(await screen.findByRole('button', { name: 'Взять в работу КЗ-2026-001024' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Взять в работу КЗ-2026-001025' })).not.toBeInTheDocument();
 	});
 
 	it('пустая выдача объясняет, что менять', async () => {

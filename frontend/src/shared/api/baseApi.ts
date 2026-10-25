@@ -22,6 +22,7 @@ export const baseApi = createApi({
 		'SupportChat',
 		'BankApplication',
 		'Plan',
+		'Dashboard',
 	],
 	endpoints: () => ({}),
 });

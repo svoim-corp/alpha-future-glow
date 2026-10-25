@@ -20,9 +20,6 @@ func completeness(d *dossier, truthConfirmed bool) []missingField {
 	var out []missingField
 	add := func(field, msg string) { out = append(out, missingField{field, msg}) }
 
-	if a.Goal == nil {
-		add("params.goal", "Укажите цель кредита")
-	}
 	switch {
 	case st.invalidated:
 		add("prelim", "Параметры изменились — пройдите предварительную проверку заново")

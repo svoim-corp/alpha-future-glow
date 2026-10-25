@@ -10,9 +10,16 @@
 	align-items: end;
 	justify-content: space-between;
 	gap: 18px;
-	> :last-child {
-		min-width: 180px;
-	}
+}
+
+.stateFilter {
+	width: 220px;
+	max-width: 100%;
+}
+
+.hiddenFilter {
+	visibility: hidden;
+	pointer-events: none;
 }
 
 .card {

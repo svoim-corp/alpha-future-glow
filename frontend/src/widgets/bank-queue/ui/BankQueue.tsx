@@ -14,7 +14,8 @@ import {
 import { AssignApplication } from '@features/assign-application';
 import { paths } from '@shared/config';
 import { formatDateTime, formatMoney, formatTerm } from '@shared/lib/format';
-import { AsyncBoundary, Button, DataTable, Metrics, SelectField } from '@shared/ui';
+import { AsyncBoundary, Button, DataTable, FilterToolbar, ListToolbar, Metrics, SelectFilter } from '@shared/ui';
+import clsx from 'clsx';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
@@ -25,7 +26,10 @@ const ANY = '';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
 	{ value: ANY, label: 'Все статусы' },
-	...(['SUBMITTED', 'DATA_CHECK', 'INFO_REQUESTED', 'SCORING', 'ON_DECISION'] as ApplicationStatus[])
+	...([
+		'SUBMITTED', 'DATA_CHECK', 'INFO_REQUESTED', 'SCORING', 'ON_DECISION',
+		'APPROVED', 'COUNTER_OFFER', 'REJECTED', 'SIGNING', 'ISSUED', 'CLOSED',
+	] as ApplicationStatus[])
 		.map((value) => ({ value, label: BANK_STATUS_LABEL[value] })),
 ];
 const PRODUCT_OPTIONS = [
@@ -47,13 +51,19 @@ const MODE_OPTIONS = [
 	{ value: 'MANUAL', label: 'Ручной разбор' },
 ];
 
-const STAT_LABELS = [
-	['SUBMITTED', 'Подано'],
-	['DATA_CHECK', 'Проверка данных'],
-	['INFO_REQUESTED', 'Запрошена информация'],
-	['SCORING', 'Скоринг'],
-	['ON_DECISION', 'На решении'],
-	['decidedToday', 'Решено сегодня'],
+/** Взять в работу можно только заявку на ручном разборе, пока она не решена: у автозаявок исполнителя нет */
+const MANUAL_STATUSES: ApplicationStatus[] = ['INFO_REQUESTED', 'SCORING', 'ON_DECISION'];
+const canAssign = (row: BankQueueItem) => (
+	row.assignee !== null || (row.decisionMode === 'MANUAL' && MANUAL_STATUSES.includes(row.status))
+);
+
+const STATS = [
+	{ key: 'ON_DECISION', label: 'На решении', hint: 'Ждут решения сотрудника', accent: true },
+	{ key: 'SUBMITTED', label: 'Подано', hint: 'Новые заявки' },
+	{ key: 'DATA_CHECK', label: 'Проверка данных', hint: 'Идут внешние проверки' },
+	{ key: 'INFO_REQUESTED', label: 'Запрошена информация', hint: 'Ждём ответ клиента' },
+	{ key: 'SCORING', label: 'Скоринг', hint: 'Идёт оценка' },
+	{ key: 'decidedToday', label: 'Решено сегодня', hint: 'С начала дня' },
 ] as const;
 
 const Stats = () => {
@@ -70,7 +80,7 @@ const Stats = () => {
 			{data && (
 				<Metrics
 					label="Заявки по этапам"
-					items={STAT_LABELS.map(([key, label]) => ({ label, value: data[key] }))}
+					items={STATS.map(({ key, ...item }) => ({ ...item, value: data[key] }))}
 				/>
 			)}
 		</AsyncBoundary>
@@ -87,109 +97,140 @@ export const BankQueue = () => {
 	return (
 		<div className={styles.queue}>
 			<Stats />
-			<div className={styles.filters}>
-				<SelectField
-					label="Статус"
-					value={filters.status ?? ANY}
-					options={STATUS_OPTIONS}
-					onChange={(next) => change({ status: (next || undefined) as ApplicationStatus | undefined })}
-				/>
-				<SelectField
-					label="Продукт"
-					value={filters.product ?? ANY}
-					options={PRODUCT_OPTIONS}
-					onChange={(next) => change({ product: next || undefined })}
-				/>
-				<SelectField
-					label="Риск"
-					value={filters.risk ?? ANY}
-					options={RISK_OPTIONS}
-					onChange={(next) => change({ risk: (next || undefined) as RiskBand | undefined })}
-				/>
-				<SelectField
-					label="Режим решения"
-					value={filters.decisionMode ?? ANY}
-					options={MODE_OPTIONS}
-					onChange={(next) => change({ decisionMode: (next || undefined) as DecisionMode | undefined })}
-				/>
+			<div className={styles.card}>
+				<FilterToolbar>
+					<SelectFilter
+						label="Статус"
+						value={filters.status ?? ANY}
+						options={STATUS_OPTIONS}
+						onChange={(next) => change({ status: (next || undefined) as ApplicationStatus | undefined })}
+					/>
+					<SelectFilter
+						label="Продукт"
+						value={filters.product ?? ANY}
+						options={PRODUCT_OPTIONS}
+						onChange={(next) => change({ product: next || undefined })}
+					/>
+					<SelectFilter
+						label="Риск"
+						value={filters.risk ?? ANY}
+						options={RISK_OPTIONS}
+						onChange={(next) => change({ risk: (next || undefined) as RiskBand | undefined })}
+					/>
+					<SelectFilter
+						label="Режим решения"
+						value={filters.decisionMode ?? ANY}
+						options={MODE_OPTIONS}
+						onChange={(next) => change({ decisionMode: (next || undefined) as DecisionMode | undefined })}
+					/>
+				</FilterToolbar>
+				<ListToolbar>
+					<span role="status">{data ? `Найдено: ${data.total}` : 'Загружаем заявки'}</span>
+				</ListToolbar>
+				<AsyncBoundary
+					isLoading={isLoading}
+					isError={isError}
+					isEmpty={data?.items.length === 0}
+					onRetry={() => void refetch()}
+					loadingLabel="Загружаем заявки"
+					errorText="Не удалось загрузить очередь"
+					emptyTitle="По этим условиям заявок нет"
+					emptyText="Измените фильтры, чтобы увидеть другие заявки."
+				>
+					{data && (
+						<>
+							<DataTable<BankQueueItem>
+								caption="Очередь заявок"
+								hideCaption
+								className={styles.table}
+								rows={data.items}
+								getRowKey={(row) => row.id}
+								columns={[
+									{
+										key: 'number',
+										header: 'Заявка',
+										render: (row) => (
+											<span className={styles.cell}>
+												<Link to={paths.bankApplication(row.id)} className={styles.link}>
+													{row.number}
+												</Link>
+												<small>{formatDateTime(row.submittedAt)}</small>
+											</span>
+										),
+									},
+									{
+										key: 'company',
+										header: 'Компания',
+										render: (row) => (
+											<span className={styles.cell}>
+												<strong>{row.company.name}</strong>
+												<small>{row.product.name}</small>
+											</span>
+										),
+									},
+									{
+										key: 'amount',
+										header: 'Сумма и срок',
+										align: 'right',
+										render: (row) => (
+											<span className={clsx(styles.cell, styles.end)}>
+												<strong>{formatMoney(row.amount)}</strong>
+												<small>{formatTerm(row.term)}</small>
+											</span>
+										),
+									},
+									{
+										key: 'status',
+										header: 'Статус',
+										render: (row) => (
+											<StatusBadge status={row.status} label={BANK_STATUS_LABEL[row.status]} />
+										),
+									},
+									{
+										key: 'score',
+										header: 'Балл и риск',
+										render: (row) => (
+											<span className={styles.score}>
+												<strong>{row.score ?? '—'}</strong>
+												<RiskBadge band={row.riskBand} />
+											</span>
+										),
+									},
+									{ key: 'mode', header: 'Режим', render: (row) => <DecisionModeLabel mode={row.decisionMode} /> },
+									{
+										key: 'assignee',
+										header: 'Исполнитель',
+										render: (row) => (
+											canAssign(row) ? <AssignApplication item={row} /> : <span>—</span>
+										),
+									},
+								]}
+							/>
+							<nav className={styles.pager} aria-label="Страницы очереди">
+								<span>{`Страница ${data.page} из ${pages}`}</span>
+								<span className={styles.pagerButtons}>
+									<Button
+										variant="secondary"
+										compact
+										disabled={data.page <= 1}
+										onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
+									>
+										Назад
+									</Button>
+									<Button
+										variant="secondary"
+										compact
+										disabled={data.page >= pages}
+										onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
+									>
+										Вперёд
+									</Button>
+								</span>
+							</nav>
+						</>
+					)}
+				</AsyncBoundary>
 			</div>
-			<AsyncBoundary
-				isLoading={isLoading}
-				isError={isError}
-				isEmpty={data?.items.length === 0}
-				onRetry={() => void refetch()}
-				loadingLabel="Загружаем заявки"
-				errorText="Не удалось загрузить очередь"
-				emptyTitle="По этим условиям заявок нет"
-				emptyText="Измените фильтры, чтобы увидеть другие заявки."
-			>
-				{data && (
-					<>
-						<DataTable<BankQueueItem>
-							caption="Очередь заявок"
-							rows={data.items}
-							getRowKey={(row) => row.id}
-							columns={[
-								{
-									key: 'number',
-									header: 'Заявка',
-									render: (row) => <Link to={paths.bankApplication(row.id)}>{row.number}</Link>,
-								},
-								{
-									key: 'company',
-									header: 'Компания',
-									render: (row) => row.company.name,
-								},
-								{ key: 'product', header: 'Продукт', render: (row) => row.product.name },
-								{
-									key: 'amount',
-									header: 'Сумма и срок',
-									align: 'right',
-									render: (row) => `${formatMoney(row.amount)}, ${formatTerm(row.term)}`,
-								},
-								{
-									key: 'status',
-									header: 'Статус',
-									render: (row) => (
-										<StatusBadge status={row.status} label={BANK_STATUS_LABEL[row.status]} />
-									),
-								},
-								{
-									key: 'score',
-									header: 'Балл и риск',
-									render: (row) => (
-										<>
-											{row.score ?? '—'} <RiskBadge band={row.riskBand} />
-										</>
-									),
-								},
-								{ key: 'mode', header: 'Режим', render: (row) => <DecisionModeLabel mode={row.decisionMode} /> },
-								{ key: 'assignee', header: 'Исполнитель', render: (row) => <AssignApplication item={row} /> },
-								{ key: 'submitted', header: 'Подана', render: (row) => formatDateTime(row.submittedAt) },
-							]}
-						/>
-						<nav className={styles.pager} aria-label="Страницы очереди">
-							<Button
-								variant="secondary"
-								compact
-								disabled={data.page <= 1}
-								onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
-							>
-								Назад
-							</Button>
-							<span>{`Страница ${data.page} из ${pages}`}</span>
-							<Button
-								variant="secondary"
-								compact
-								disabled={data.page >= pages}
-								onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
-							>
-								Вперёд
-							</Button>
-						</nav>
-					</>
-				)}
-			</AsyncBoundary>
 		</div>
 	);
 };

@@ -57,6 +57,7 @@ func (m *Module) Register(r httpx.Routes) {
 	r.Bank.GET("/applications/:id/completeness", m.bankCompleteness)
 	r.Bank.GET("/applications/:id/checks", m.bankChecks)
 	r.Bank.POST("/applications/:id/checks/refresh", m.bankRefreshChecks)
+	r.Bank.GET("/applications/:id/info-requests", m.bankInfoRequests)
 	r.Bank.POST("/applications/:id/info-requests", m.bankRequestInfo)
 	r.Bank.POST("/applications/:id/decision", m.deps.Idem.Middleware(), m.bankDecision)
 

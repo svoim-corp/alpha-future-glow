@@ -128,3 +128,82 @@ textarea.control {
 		pointer-events: none;
 	}
 }
+
+/* Крупные карточки выбора: точка слева, название и пояснение, видно, что вариант нужно выбрать */
+.cards {
+	display: grid;
+	gap: var(--space-2);
+}
+
+.card {
+	display: grid;
+	grid-template-columns: 22px minmax(0, 1fr);
+	gap: 2px 14px;
+	align-items: start;
+	padding: 16px 18px;
+	border: 1px solid var(--color-control-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	cursor: pointer;
+
+	&:hover {
+		border-color: var(--color-text);
+	}
+
+	&:has(input:checked) {
+		border-color: var(--color-primary);
+		background: var(--color-primary-soft);
+	}
+
+	&:has(input:focus-visible) {
+		outline: 3px solid var(--color-focus);
+		outline-offset: 3px;
+	}
+
+	input {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+
+.dot {
+	position: relative;
+	grid-row: span 2;
+	width: 22px;
+	height: 22px;
+	margin-top: 1px;
+	border: 2px solid var(--color-control-border);
+	border-radius: 50%;
+	background: var(--color-surface);
+
+	&::after {
+		content: '';
+		position: absolute;
+		inset: 3px;
+		border-radius: 50%;
+		background: var(--color-primary);
+		transform: scale(0);
+		transition: transform var(--duration);
+	}
+}
+
+.card:has(input:checked) .dot {
+	border-color: var(--color-primary);
+
+	&::after {
+		transform: scale(1);
+	}
+}
+
+.cardTitle {
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.cardText {
+	grid-column: 2;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--color-text-muted);
+}

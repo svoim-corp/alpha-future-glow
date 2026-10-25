@@ -1,4 +1,5 @@
 import { fullApplication } from '@test/fixtures/applications';
+import { contractFixture } from '@test/fixtures/contract';
 import { counterOfferFixture, infoRequestsFixture, timelineFixture } from '@test/fixtures/tracking';
 import { apiUrl, server } from '@test/msw/server';
 import { renderWithProviders } from '@test/render';
@@ -45,18 +46,37 @@ describe('ApplicationPage', () => {
 		expect(screen.getByRole('region', { name: 'Предложение банка' })).toHaveTextContent('1 200 000');
 	});
 
-	it('на подписании ведёт к странице подписания', async () => {
+	it('на подписании показывает договор и подпись прямо на странице заявки', async () => {
 		server.use(
 			app('SIGNING'),
+			timeline,
+			http.get(apiUrl('/applications/a-1031/offer'), () => HttpResponse.json(counterOfferFixture)),
+			http.get(apiUrl('/applications/a-1031/contract'), () => HttpResponse.json(contractFixture)),
+		);
+		renderPage();
+
+		expect(await screen.findByText('Условия кредита')).toBeInTheDocument();
+		expect(await screen.findByRole('button', { name: 'Подписать договор' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Принять условия' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: 'Перейти к подписанию' })).not.toBeInTheDocument();
+	});
+
+	it('пока банк проверяет заявку, сам подтягивает решение и кнопки', async () => {
+		let status = 'DATA_CHECK';
+		server.use(
+			http.get(apiUrl('/applications/a-1031'), () => HttpResponse.json({ ...base, status })),
 			timeline,
 			http.get(apiUrl('/applications/a-1031/offer'), () => HttpResponse.json(counterOfferFixture)),
 		);
 		renderPage();
 
-		expect(await screen.findByRole('link', { name: 'Перейти к подписанию' }))
-			.toHaveAttribute('href', '/applications/a-1031/sign');
+		expect(await screen.findByText('Заявка КЗ-2026-001024')).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: 'Принять условия' })).not.toBeInTheDocument();
-	});
+
+		status = 'APPROVED';
+
+		expect(await screen.findByRole('button', { name: 'Принять условия' }, { timeout: 6000 })).toBeInTheDocument();
+	}, 10000);
 
 	it('даёт перейти в поддержку с привязкой к заявке', async () => {
 		server.use(app('SCORING'), timeline);

@@ -2,6 +2,7 @@ export {
 	planApi,
 	useCreatePlanMutation,
 	useDeletePlanMutation,
+	useGetPlanQuery,
 	useGetPlanRecommendationsQuery,
 	useGetPlansQuery,
 	useUpdatePlanMutation,

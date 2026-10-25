@@ -75,9 +75,9 @@ describe('RequestPrelimDecision', () => {
 		expect(screen.getByText('Вернуться, когда бизнесу будет 6 месяцев')).toBeInTheDocument();
 	});
 
-	it('выбор «уменьшить сумму» отправляет лимит как новую сумму и переходит к этапу 2', async () => {
+	it('выбор «уменьшить сумму» отправляет лимит как новую сумму и сообщает мастеру о выборе', async () => {
 		const choice = vi.fn();
-		const onStage2 = vi.fn();
+		const onChosen = vi.fn();
 		server.use(
 			http.post(apiUrl('/applications/a-1031/prelim'), () => HttpResponse.json(limitBody)),
 			http.post(apiUrl('/applications/a-1031/prelim/choice'), async ({ request }) => {
@@ -87,17 +87,18 @@ describe('RequestPrelimDecision', () => {
 			}),
 		);
 		const app = { ...fresh, consents: { bki: { given: true, at: '2026-10-20T10:05:00Z' } } };
-		const { user } = renderWithProviders(<RequestPrelimDecision application={app} onStage2={onStage2} />);
+		const { user } = renderWithProviders(<RequestPrelimDecision application={app} onChosen={onChosen} />);
 
 		await user.click(screen.getByRole('button', { name: 'Получить предварительное решение' }));
 		await user.click(await screen.findByRole('button', { name: 'Продолжить к полной заявке' }));
 
-		await waitFor(() => expect(onStage2).toHaveBeenCalled());
+		await waitFor(() => expect(onChosen).toHaveBeenCalled());
 		expect(choice).toHaveBeenCalledWith({ choice: 'REDUCE_AMOUNT', amount: 1000000 });
 	});
 
-	it('выбор «оставить сумму» отправляет KEEP_AMOUNT без суммы', async () => {
+	it('выбор «оставить сумму» отправляет KEEP_AMOUNT без суммы и тоже сообщает мастеру', async () => {
 		const choice = vi.fn();
+		const onChosen = vi.fn();
 		server.use(
 			http.post(apiUrl('/applications/a-1031/prelim'), () => HttpResponse.json(limitBody)),
 			http.post(apiUrl('/applications/a-1031/prelim/choice'), async ({ request }) => {
@@ -107,13 +108,14 @@ describe('RequestPrelimDecision', () => {
 			}),
 		);
 		const app = { ...fresh, consents: { bki: { given: true, at: '2026-10-20T10:05:00Z' } } };
-		const { user } = renderWithProviders(<RequestPrelimDecision application={app} />);
+		const { user } = renderWithProviders(<RequestPrelimDecision application={app} onChosen={onChosen} />);
 
 		await user.click(screen.getByRole('button', { name: 'Получить предварительное решение' }));
 		await user.click(await screen.findByRole('radio', { name: /Оставить запрошенную сумму/ }));
 		await user.click(screen.getByRole('button', { name: 'Продолжить к полной заявке' }));
 
 		await waitFor(() => expect(choice).toHaveBeenCalledWith({ choice: 'KEEP_AMOUNT' }));
+		expect(onChosen).toHaveBeenCalled();
 	});
 
 	it('если сумма в пределах лимита, выбор не предлагается', async () => {

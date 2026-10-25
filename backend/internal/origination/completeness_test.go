@@ -30,7 +30,7 @@ func TestCompleteness(t *testing.T) {
 	}{
 		{"всё есть", func(*dossier) {}, true, nil},
 		{"не подтверждена достоверность", func(*dossier) {}, false, []string{"stage2.truthConfirmed"}},
-		{"нет цели", func(d *dossier) { d.app.Goal = nil }, true, []string{"params.goal"}},
+		{"цель необязательна", func(d *dossier) { d.app.Goal = nil }, true, nil},
 		{"этап 1 не пройден", func(d *dossier) { d.stage = stageState{stage: stagePrelim} }, true, []string{"prelim"}},
 		{"этап 1 устарел", func(d *dossier) { d.stage = stageState{stage: stagePrelim, invalidated: true} }, true, []string{"prelim"}},
 		{"стоп-отказ", func(d *dossier) {
@@ -48,7 +48,7 @@ func TestCompleteness(t *testing.T) {
 		{"продукт без поручителя", func(d *dossier) { d.product, d.app.GuarantorPersonID = &express, nil }, true, nil},
 		{"пустая заявка", func(d *dossier) {
 			d.app.Goal, d.app.GuarantorPersonID, d.stage, d.consent, d.guarantorConsent = nil, nil, stageState{stage: stagePrelim}, nil, nil
-		}, false, []string{"params.goal", "prelim", "consents.bki", "stage2.guarantor.personId", "stage2.truthConfirmed"}},
+		}, false, []string{"prelim", "consents.bki", "stage2.guarantor.personId", "stage2.truthConfirmed"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

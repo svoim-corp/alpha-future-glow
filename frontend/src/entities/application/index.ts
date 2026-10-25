@@ -1,6 +1,7 @@
 export {
 	applicationApi,
 	useGetApplicationQuery,
+	useGetAllMyApplicationsQuery,
 	useGetCompanyProfileQuery,
 	useGetMyApplicationsQuery,
 	usePatchApplicationMutation,
@@ -11,6 +12,7 @@ export {
 	useGetBankApplicationQuery,
 	useGetBankApplicationsQuery,
 	useGetBankHistoryQuery,
+	useGetBankInfoRequestsQuery,
 	useGetBankStatsQuery,
 	useGetChecksQuery,
 	useGetCompletenessQuery,
@@ -82,6 +84,7 @@ export {
 	ChecksView,
 	CompletenessView,
 	HistoryView,
+	InfoRequestsView,
 	ScoreView,
 } from './ui/BankReviewViews';
 export { CompanyCard } from './ui/CompanyCard';

@@ -120,3 +120,16 @@
 		padding: 22px;
 	}
 }
+
+.compact {
+	padding: 20px;
+
+	.grid {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 24px;
+	}
+
+	.result {
+		padding: 20px;
+	}
+}

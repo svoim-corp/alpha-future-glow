@@ -11,6 +11,12 @@ interface LoanConditionsDialogProps {
 	onClose: () => void;
 }
 
+const closeReasons = {
+	SCHEDULE_COMPLETED: 'Погашен по графику',
+	EARLY_REPAYMENT: 'Погашен досрочно',
+	LIMIT_CLOSED: 'Кредитный лимит закрыт',
+};
+
 export const LoanConditionsDialog = ({ loan, details, onClose }: LoanConditionsDialogProps) => {
 	const contract = useGetContractQuery(details.applicationId);
 	return (
@@ -18,66 +24,33 @@ export const LoanConditionsDialog = ({ loan, details, onClose }: LoanConditionsD
 			<div className={styles.grid}>
 				<section>
 					<h3>{details.product?.name ?? loan.product.name}</h3>
-					<KeyValueList
-						items={[
-							{ label: 'Договор', value: details.contractNumber },
-							{
-								label: 'Статус',
-								value: loan.status === 'CLOSED' ? 'Закрыт' : 'Действует',
-							},
-							{
-								label: 'Дата выдачи',
-								value: formatDate(details.issuedAt ?? loan.issuedAt),
-							},
-							{ label: 'Сумма', value: formatMoney(details.terms.amount) },
-							{ label: 'Остаток основного долга', value: formatMoney(loan.balance) },
-							{ label: 'Срок', value: formatTerm(details.terms.term) },
-							{ label: 'Ставка', value: formatRate(details.terms.rate) },
-							{
-								label: details.terms.graceMonths
-									? 'Платёж после отсрочки'
-									: 'Платёж по договору',
-								value: formatMoney(details.terms.monthlyPayment),
-							},
-							{
-								label: 'Отсрочка основного долга',
-								value: details.terms.graceMonths
-									? formatTerm(details.terms.graceMonths)
-									: 'Не предусмотрена',
-							},
-						]}
-					/>
-					<p>
-						Точные суммы и даты каждого платежа указаны в графике. Последний платёж
-						может отличаться.
-					</p>
+					<KeyValueList items={[
+						{ label: 'Договор', value: details.contractNumber },
+						{ label: 'Статус', value: loan.status === 'CLOSED' ? 'Закрыт' : 'Действует' },
+						...(details.closedAt ? [{ label: 'Дата закрытия', value: formatDate(details.closedAt.slice(0, 10)) }] : []),
+						...(details.closeReason ? [{ label: 'Причина закрытия', value: closeReasons[details.closeReason] }] : []),
+						{ label: 'Дата выдачи', value: formatDate(details.issuedAt ?? loan.issuedAt) },
+						{ label: 'Сумма', value: formatMoney(details.terms.amount) },
+						{ label: 'Остаток основного долга', value: formatMoney(loan.balance) },
+						{ label: 'Срок', value: formatTerm(details.terms.term) },
+						{ label: 'Ставка', value: formatRate(details.terms.rate) },
+						{ label: details.terms.graceMonths ? 'Платёж после отсрочки' : 'Платёж по договору', value: formatMoney(details.terms.monthlyPayment) },
+						{ label: 'Отсрочка основного долга', value: details.terms.graceMonths ? formatTerm(details.terms.graceMonths) : 'Не предусмотрена' },
+					]} />
+					<p>Точные суммы и даты каждого платежа указаны в графике. Последний платёж может отличаться.</p>
 				</section>
 				<section>
 					<h3>Документы договора</h3>
-					<AsyncBoundary
-						isLoading={contract.isLoading}
-						isError={contract.isError}
-						onRetry={() => void contract.refetch()}
-						loadingLabel="Загрузка документов"
+					<AsyncBoundary isLoading={contract.isLoading} isError={contract.isError}
+						onRetry={() => void contract.refetch()} loadingLabel="Загрузка документов"
 						errorText="Не удалось загрузить документы договора."
-						isEmpty={contract.data?.documents.length === 0}
-						emptyTitle="Документов пока нет"
-					>
+						isEmpty={contract.data?.documents.length === 0} emptyTitle="Документов пока нет">
 						<ul className={styles.documents}>
-							{contract.data?.documents.map((document) => (
-								<li key={document.id}>
-									<a href={document.url} target="_blank" rel="noreferrer">
-										<Icon name="documents" size={20} />
-										{document.title}
-										<Icon name="arrow" size={16} />
-									</a>
-								</li>
-							))}
+							{contract.data?.documents.map((document) => <li key={document.id}>
+								<a href={document.url} target="_blank" rel="noreferrer"><Icon name="documents" size={20} />{document.title}<Icon name="arrow" size={16} /></a>
+							</li>)}
 						</ul>
-						<p>
-							Печатные формы банка открываются в новой вкладке. Их можно распечатать
-							или сохранить средствами браузера.
-						</p>
+						<p>Печатные формы банка открываются в новой вкладке. Их можно распечатать или сохранить средствами браузера.</p>
 					</AsyncBoundary>
 				</section>
 			</div>

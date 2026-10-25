@@ -16,36 +16,6 @@
 	}
 }
 
-.eyebrow {
-	font-size: 9px;
-	font-weight: 500;
-	color: var(--color-text-muted);
-	letter-spacing: 0.13em;
-}
-
-.meta {
-	display: flex;
-	gap: 16px;
-	align-items: center;
-	justify-content: space-between;
-	padding-bottom: 16px;
-	font-size: 10px;
-	color: var(--color-text-muted);
-
-	span:first-child {
-		display: flex;
-		gap: 8px;
-		align-items: center;
-	}
-
-	i {
-		width: 5px;
-		height: 5px;
-		background: var(--color-primary);
-		border-radius: 50%;
-	}
-}
-
 @media (max-width: 600px) {
 	.heading h1 {
 		font-size: 27px;

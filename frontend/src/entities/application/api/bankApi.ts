@@ -11,6 +11,7 @@ import {
 	type HistoryEntry,
 	type Score,
 } from '../model/bank';
+import { type InfoRequest } from '../model/tracking';
 
 const toQuery = (filters: BankQueueFilters): string => {
 	const params = new URLSearchParams();
@@ -69,6 +70,10 @@ export const bankApi = baseApi.injectEndpoints({
 			query: (id) => `/bank/applications/${id}/score`,
 			providesTags: detailTag,
 		}),
+		getBankInfoRequests: build.query<InfoRequest[], string>({
+			query: (id) => `/bank/applications/${id}/info-requests`,
+			providesTags: detailTag,
+		}),
 		getBankHistory: build.query<HistoryEntry[], string>({
 			query: (id) => `/bank/applications/${id}/history`,
 			providesTags: detailTag,
@@ -86,4 +91,5 @@ export const {
 	useRefreshChecksMutation,
 	useGetScoreQuery,
 	useGetBankHistoryQuery,
+	useGetBankInfoRequestsQuery,
 } = bankApi;

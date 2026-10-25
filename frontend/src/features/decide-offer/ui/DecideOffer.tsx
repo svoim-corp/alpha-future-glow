@@ -7,7 +7,8 @@ import styles from './DecideOffer.module.scss';
 
 interface DecideOfferProps {
 	applicationId: string;
-	onAccepted: (redirect: string) => void;
+	/** Куда ведёт бэк после принятия; страница заявки сама покажет подписание, поэтому необязательно */
+	onAccepted?: (redirect: string) => void;
 }
 
 /** Принять условия (→ подписание) или отказаться с необязательной причиной (→ заявка закрывается) */
@@ -22,7 +23,8 @@ export const DecideOffer = ({ applicationId, onAccepted }: DecideOfferProps) => 
 		setFailure(null);
 
 		try {
-			onAccepted((await accept({ applicationId }).unwrap()).redirect);
+			const result = await accept({ applicationId }).unwrap();
+			onAccepted?.(result.redirect);
 		} catch (error) {
 			setFailure(getErrorMessage(error, 'Не удалось принять условия. Повторите попытку.'));
 		}
