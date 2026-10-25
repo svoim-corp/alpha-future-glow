@@ -2042,6 +2042,105 @@ definitions:
     - ActorClient
     - ActorOfficer
     - ActorSystem
+  shared.AssistantDraft:
+    properties:
+      amount:
+        maximum: 1000000000000
+        type: integer
+      goal:
+        maxLength: 100
+        type: string
+      productCode:
+        maxLength: 50
+        type: string
+      term:
+        maximum: 1200
+        type: integer
+    required:
+    - amount
+    - goal
+    - productCode
+    - term
+    type: object
+  shared.AssistantLoan:
+    properties:
+      amount:
+        type: integer
+      balance:
+        type: integer
+      id:
+        type: string
+      productName:
+        type: string
+      rate:
+        type: number
+      status:
+        type: string
+      term:
+        type: integer
+    type: object
+  shared.AssistantPlan:
+    properties:
+      budgetRub:
+        type: integer
+      dateMode:
+        type: string
+      endDate:
+        type: string
+      goal:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      startDate:
+        type: string
+      state:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  shared.AssistantPlanChange:
+    properties:
+      budgetRub:
+        maximum: 1000000000000
+        type: integer
+      dateMode:
+        enum:
+        - DAY
+        - PERIOD
+        - UNSCHEDULED
+        type: string
+      endDate:
+        type: string
+      expectedUpdatedAt:
+        type: string
+      goal:
+        maxLength: 64
+        minLength: 1
+        type: string
+      id:
+        maxLength: 100
+        type: string
+      note:
+        maxLength: 2000
+        type: string
+      startDate:
+        type: string
+      state:
+        enum:
+        - ACTIVE
+        - PAUSED
+        - DONE
+        - ARCHIVED
+        type: string
+      title:
+        maxLength: 200
+        minLength: 1
+        type: string
+    type: object
   shared.AuthorityType:
     enum:
     - HEAD
@@ -2134,6 +2233,21 @@ definitions:
     - NotifyPaymentDue
     - NotifyTicketReply
     - NotifyPlanMatch
+  shared.PaymentEstimate:
+    properties:
+      amount:
+        type: integer
+      max:
+        type: integer
+      min:
+        type: integer
+      rateMax:
+        type: number
+      rateMin:
+        type: number
+      term:
+        type: integer
+    type: object
   shared.PersonRole:
     enum:
     - HEAD
@@ -2206,6 +2320,128 @@ definitions:
     - StatusSigning
     - StatusIssued
     - StatusClosed
+  shared.UpcomingPayment:
+    properties:
+      amount:
+        type: integer
+      date:
+        type: string
+      loanId:
+        type: string
+      productName:
+        type: string
+    type: object
+  support.actionParams:
+    properties:
+      draft:
+        $ref: '#/definitions/shared.AssistantDraft'
+      goalLabel:
+        type: string
+      kind:
+        enum:
+        - draft
+        - ticket
+        - plan
+        type: string
+      planChange:
+        $ref: '#/definitions/shared.AssistantPlanChange'
+      planPreview:
+        $ref: '#/definitions/shared.AssistantPlan'
+      productName:
+        type: string
+      subject:
+        maxLength: 200
+        type: string
+      text:
+        maxLength: 4000
+        type: string
+    required:
+    - kind
+    type: object
+  support.applicationCard:
+    properties:
+      amount:
+        type: integer
+      canDelete:
+        type: boolean
+      id:
+        type: string
+      nextStep:
+        type: string
+      number:
+        type: string
+      productCode:
+        type: string
+      status:
+        type: string
+      term:
+        type: integer
+    type: object
+  support.block:
+    properties:
+      action:
+        $ref: '#/definitions/support.actionParams'
+      actionId:
+        type: string
+      application:
+        $ref: '#/definitions/support.applicationCard'
+      calculation:
+        $ref: '#/definitions/shared.PaymentEstimate'
+      company:
+        $ref: '#/definitions/support.companyCard'
+      kind:
+        type: string
+      loan:
+        $ref: '#/definitions/shared.AssistantLoan'
+      navigation:
+        $ref: '#/definitions/support.navigationCard'
+      payment:
+        $ref: '#/definitions/shared.UpcomingPayment'
+      plan:
+        $ref: '#/definitions/shared.AssistantPlan'
+      product:
+        $ref: '#/definitions/support.productCard'
+      resultId:
+        type: string
+      ticket:
+        $ref: '#/definitions/support.ticketCard'
+      title:
+        type: string
+    type: object
+  support.companyCard:
+    properties:
+      actualAddress:
+        type: string
+      inn:
+        type: string
+      monthlyIncome:
+        type: integer
+      name:
+        type: string
+      regAddress:
+        type: string
+      viewerName:
+        type: string
+      viewerPosition:
+        type: string
+    type: object
+  support.conversation:
+    properties:
+      applicationId:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+  support.conversationRequest:
+    properties:
+      applicationId:
+        maxLength: 100
+        type: string
+    type: object
   support.faqDTO:
     properties:
       answer:
@@ -2219,6 +2455,91 @@ definitions:
         type: string
       step:
         example: APPLICATION
+        type: string
+    type: object
+  support.messageDTO:
+    properties:
+      blocks:
+        items:
+          $ref: '#/definitions/support.block'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: string
+      role:
+        type: string
+      sources:
+        items:
+          $ref: '#/definitions/support.source'
+        type: array
+      status:
+        type: string
+      text:
+        type: string
+    type: object
+  support.messageRequest:
+    properties:
+      text:
+        maxLength: 4000
+        type: string
+    required:
+    - text
+    type: object
+  support.navigationCard:
+    properties:
+      href:
+        type: string
+      label:
+        type: string
+      section:
+        type: string
+    type: object
+  support.productCard:
+    properties:
+      amountMax:
+        type: integer
+      amountMin:
+        type: integer
+      code:
+        type: string
+      goals:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      rateMax:
+        type: number
+      rateMin:
+        type: number
+      termMax:
+        type: integer
+      termMin:
+        type: integer
+    type: object
+  support.source:
+    properties:
+      excerpt:
+        type: string
+      href:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+  support.ticketCard:
+    properties:
+      id:
+        type: string
+      reply:
+        type: string
+      status:
+        type: string
+      subject:
+        type: string
+      text:
         type: string
     type: object
   support.ticketCreatedDTO:
@@ -5243,6 +5564,138 @@ paths:
       summary: Общий поиск клиентского кабинета
       tags:
       - search
+  /support/conversations:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/support.conversation'
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Диалоги пользователя
+      tags:
+      - support
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Контекст
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/support.conversationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/support.conversation'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Новый диалог с ассистентом
+      tags:
+      - support
+  /support/conversations/{id}/actions/{actionId}/confirm:
+    post:
+      parameters:
+      - description: Диалог
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Предложение
+        in: path
+        name: actionId
+        required: true
+        type: string
+      - description: Ключ запроса
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/support.block'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Подтвердить предложение ассистента
+      tags:
+      - support
+  /support/conversations/{id}/messages:
+    get:
+      parameters:
+      - description: Диалог
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/support.messageDTO'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Сообщения диалога
+      tags:
+      - support
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Диалог
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ключ запроса
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      - description: Вопрос
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/support.messageRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/support.messageDTO'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.ErrorBody'
+      summary: Задать вопрос ассистенту
+      tags:
+      - support
   /support/faq:
     get:
       description: Вопросы по шагу пути клиента. Без step — по всем шагам.

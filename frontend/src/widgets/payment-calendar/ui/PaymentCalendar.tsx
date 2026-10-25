@@ -1,4 +1,9 @@
-import { PaymentStatusBadge, type ScheduleItem, useGetScheduleQuery, useGetUpcomingPaymentsQuery } from '@entities/loan';
+import {
+	PaymentStatusBadge,
+	type ScheduleItem,
+	useGetScheduleQuery,
+	useGetUpcomingPaymentsQuery,
+} from '@entities/loan';
 import { buildMonthGrid, monthRange, type MonthRef, shiftMonth } from '@shared/lib/calendar';
 import { formatDate, formatMoney } from '@shared/lib/format';
 import { AsyncBoundary, Button, Card, MonthPicker } from '@shared/ui';
@@ -24,7 +29,11 @@ const startMonth = (): MonthRef => {
 };
 
 const Upcoming = () => {
-	const { data, isLoading, isError, refetch } = useGetUpcomingPaymentsQuery(3, { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true });
+	const { data, isLoading, isError, refetch } = useGetUpcomingPaymentsQuery(3, {
+		refetchOnFocus: true,
+		refetchOnReconnect: true,
+		refetchOnMountOrArgChange: true,
+	});
 
 	return (
 		<AsyncBoundary
@@ -59,7 +68,17 @@ export const PaymentCalendar = () => {
 	const [selected, setSelected] = useState(() => new Date().toISOString().slice(0, 10));
 	const range = monthRange(current);
 	const selectedDate = selected >= range.from && selected <= range.to ? selected : range.from;
-	const { currentData: data, isLoading, isFetching, isError, refetch } = useGetScheduleQuery(range, { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true });
+	const {
+		currentData: data,
+		isLoading,
+		isFetching,
+		isError,
+		refetch,
+	} = useGetScheduleQuery(range, {
+		refetchOnFocus: true,
+		refetchOnReconnect: true,
+		refetchOnMountOrArgChange: true,
+	});
 	const byDate = new Map<string, ScheduleItem[]>();
 
 	for (const item of data ?? []) {
@@ -71,20 +90,40 @@ export const PaymentCalendar = () => {
 	return (
 		<div className={styles.wrap}>
 			<Card aria-labelledby="cal-upcoming">
-				<h2 id="cal-upcoming" className={styles.title}>Ближайшие платежи</h2>
+				<h2 id="cal-upcoming" className={styles.title}>
+					Ближайшие платежи
+				</h2>
 				<Upcoming />
 			</Card>
 			<Card aria-labelledby="cal-month">
 				<div className={styles.controls}>
 					<MonthPicker value={current} onChange={setCurrent} />
-					<Button variant="secondary" onClick={() => { setCurrent(startMonth()); setSelected(new Date().toISOString().slice(0, 10)); }}>Сегодня</Button>
+					<Button
+						variant="secondary"
+						onClick={() => {
+							setCurrent(startMonth());
+							setSelected(new Date().toISOString().slice(0, 10));
+						}}
+					>
+						Сегодня
+					</Button>
 				</div>
 				<div className={styles.nav}>
-					<Button variant="secondary" compact onClick={() => setCurrent((prev) => shiftMonth(prev, -1))}>
+					<Button
+						variant="secondary"
+						compact
+						onClick={() => setCurrent((prev) => shiftMonth(prev, -1))}
+					>
 						Предыдущий месяц
 					</Button>
-					<h2 id="cal-month" className={styles.month}>{label}</h2>
-					<Button variant="secondary" compact onClick={() => setCurrent((prev) => shiftMonth(prev, 1))}>
+					<h2 id="cal-month" className={styles.month}>
+						{label}
+					</h2>
+					<Button
+						variant="secondary"
+						compact
+						onClick={() => setCurrent((prev) => shiftMonth(prev, 1))}
+					>
 						Следующий месяц
 					</Button>
 				</div>
@@ -99,31 +138,92 @@ export const PaymentCalendar = () => {
 						<table className={styles.table}>
 							<caption className="visually-hidden">{`Платежи за ${label}`}</caption>
 							<thead>
-								<tr>{WEEKDAYS.map((day) => <th key={day} scope="col">{day}</th>)}</tr>
+								<tr>
+									{WEEKDAYS.map((day) => (
+										<th key={day} scope="col">
+											{day}
+										</th>
+									))}
+								</tr>
 							</thead>
 							<tbody>
 								{buildMonthGrid(current).map((week) => (
 									<tr key={week.find(Boolean) ?? 'empty'}>
 										{week.map((date, index) => {
-											const payments = date ? byDate.get(date) ?? [] : [];
+											const payments = date ? (byDate.get(date) ?? []) : [];
 											const firstPayment = payments[0];
 
 											return (
-												<td key={date ?? `empty-${index}`} className={date ? styles.cell : `${styles.cell} ${styles.empty}`}>
+												<td
+													key={date ?? `empty-${index}`}
+													className={
+														date
+															? styles.cell
+															: `${styles.cell} ${styles.empty}`
+													}
+												>
 													{date && (
-														<button type="button" className={styles.day} aria-pressed={selectedDate === date}
-															aria-controls={selectedId} aria-current={date === today ? 'date' : undefined}
+														<button
+															type="button"
+															className={styles.day}
+															aria-pressed={selectedDate === date}
+															aria-controls={selectedId}
+															aria-current={
+																date === today ? 'date' : undefined
+															}
 															aria-label={`${formatDate(date)}, платежей: ${payments.length}. Показать платежи дня`}
-															onClick={() => setSelected(date)}>
-															<span className={styles.dayNumber}>{Number(date.slice(8))}</span>
-															{firstPayment && <span className={styles.pay} data-status={firstPayment.status}>
-																<span className={styles.payAmount}>{formatMoney(firstPayment.amount)}</span>
-																<span className={styles.payProduct}>{firstPayment.productName}</span>
-															</span>}
-															{payments.length > 1 && <span className={styles.more} title={morePayments(payments.length - 1)}>
-																<span className={styles.moreFull}>{morePayments(payments.length - 1)}</span>
-																<span className={styles.moreCompact} aria-hidden="true">+{payments.length - 1}</span>
-															</span>}
+															onClick={() => setSelected(date)}
+														>
+															<span className={styles.dayNumber}>
+																{Number(date.slice(8))}
+															</span>
+															{firstPayment && (
+																<span
+																	className={styles.pay}
+																	data-status={
+																		firstPayment.status
+																	}
+																>
+																	<span
+																		className={styles.payAmount}
+																	>
+																		{formatMoney(
+																			firstPayment.amount,
+																		)}
+																	</span>
+																	<span
+																		className={
+																			styles.payProduct
+																		}
+																	>
+																		{firstPayment.productName}
+																	</span>
+																</span>
+															)}
+															{payments.length > 1 && (
+																<span
+																	className={styles.more}
+																	title={morePayments(
+																		payments.length - 1,
+																	)}
+																>
+																	<span
+																		className={styles.moreFull}
+																	>
+																		{morePayments(
+																			payments.length - 1,
+																		)}
+																	</span>
+																	<span
+																		className={
+																			styles.moreCompact
+																		}
+																		aria-hidden="true"
+																	>
+																		+{payments.length - 1}
+																	</span>
+																</span>
+															)}
 														</button>
 													)}
 												</td>
@@ -134,13 +234,26 @@ export const PaymentCalendar = () => {
 							</tbody>
 						</table>
 					</div>
-					<section id={selectedId} className={styles.selected} aria-label="Платежи выбранного дня" aria-live="polite">
+					<section
+						id={selectedId}
+						className={styles.selected}
+						aria-label="Платежи выбранного дня"
+						aria-live="polite"
+					>
 						<h3>Платежи {formatDate(selectedDate)}</h3>
-						{(byDate.get(selectedDate) ?? []).length > 0 ? <ul className={styles.upcoming}>
-							{byDate.get(selectedDate)?.map((item) => <li className={styles.item} key={item.loanId}>
-								<strong>{item.productName}</strong><span>{formatMoney(item.amount)}</span><PaymentStatusBadge status={item.status} />
-							</li>)}
-						</ul> : <p>На эту дату платежей нет.</p>}
+						{(byDate.get(selectedDate) ?? []).length > 0 ? (
+							<ul className={styles.upcoming}>
+								{byDate.get(selectedDate)?.map((item) => (
+									<li className={styles.item} key={item.loanId}>
+										<strong>{item.productName}</strong>
+										<span>{formatMoney(item.amount)}</span>
+										<PaymentStatusBadge status={item.status} />
+									</li>
+								))}
+							</ul>
+						) : (
+							<p>На эту дату платежей нет.</p>
+						)}
 					</section>
 				</AsyncBoundary>
 			</Card>

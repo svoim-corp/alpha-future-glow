@@ -88,6 +88,7 @@ func run(log *slog.Logger) error {
 	offerMod := offer.New(deps)
 	servicingMod := servicing.New(deps)
 	supportMod := support.New(deps)
+	supportMod.ConfigureAI(support.AIConfig{URL: cfg.OllamaURL, Model: cfg.OllamaModel, EmbeddingModel: cfg.EmbeddingModel})
 	notificationsMod := notifications.New(deps)
 	plannerMod := planner.New(deps)
 	dashboardMod := dashboard.New(deps)
@@ -132,7 +133,7 @@ func run(log *slog.Logger) error {
 		Notifier: notificationsMod.Notifier(), Products: catalogMod.Products(), Debits: integrationsMod.Debits(),
 		Companies: companyMod.Companies(), Authorities: companyMod.Authorities(),
 	})
-	supportMod.Wire(support.Ports{Applications: originationMod.Applications()})
+	supportMod.Wire(support.Ports{Applications: originationMod.Applications(), Catalog: catalogMod.Assistant(), Drafts: originationMod.Assistant(), Payments: servicingMod.Assistant(), Planner: plannerMod.Assistant(), Loans: servicingMod.AssistantLoans(), Companies: companyMod.Companies()})
 	plannerMod.Wire(planner.Ports{
 		SearchLabels: catalogMod.SearchLabels,
 		Matcher:      catalogMod.ProductMatcher(),
@@ -160,6 +161,14 @@ func run(log *slog.Logger) error {
 	}
 
 	// Фоновый конвейер Scoring: останавливается вместе с сервером и дожидается текущего шага.
+	if err := supportMod.RecoverChat(ctx); err != nil {
+		return err
+	}
+	chatCtx, stopChat := context.WithCancel(ctx)
+	chatDone := make(chan struct{})
+	go func() { defer close(chatDone); supportMod.RunChat(chatCtx) }()
+	defer func() { stopChat(); <-chatDone }()
+
 	pipelineCtx, stopPipeline := context.WithCancel(ctx)
 	pipelineDone := make(chan struct{})
 	go func() {

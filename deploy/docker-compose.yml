@@ -13,7 +13,9 @@ name: credit-cabinet
 
 services:
   db:
-    image: postgres:17-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cabinet}
@@ -57,6 +59,9 @@ services:
       APP_PROFILE: ${APP_PROFILE:-demo}
       DATABASE_URL: postgres://${POSTGRES_USER:-cabinet}:${POSTGRES_PASSWORD:-cabinet}@db:5432/${POSTGRES_DB:-cabinet}?sslmode=disable
       MOCKS_BASE_URL: http://mocks:8090
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b-q4_K_M}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-bge-m3:567m}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -82,5 +87,57 @@ services:
       backend:
         condition: service_healthy
 
+  ollama:
+    image: ollama/ollama:0.12.6
+    profiles: [ai]
+    restart: unless-stopped
+    environment:
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  ai-models:
+    image: ollama/ollama:0.12.6
+    profiles: [ai]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "/config/prepare-models.sh"]
+    volumes:
+      - ollama-data:/root/.ollama:ro
+      - ./prepare-models.sh:/config/prepare-models.sh:ro
+      - ./models.sha256:/config/models.sha256:ro
+    depends_on:
+      ollama:
+        condition: service_healthy
+    # Нужны только для начальной подготовки; дальнейший запуск работает без интернета.
+    env_file:
+      - path: .env.models
+        required: true
+
+  ai-index:
+    profiles: [ai]
+    build:
+      context: ../backend
+      args:
+        APP: support-index
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-cabinet}:${POSTGRES_PASSWORD:-cabinet}@db:5432/${POSTGRES_DB:-cabinet}?sslmode=disable
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b-q4_K_M}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-bge-m3:567m}
+    depends_on:
+      backend:
+        condition: service_healthy
+      ai-models:
+        condition: service_completed_successfully
+
 volumes:
   db-data:
+  ollama-data:

@@ -8,6 +8,7 @@ import (
 
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/db"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/httpx"
+	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/idempotency"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/platform/module"
 	"github.com/svoim-corp/alpha-future-glow/backend/internal/shared"
 )
@@ -18,6 +19,12 @@ var migrations embed.FS
 // Ports — данные других зон, нужные зоне. Подставляются в cmd/api/main.go.
 type Ports struct {
 	Applications shared.Applications // заявка в обращении — своей компании
+	Catalog      shared.AssistantCatalog
+	Drafts       shared.AssistantApplications
+	Payments     shared.AssistantPayments
+	Planner      shared.AssistantPlanner
+	Loans        shared.AssistantLoans
+	Companies    shared.Companies
 }
 
 type Module struct {
@@ -25,9 +32,13 @@ type Module struct {
 	store *Store
 	ports Ports
 	now   func() time.Time
+	ai    *ollama
 }
 
 func New(deps module.Deps) *Module {
+	if deps.Idem == nil {
+		deps.Idem = idempotency.New(deps.DB)
+	}
 	return &Module{deps: deps, store: &Store{db: deps.DB}, now: time.Now}
 }
 
@@ -39,6 +50,7 @@ func (m *Module) Wire(p Ports) { m.ports = p }
 
 // Register — частые вопросы открыты без входа, как и каталог.
 func (m *Module) Register(r httpx.Routes) {
+	m.registerChat(r)
 	r.Public.GET("/support/faq", m.faq)
 	r.Public.GET("/support/faq/:id", m.getFAQ)
 	r.Client.POST("/support/tickets", m.createTicket)

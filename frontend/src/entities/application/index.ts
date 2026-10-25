@@ -1,7 +1,7 @@
 export {
 	applicationApi,
-	useGetApplicationQuery,
 	useGetAllMyApplicationsQuery,
+	useGetApplicationQuery,
 	useGetCompanyProfileQuery,
 	useGetMyApplicationsQuery,
 	usePatchApplicationMutation,
@@ -38,8 +38,8 @@ export type {
 	ScoreFactor,
 } from './model/bank';
 export { companyStateLabel, isCompanyActive } from './model/companyState';
-export { isExpiredOffer } from './model/pendingOffer';
 export type { PendingOffer } from './model/pendingOffer';
+export { isExpiredOffer } from './model/pendingOffer';
 export { applicationHref, BANK_STATUS_LABEL, STATUS_VIEW } from './model/status';
 export type {
 	Actor,
@@ -78,6 +78,7 @@ export type {
 	TurnoverInfo,
 } from './model/types';
 export { isVersionConflict, useDraftPatch } from './model/useDraftPatch';
+export { AssistantApplicationCard } from './ui/AssistantApplicationCard';
 export {
 	ApplicantView,
 	ChecksView,

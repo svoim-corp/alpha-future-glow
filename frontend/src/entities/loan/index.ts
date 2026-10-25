@@ -9,6 +9,8 @@ export {
 	useGetScheduleQuery,
 	useGetUpcomingPaymentsQuery,
 } from './api/loanApi';
+export { loanOverview, paymentGroups, upcomingPaymentRange } from './model/overview';
+export { paymentAmounts } from './model/paymentAmounts';
 export type {
 	Loan,
 	LoanDebt,
@@ -24,9 +26,9 @@ export type {
 	RepaymentStatus,
 	ScheduleItem,
 } from './model/types';
+export { AssistantLoanCard } from './ui/AssistantLoanCard';
+export { AssistantPaymentCard } from './ui/AssistantPaymentCard';
 export { LoanCard } from './ui/LoanCard';
 export { LoansSummaryCard } from './ui/LoansSummaryCard';
 export { PaymentsTable } from './ui/PaymentsTable';
 export { PaymentStatusBadge } from './ui/PaymentStatusBadge';
-export { loanOverview, paymentGroups, upcomingPaymentRange } from './model/overview';
-export { paymentAmounts } from './model/paymentAmounts';

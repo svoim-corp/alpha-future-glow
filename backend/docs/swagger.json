@@ -3687,6 +3687,207 @@
                 }
             }
         },
+        "/support/conversations": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Диалоги пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/support.conversation"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Новый диалог с ассистентом",
+                "parameters": [
+                    {
+                        "description": "Контекст",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/support.conversationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/support.conversation"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/support/conversations/{id}/actions/{actionId}/confirm": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Подтвердить предложение ассистента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Диалог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Предложение",
+                        "name": "actionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ запроса",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/support.block"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/support/conversations/{id}/messages": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Сообщения диалога",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Диалог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/support.messageDTO"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "support"
+                ],
+                "summary": "Задать вопрос ассистенту",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Диалог",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ключ запроса",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Вопрос",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/support.messageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/support.messageDTO"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/support/faq": {
             "get": {
                 "description": "Вопросы по шагу пути клиента. Без step — по всем шагам.",
@@ -6844,6 +7045,147 @@
                 "ActorSystem"
             ]
         },
+        "shared.AssistantDraft": {
+            "type": "object",
+            "required": [
+                "amount",
+                "goal",
+                "productCode",
+                "term"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "maximum": 1000000000000
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "productCode": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "term": {
+                    "type": "integer",
+                    "maximum": 1200
+                }
+            }
+        },
+        "shared.AssistantLoan": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "integer"
+                }
+            }
+        },
+        "shared.AssistantPlan": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer"
+                },
+                "dateMode": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "shared.AssistantPlanChange": {
+            "type": "object",
+            "properties": {
+                "budgetRub": {
+                    "type": "integer",
+                    "maximum": 1000000000000
+                },
+                "dateMode": {
+                    "type": "string",
+                    "enum": [
+                        "DAY",
+                        "PERIOD",
+                        "UNSCHEDULED"
+                    ]
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "expectedUpdatedAt": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "id": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "PAUSED",
+                        "DONE",
+                        "ARCHIVED"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                }
+            }
+        },
         "shared.AuthorityType": {
             "type": "string",
             "enum": [
@@ -6958,6 +7300,29 @@
                 "NotifyPlanMatch"
             ]
         },
+        "shared.PaymentEstimate": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "max": {
+                    "type": "integer"
+                },
+                "min": {
+                    "type": "integer"
+                },
+                "rateMax": {
+                    "type": "number"
+                },
+                "rateMin": {
+                    "type": "number"
+                },
+                "term": {
+                    "type": "integer"
+                }
+            }
+        },
         "shared.PersonRole": {
             "type": "string",
             "enum": [
@@ -7048,6 +7413,190 @@
                 "StatusClosed"
             ]
         },
+        "shared.UpcomingPayment": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "loanId": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.actionParams": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "draft": {
+                    "$ref": "#/definitions/shared.AssistantDraft"
+                },
+                "goalLabel": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "ticket",
+                        "plan"
+                    ]
+                },
+                "planChange": {
+                    "$ref": "#/definitions/shared.AssistantPlanChange"
+                },
+                "planPreview": {
+                    "$ref": "#/definitions/shared.AssistantPlan"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "text": {
+                    "type": "string",
+                    "maxLength": 4000
+                }
+            }
+        },
+        "support.applicationCard": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "canDelete": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nextStep": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "productCode": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "integer"
+                }
+            }
+        },
+        "support.block": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/support.actionParams"
+                },
+                "actionId": {
+                    "type": "string"
+                },
+                "application": {
+                    "$ref": "#/definitions/support.applicationCard"
+                },
+                "calculation": {
+                    "$ref": "#/definitions/shared.PaymentEstimate"
+                },
+                "company": {
+                    "$ref": "#/definitions/support.companyCard"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "loan": {
+                    "$ref": "#/definitions/shared.AssistantLoan"
+                },
+                "navigation": {
+                    "$ref": "#/definitions/support.navigationCard"
+                },
+                "payment": {
+                    "$ref": "#/definitions/shared.UpcomingPayment"
+                },
+                "plan": {
+                    "$ref": "#/definitions/shared.AssistantPlan"
+                },
+                "product": {
+                    "$ref": "#/definitions/support.productCard"
+                },
+                "resultId": {
+                    "type": "string"
+                },
+                "ticket": {
+                    "$ref": "#/definitions/support.ticketCard"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.companyCard": {
+            "type": "object",
+            "properties": {
+                "actualAddress": {
+                    "type": "string"
+                },
+                "inn": {
+                    "type": "string"
+                },
+                "monthlyIncome": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "regAddress": {
+                    "type": "string"
+                },
+                "viewerName": {
+                    "type": "string"
+                },
+                "viewerPosition": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.conversation": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.conversationRequest": {
+            "type": "object",
+            "properties": {
+                "applicationId": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
         "support.faqDTO": {
             "type": "object",
             "properties": {
@@ -7066,6 +7615,136 @@
                 "step": {
                     "type": "string",
                     "example": "APPLICATION"
+                }
+            }
+        },
+        "support.messageDTO": {
+            "type": "object",
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/support.block"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/support.source"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.messageRequest": {
+            "type": "object",
+            "required": [
+                "text"
+            ],
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "maxLength": 4000
+                }
+            }
+        },
+        "support.navigationCard": {
+            "type": "object",
+            "properties": {
+                "href": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "section": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.productCard": {
+            "type": "object",
+            "properties": {
+                "amountMax": {
+                    "type": "integer"
+                },
+                "amountMin": {
+                    "type": "integer"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "goals": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rateMax": {
+                    "type": "number"
+                },
+                "rateMin": {
+                    "type": "number"
+                },
+                "termMax": {
+                    "type": "integer"
+                },
+                "termMin": {
+                    "type": "integer"
+                }
+            }
+        },
+        "support.source": {
+            "type": "object",
+            "properties": {
+                "excerpt": {
+                    "type": "string"
+                },
+                "href": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "support.ticketCard": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "reply": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
                 }
             }
         },

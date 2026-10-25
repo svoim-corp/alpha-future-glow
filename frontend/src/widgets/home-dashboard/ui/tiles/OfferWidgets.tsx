@@ -11,7 +11,7 @@ import { WidgetPreview } from './WidgetPreview';
 import { WidgetState } from './WidgetState';
 
 const freshness = { refetchOnFocus: true, refetchOnReconnect: true, refetchOnMountOrArgChange: true };
-export const DraftsWidget = ({ widget }: { widget: Extract<DashboardWidget, { type: 'drafts' }> }) => {
+export const DraftsWidget = ({ widget: _widget }: { widget: Extract<DashboardWidget, { type: 'drafts' }> }) => {
 	const query = useGetAllMyApplicationsQuery(undefined, freshness);
 	const items = (query.currentData ?? []).filter((item) => item.status === 'DRAFT');
 	return <WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()}>
@@ -24,11 +24,11 @@ export const DraftsWidget = ({ widget }: { widget: Extract<DashboardWidget, { ty
 	</WidgetState>;
 };
 
-export const OffersWidget = ({ widget }: { widget: Extract<DashboardWidget, { type: 'offers' }> }) => {
+export const OffersWidget = ({ widget: _widget }: { widget: Extract<DashboardWidget, { type: 'offers' }> }) => {
 	const query = useGetPendingOffersQuery(undefined, freshness);
 	const products = useGetProductsQuery();
 	const today = new Date().toISOString().slice(0, 10);
-	const entries = (query.currentData ?? []).filter((entry) => widget.settings.filter === 'all' || !isExpiredOffer(entry, today));
+	const entries = (query.currentData ?? []).filter((entry) => _widget.settings.filter === 'all' || !isExpiredOffer(entry, today));
 	return <WidgetState loading={query.isLoading} error={query.isError} retry={() => void query.refetch()}>
 		{entries.length === 0 ? <p className={styles.empty}>Подходящих предложений пока нет.</p> : <WidgetPreview rowHeight={184} maxColumns={3} minColumnWidth={220}>
 			{entries.map((entry) => {

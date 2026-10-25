@@ -14,6 +14,17 @@ import (
 
 type Store struct{ db *sqlx.DB }
 
+// AssistantApplications включает удалённые черновики, чтобы обновить старые карточки чата.
+func (s *Store) AssistantApplications(ctx context.Context, companyID string, ids []string) ([]appRow, error) {
+	out := []appRow{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	err := s.db.SelectContext(ctx, &out, `SELECT `+appCols+` FROM origination.applications
+		WHERE company_id=$1 AND id=ANY($2::text[]) ORDER BY created_at DESC,id`, companyID, ids)
+	return out, err
+}
+
 type appRow struct {
 	ID                string                   `db:"id"`
 	Number            *string                  `db:"number"`
@@ -52,9 +63,10 @@ func (s *Store) Insert(ctx context.Context, a *appRow) error {
 	return s.db.GetContext(ctx, &a.ID, `
 		INSERT INTO origination.applications (id, company_id, applicant_id, product_code, goal, amount, term, authority,
 			status, version, created_at, updated_at)
-		VALUES ('a-' || nextval('origination.application_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+		VALUES (COALESCE(NULLIF($11, ''), 'a-' || nextval('origination.application_seq')), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+		ON CONFLICT (id) DO UPDATE SET id = EXCLUDED.id
 		RETURNING id`,
-		a.CompanyID, a.ApplicantID, a.ProductCode, a.Goal, a.Amount, a.Term, a.Authority, a.Status, a.Version, a.CreatedAt)
+		a.CompanyID, a.ApplicantID, a.ProductCode, a.Goal, a.Amount, a.Term, a.Authority, a.Status, a.Version, a.CreatedAt, a.ID)
 }
 
 // Application — заявка по id; (nil, nil) — заявки нет.

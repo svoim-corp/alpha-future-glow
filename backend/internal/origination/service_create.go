@@ -17,6 +17,7 @@ type applicant struct {
 }
 
 type draftInput struct {
+	CommandID   string // только внутренняя команда Support, не поле HTTP-запроса
 	ProductCode string
 	Amount      int64
 	Term        *int
@@ -61,6 +62,7 @@ func (m *Module) createDraft(ctx context.Context, who applicant, in draftInput) 
 
 	now := m.now().UTC()
 	row := &appRow{
+		ID:        in.CommandID,
 		CompanyID: who.companyID, ApplicantID: who.actor.UserID, ProductCode: p.Code, Goal: prm.Goal,
 		Amount: prm.Amount, Term: prm.Term, Status: string(shared.StatusDraft), Version: 1,
 		Authority: db.JSON[authorityRecord]{V: authorityRecord{

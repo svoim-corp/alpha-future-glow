@@ -37,7 +37,11 @@ const maxPlans = 200
 
 // InsertPlan присваивает плану номер p-N.
 func (s *Store) InsertPlan(ctx context.Context, p *planRow) error {
-	return s.db.GetContext(ctx, &p.ID, `
+	return s.insertPlan(ctx, s.db, p)
+}
+
+func (s *Store) insertPlan(ctx context.Context, q sqlx.QueryerContext, p *planRow) error {
+	return sqlx.GetContext(ctx, q, &p.ID, `
 		INSERT INTO planner.plans (id, company_id, created_by, title, note, goal, budget_rub, date_mode, start_date, end_date,
 			state, notify_in_app, notify_email, created_at, updated_at)
 		VALUES ('p-' || nextval('planner.plan_seq'), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
@@ -69,7 +73,11 @@ func (s *Store) Plans(ctx context.Context, companyID, state string) ([]planRow, 
 }
 
 func (s *Store) UpdatePlan(ctx context.Context, p *planRow) error {
-	_, err := s.db.ExecContext(ctx, `
+	return s.updatePlan(ctx, s.db, p)
+}
+
+func (s *Store) updatePlan(ctx context.Context, q sqlx.ExecerContext, p *planRow) error {
+	_, err := q.ExecContext(ctx, `
 		UPDATE planner.plans SET title = $2, note = $3, goal = $4, budget_rub = $5, date_mode = $6, start_date = $7,
 			end_date = $8, state = $9, notify_in_app = $10, notify_email = $11, updated_at = $12
 		WHERE id = $1`,
@@ -95,6 +103,6 @@ func (s *Store) RecordMatch(ctx context.Context, planID, productCode string, at 
 }
 
 func (s *Store) Reset(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, `TRUNCATE planner.plans, planner.plan_matches`)
+	_, err := s.db.ExecContext(ctx, `TRUNCATE planner.plans, planner.plan_matches, planner.assistant_commands`)
 	return err
 }

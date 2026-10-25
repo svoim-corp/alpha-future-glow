@@ -15,4 +15,6 @@ export type {
 	ProductSummary,
 	Range,
 } from './model/types';
+export { AssistantCalculationCard } from './ui/AssistantCalculationCard';
+export { AssistantProductCard } from './ui/AssistantProductCard';
 export { ProductCard } from './ui/ProductCard';

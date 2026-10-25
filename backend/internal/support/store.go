@@ -40,8 +40,9 @@ type ticketRow struct {
 func (s *Store) InsertTicket(ctx context.Context, t *ticketRow) error {
 	return s.db.GetContext(ctx, &t.ID, `
 		INSERT INTO support.tickets (id, user_id, company_id, application_id, subject, text, status, created_at, updated_at)
-		VALUES ('t-' || nextval('support.ticket_seq'), $1, $2, $3, $4, $5, $6, $7, $7)
-		RETURNING id`, t.UserID, t.CompanyID, t.ApplicationID, t.Subject, t.Text, t.Status, t.CreatedAt)
+		VALUES (COALESCE(NULLIF($8, ''), 't-' || nextval('support.ticket_seq')), $1, $2, $3, $4, $5, $6, $7, $7)
+		ON CONFLICT (id) DO UPDATE SET id = EXCLUDED.id
+		RETURNING id`, t.UserID, t.CompanyID, t.ApplicationID, t.Subject, t.Text, t.Status, t.CreatedAt, t.ID)
 }
 
 // Tickets — обращения пользователя, недавно изменённые первыми.
@@ -54,6 +55,6 @@ func (s *Store) Tickets(ctx context.Context, userID string, limit int) ([]ticket
 }
 
 func (s *Store) ResetTickets(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, `TRUNCATE support.tickets`)
+	_, err := s.db.ExecContext(ctx, `TRUNCATE support.actions, support.messages, support.conversations, support.tickets`)
 	return err
 }
