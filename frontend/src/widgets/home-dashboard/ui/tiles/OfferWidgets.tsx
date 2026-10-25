@@ -51,5 +51,3 @@ export const OffersWidget = ({ widget: _widget }: { widget: Extract<DashboardWid
 		<Link className={styles.link} to={`${ROUTES.credits}?tab=approved`}>Все предложения ↗</Link>
 	</WidgetState>;
 };
-
-

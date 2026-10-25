@@ -30,4 +30,7 @@ export const supportApi = baseApi.injectEndpoints({
 	}),
 });
 
-export const { useGetFaqItemQuery, useGetTicketQuery, useGetFaqQuery, useGetTicketsQuery, useGetConversationsQuery, useGetChatMessagesQuery } = supportApi;
+export const {
+	useGetFaqItemQuery, useGetTicketQuery, useGetFaqQuery, useGetTicketsQuery,
+	useGetConversationsQuery, useGetChatMessagesQuery,
+} = supportApi;

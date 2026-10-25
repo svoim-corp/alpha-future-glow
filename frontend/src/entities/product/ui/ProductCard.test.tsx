@@ -34,4 +34,3 @@ describe('ProductCard', () => {
 		expect(screen.getByText('Лимит на 12 месяцев')).toBeInTheDocument();
 	});
 });
-

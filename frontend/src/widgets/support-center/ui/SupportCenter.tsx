@@ -41,7 +41,10 @@ export const SupportCenter = () => {
 					<div className={styles.card}><FaqList step={step} query={query} /></div>
 					<div className={styles.context}>
 						<span className={styles.contextIcon}><Icon name="applications" size={18} /></span>
-						<div><strong>Вопрос по конкретной заявке?</strong><p>Укажите её номер в обращении — так проще сохранить контекст.</p></div>
+						<div>
+							<strong>Вопрос по конкретной заявке?</strong>
+							<p>Укажите её номер в обращении — так проще сохранить контекст.</p>
+						</div>
 						<Link to={ROUTES.applications} className={styles.link}>Мои заявки <Icon name="arrow" size={14} /></Link>
 					</div>
 				</section>}
